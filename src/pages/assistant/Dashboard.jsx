@@ -5,21 +5,7 @@ import { patientService } from '@/services/patients';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTime, formatDate, getStatusColor, getStatusLabel, cn } from '@/lib/utils';
 import { Calendar, UserPlus, ClipboardList, Clock, Users, FileText, ChevronRight, Plus } from 'lucide-react';
-
-const StatCard = ({ title, value, icon: Icon, color, trend }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-extrabold mt-2 text-slate-900 tracking-tight">{value}</p>
-        {trend && <p className="text-xs font-bold text-emerald-600 mt-1">{trend}</p>}
-      </div>
-      <div className={`h-14 w-14 rounded-2xl bg-${color}-50 text-${color}-600 border border-${color}-100 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-        <Icon className="h-7 w-7" />
-      </div>
-    </div>
-  </div>
-);
+import { StatCard } from '@/components/common/StatCard';
 
 export const AssistantDashboard = () => {
   const { user } = useAuth();
@@ -39,7 +25,7 @@ export const AssistantDashboard = () => {
   });
 
   const confirmedToday = todayAppointments.filter(a => a.statut === 'confirmed').length;
-  const pendingToday = todayAppointments.filter(a => a.statut === 'pending').length;
+  const pendingToday = todayAppointments.filter(a => a.statut === 'planifie' || a.statut === 'pending').length;
 
   return (
     <div className="space-y-8">
@@ -78,12 +64,12 @@ export const AssistantDashboard = () => {
               todayAppointments.map((appt) => (
                 <div key={appt.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="text-center bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-[70px]">
-                    <p className="text-sm font-extrabold text-primary tracking-tight">{formatTime(appt.dateHeureDebut)}</p>
-                    <p className="text-[10px] text-slate-400 font-bold">{formatTime(appt.dateHeureFin)}</p>
+                    <p className="text-sm font-extrabold text-primary tracking-tight">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold">{formatTime(appt.date_heure_fin || appt.dateHeureFin)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800 truncate">
-                      {appt.patient?.utilisateur?.prenom} {appt.patient?.utilisateur?.nom}
+                      {appt.patients?.utilisateurs?.prenom || appt.patient?.utilisateur?.prenom} {appt.patients?.utilisateurs?.nom || appt.patient?.utilisateur?.nom}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">{appt.motif || 'Consultation'}</p>
                   </div>
@@ -136,13 +122,13 @@ export const AssistantDashboard = () => {
               {allPatients.slice(0, 5).map((patient) => (
                 <div key={patient.id} className="px-6 py-3 flex items-center gap-3 hover:bg-slate-50/50 transition-colors">
                   <div className="h-8 w-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">
-                    {patient.utilisateur?.prenom?.[0]}{patient.utilisateur?.nom?.[0]}
+                    {patient.utilisateurs?.prenom?.[0] || patient.utilisateur?.prenom?.[0]}{patient.utilisateurs?.nom?.[0] || patient.utilisateur?.nom?.[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-slate-700 truncate">
-                      {patient.utilisateur?.prenom} {patient.utilisateur?.nom}
+                      {patient.utilisateurs?.prenom || patient.utilisateur?.prenom} {patient.utilisateurs?.nom || patient.utilisateur?.nom}
                     </p>
-                    <p className="text-[11px] text-slate-400 font-medium truncate">{patient.utilisateur?.telephone}</p>
+                    <p className="text-[11px] text-slate-400 font-medium truncate">{patient.utilisateurs?.telephone || patient.utilisateur?.telephone}</p>
                   </div>
                 </div>
               ))}

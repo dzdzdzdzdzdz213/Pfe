@@ -4,59 +4,57 @@ import { supabase } from '@/lib/supabase';
 import { auditService } from '@/services/audit';
 import { formatDate, formatDateTime, timeAgo } from '@/lib/utils';
 import { Users, Calendar, Activity, FileText, ClipboardList, TrendingUp, Database, Shield, ChevronRight } from 'lucide-react';
-
-const StatCard = ({ title, value, icon: Icon, color, subtitle }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300 group">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-extrabold mt-2 text-slate-900 tracking-tight">{value}</p>
-        {subtitle && <p className="text-xs font-bold text-emerald-600 mt-1">{subtitle}</p>}
-      </div>
-      <div className={`h-14 w-14 rounded-2xl bg-${color}-50 text-${color}-600 border border-${color}-100 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-        <Icon className="h-7 w-7" />
-      </div>
-    </div>
-  </div>
-);
+import { StatCard } from '@/components/common/StatCard';
 
 export const AdminDashboard = () => {
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const startOf7DaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
-  const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay()).toISOString();
 
-  const { data: usersCount = 0 } = useQuery({
-    queryKey: ['admin', 'usersCount'],
+  // Unified Dashboard Metrics Query
+  const { data: dashboardData, isLoading: loadingMetrics } = useQuery({
+    queryKey: ['admin', 'dashboardMetrics'],
     queryFn: async () => {
-      const { count } = await supabase.from('utilisateur').select('*', { count: 'exact', head: true });
-      return count || 0;
-    },
+      const usersP = supabase.from('utilisateurs').select('*', { count: 'exact', head: true });
+      const examsP = supabase.from('examens').select('*', { count: 'exact', head: true }).eq('statut', 'planifie');
+      const reportsP = supabase.from('comptes_rendus').select('*', { count: 'exact', head: true }).eq('est_valide', true);
+      const rdvP = supabase.from('rendez_vous').select('date_heure_debut').gte('date_heure_debut', startOf7DaysAgo).lte('date_heure_debut', endOfDay);
+
+      const [usersRes, examsRes, reportsRes, rdvRes] = await Promise.all([usersP, examsP, reportsP, rdvP]);
+
+      const rdvData = rdvRes.data || [];
+      const chartDays = [];
+      let todayCount = 0;
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).getTime();
+        
+        const count = rdvData.filter(r => {
+          const t = new Date(r.date_heure_debut).getTime();
+          return t >= dayStart && t <= dayEnd;
+        }).length;
+        
+        if (i === 0) todayCount = count; // Today's count
+
+        chartDays.push({ day: new Intl.DateTimeFormat('fr', { weekday: 'short' }).format(d), count });
+      }
+
+      return {
+        usersCount: usersRes.count || 0,
+        pendingExams: examsRes.count || 0,
+        weekReports: reportsRes.count || 0,
+        todayAppointments: todayCount,
+        weekData: chartDays
+      };
+    }
   });
 
-  const { data: todayAppointments = 0 } = useQuery({
-    queryKey: ['admin', 'todayAppointments'],
-    queryFn: async () => {
-      const { count } = await supabase.from('rendez_vous').select('*', { count: 'exact', head: true }).gte('dateHeureDebut', startOfDay).lte('dateHeureDebut', endOfDay);
-      return count || 0;
-    },
-  });
-
-  const { data: pendingExams = 0 } = useQuery({
-    queryKey: ['admin', 'pendingExams'],
-    queryFn: async () => {
-      const { count } = await supabase.from('examen').select('*', { count: 'exact', head: true }).eq('statut', 'pending');
-      return count || 0;
-    },
-  });
-
-  const { data: weekReports = 0 } = useQuery({
-    queryKey: ['admin', 'weekReports'],
-    queryFn: async () => {
-      const { count } = await supabase.from('compte_rendu').select('*', { count: 'exact', head: true }).eq('est_valide', true);
-      return count || 0;
-    },
-  });
+  const { usersCount = 0, pendingExams = 0, weekReports = 0, todayAppointments = 0, weekData = [] } = dashboardData || {};
+  const maxCount = Math.max(...weekData.map(d => d.count), 1);
 
   const { data: recentLogs = [], isLoading: loadingLogs } = useQuery({
     queryKey: ['admin', 'recentLogs'],
@@ -66,33 +64,14 @@ export const AdminDashboard = () => {
     },
   });
 
-  // Compute a simple 7-day appointment chart
-  const { data: weekData = [] } = useQuery({
-    queryKey: ['admin', 'weekChart'],
-    queryFn: async () => {
-      const days = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).toISOString();
-        const { count } = await supabase.from('rendez_vous').select('*', { count: 'exact', head: true }).gte('dateHeureDebut', dayStart).lte('dateHeureDebut', dayEnd);
-        days.push({ day: new Intl.DateTimeFormat('fr', { weekday: 'short' }).format(d), count: count || 0 });
-      }
-      return days;
-    },
-  });
-
-  const maxCount = Math.max(...weekData.map(d => d.count), 1);
-
   return (
     <div className="space-y-8">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Utilisateurs" value={usersCount} icon={Users} color="blue" />
-        <StatCard title="RDV Aujourd'hui" value={todayAppointments} icon={Calendar} color="emerald" />
-        <StatCard title="Examens en attente" value={pendingExams} icon={Activity} color="amber" />
-        <StatCard title="Rapports Validés" value={weekReports} icon={FileText} color="violet" />
+        <StatCard title="Total Utilisateurs" value={usersCount} icon={Users} color="blue" loading={loadingMetrics} />
+        <StatCard title="RDV Aujourd'hui" value={todayAppointments} icon={Calendar} color="emerald" loading={loadingMetrics} />
+        <StatCard title="Examens en attente" value={pendingExams} icon={Activity} color="amber" loading={loadingMetrics} />
+        <StatCard title="Rapports Validés" value={weekReports} icon={FileText} color="violet" loading={loadingMetrics} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -106,16 +85,26 @@ export const AdminDashboard = () => {
             <TrendingUp className="h-5 w-5 text-slate-300" />
           </div>
           <div className="flex items-end gap-3 h-48">
-            {weekData.map((item, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <span className="text-xs font-bold text-slate-600">{item.count}</span>
-                <div
-                  className="w-full bg-primary/80 rounded-t-lg transition-all duration-500 hover:bg-primary min-h-[4px]"
-                  style={{ height: `${(item.count / maxCount) * 160}px` }}
-                />
-                <span className="text-[10px] font-bold text-slate-400 uppercase">{item.day}</span>
+            {loadingMetrics ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="animate-pulse flex items-end gap-3 w-full h-full">
+                  {[...Array(7)].map((_, i) => (
+                    <div key={i} className="flex-1 bg-slate-100 rounded-t-lg" style={{ height: `${Math.max(20, Math.random() * 100)}%` }} />
+                  ))}
+                </div>
               </div>
-            ))}
+            ) : (
+              weekData.map((item, i) => (
+                <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600">{item.count}</span>
+                  <div
+                    className="w-full bg-primary/80 rounded-t-lg transition-all duration-500 hover:bg-primary min-h-[4px]"
+                    style={{ height: `${(item.count / maxCount) * 160}px` }}
+                  />
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">{item.day}</span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

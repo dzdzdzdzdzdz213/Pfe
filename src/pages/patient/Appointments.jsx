@@ -26,11 +26,11 @@ export const PatientAppointments = () => {
   const { data: patientRecord } = useQuery({
     queryKey: ['patient-record', user?.id],
     queryFn: async () => {
-      if (localStorage.getItem('demo_mock_session')) {
+      if (user?.id?.startsWith('demo-')) {
         // Return a fake patient record for demo mode
         return { id: 'demo-patient-record', utilisateur_id: user?.id };
       }
-      const { data } = await supabase.from('patient').select('*').eq('utilisateur_id', user?.id).single();
+      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', user?.id).single();
       return data;
     },
     enabled: !!user?.id,
@@ -56,14 +56,14 @@ export const PatientAppointments = () => {
   const { data: services = [] } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      if (localStorage.getItem('demo_mock_session')) return MOCK_SERVICES;
-      const { data } = await supabase.from('service').select('*');
+      if (user?.id?.startsWith('demo-')) return MOCK_SERVICES;
+      const { data } = await supabase.from('services').select('*');
       return data?.length ? data : MOCK_SERVICES;
     },
   });
 
-  const upcomingAppts = appointments.filter(a => new Date(a.dateHeureDebut) > new Date() && a.statut !== 'cancelled');
-  const pastAppts = appointments.filter(a => new Date(a.dateHeureDebut) <= new Date());
+  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) > new Date() && a.statut !== 'cancelled');
+  const pastAppts = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) <= new Date());
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -131,8 +131,8 @@ export const PatientAppointments = () => {
           {upcomingAppts.length > 0 ? upcomingAppts.map(appt => (
             <div key={appt.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4 flex-wrap">
               <div className="text-center bg-primary/5 rounded-xl px-4 py-3 border border-primary/10">
-                <p className="text-lg font-extrabold text-primary">{formatTime(appt.dateHeureDebut)}</p>
-                <p className="text-xs text-slate-500 font-bold">{formatDate(appt.dateHeureDebut)}</p>
+                <p className="text-lg font-extrabold text-primary">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                <p className="text-xs text-slate-500 font-bold">{formatDate(appt.date_heure_debut || appt.dateHeureDebut)}</p>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-800">{appt.motif || 'Consultation'}</p>
@@ -156,8 +156,8 @@ export const PatientAppointments = () => {
           {pastAppts.length > 0 ? pastAppts.map(appt => (
             <div key={appt.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4 opacity-80">
               <div className="text-center bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                <p className="text-lg font-extrabold text-slate-600">{formatTime(appt.dateHeureDebut)}</p>
-                <p className="text-xs text-slate-400 font-bold">{formatDate(appt.dateHeureDebut)}</p>
+                <p className="text-lg font-extrabold text-slate-600">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                <p className="text-xs text-slate-400 font-bold">{formatDate(appt.date_heure_debut || appt.dateHeureDebut)}</p>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-700">{appt.motif || 'Consultation'}</p>

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 export const patientService = {
   async fetchPatients() {
     const { data, error } = await supabase
-      .from('patient')
+      .from('patients')
       .select(`
         *,
         utilisateur:utilisateur_id(nom, prenom, email, telephone)
@@ -14,7 +14,7 @@ export const patientService = {
 
   async fetchPatientById(id) {
     const { data, error } = await supabase
-      .from('patient')
+      .from('patients')
       .select(`
         *,
         utilisateur:utilisateur_id(*),
@@ -29,7 +29,7 @@ export const patientService = {
 
   async createPatient(patientData, utilisateurData) {
     const { data: user, error: userError } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .insert({ ...utilisateurData, role: 'patient' })
       .select()
       .single();
@@ -37,7 +37,7 @@ export const patientService = {
     if (userError) throw userError;
 
     const { data: patient, error: patientError } = await supabase
-      .from('patient')
+      .from('patients')
       .insert({ ...patientData, utilisateur_id: user.id })
       .select()
       .single();
@@ -48,7 +48,7 @@ export const patientService = {
 
   async updatePatient(id, updates, userId, userUpdates) {
     const { data: user, error: userError } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .update(userUpdates)
       .eq('id', userId)
       .select()
@@ -57,7 +57,7 @@ export const patientService = {
     if (userError) throw userError;
 
     const { data: patient, error: patientError } = await supabase
-      .from('patient')
+      .from('patients')
       .update(updates)
       .eq('id', id)
       .select()
@@ -68,13 +68,23 @@ export const patientService = {
   },
 
   async searchPatients(query) {
+    const { data: users, error: userError } = await supabase
+      .from('utilisateurs')
+      .select('id')
+      .or(`nom.ilike.%${query}%,prenom.ilike.%${query}%,email.ilike.%${query}%,telephone.ilike.%${query}%`);
+      
+    if (userError) throw userError;
+    const userIds = users.map(u => u.id);
+
+    if (userIds.length === 0) return [];
+
     const { data, error } = await supabase
-      .from('patient')
+      .from('patients')
       .select(`
         *,
         utilisateur:utilisateur_id(nom, prenom, email, telephone)
       `)
-      .or(`utilisateur.nom.ilike.%${query}%,utilisateur.prenom.ilike.%${query}%,utilisateur.email.ilike.%${query}%,utilisateur.telephone.ilike.%${query}%`);
+      .in('utilisateur_id', userIds);
     
     if (error) throw error;
     return data;

@@ -1,3 +1,4 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,31 +16,31 @@ import { Login } from './pages/auth/Login';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 // Admin
-import { AdminDashboard } from './pages/admin/Dashboard';
-import { AdminUsers } from './pages/admin/Users';
-import { AdminAuditLogs } from './pages/admin/AuditLogs';
-import { AdminSettings } from './pages/admin/Settings';
+const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminUsers = React.lazy(() => import('./pages/admin/Users').then(m => ({ default: m.AdminUsers })));
+const AdminAuditLogs = React.lazy(() => import('./pages/admin/AuditLogs').then(m => ({ default: m.AdminAuditLogs })));
+const AdminSettings = React.lazy(() => import('./pages/admin/Settings').then(m => ({ default: m.AdminSettings })));
 
 // Assistant
-import { AssistantDashboard } from './pages/assistant/Dashboard';
-import { AssistantCalendar } from './pages/assistant/Calendar';
-import { AssistantPatients } from './pages/assistant/Patients';
+const AssistantDashboard = React.lazy(() => import('./pages/assistant/Dashboard').then(m => ({ default: m.AssistantDashboard })));
+const AssistantCalendar = React.lazy(() => import('./pages/assistant/Calendar').then(m => ({ default: m.AssistantCalendar })));
+const AssistantPatients = React.lazy(() => import('./pages/assistant/Patients').then(m => ({ default: m.AssistantPatients })));
 
 // Radiologue
-import { RadiologueDashboard } from './pages/radiologue/Dashboard';
-import { RadiologueExams } from './pages/radiologue/Exams';
-import { ReportEditor } from './pages/radiologue/ReportEditor';
-import { PatientHistory } from './pages/radiologue/PatientHistory';
-import { RadiologuePatientSearch } from './pages/radiologue/PatientSearch';
+const RadiologueDashboard = React.lazy(() => import('./pages/radiologue/Dashboard').then(m => ({ default: m.RadiologueDashboard })));
+const RadiologueExams = React.lazy(() => import('./pages/radiologue/Exams').then(m => ({ default: m.RadiologueExams })));
+const ReportEditor = React.lazy(() => import('./pages/radiologue/ReportEditor').then(m => ({ default: m.ReportEditor })));
+const PatientHistory = React.lazy(() => import('./pages/radiologue/PatientHistory').then(m => ({ default: m.PatientHistory })));
+const RadiologuePatientSearch = React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.RadiologuePatientSearch })));
 
 // Patient
-import { PatientDashboard } from './pages/patient/Dashboard';
-import { PatientAppointments } from './pages/patient/Appointments';
-import { PatientRecords } from './pages/patient/Records';
-import { PatientProfile } from './pages/patient/Profile';
+const PatientDashboard = React.lazy(() => import('./pages/patient/Dashboard').then(m => ({ default: m.PatientDashboard })));
+const PatientAppointments = React.lazy(() => import('./pages/patient/Appointments').then(m => ({ default: m.PatientAppointments })));
+const PatientRecords = React.lazy(() => import('./pages/patient/Records').then(m => ({ default: m.PatientRecords })));
+const PatientProfile = React.lazy(() => import('./pages/patient/Profile').then(m => ({ default: m.PatientProfile })));
 
 // Shared
-import { ProfileSettings } from './pages/shared/ProfileSettings';
+const ProfileSettings = React.lazy(() => import('./pages/shared/ProfileSettings').then(m => ({ default: m.ProfileSettings })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +51,20 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const RouteSkeletonLoader = () => (
+  <div className="w-full h-full flex flex-col gap-8 animate-pulse">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="bg-slate-100/80 rounded-[2rem] h-32 border border-slate-200 shadow-sm" />
+      ))}
+    </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
+      <div className="lg:col-span-2 bg-slate-100/80 rounded-[2rem] h-96 border border-slate-200 shadow-sm" />
+      <div className="bg-slate-100/80 rounded-[2rem] h-96 border border-slate-200 shadow-sm" />
+    </div>
+  </div>
+);
 
 const Unauthorized = () => (
   <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -72,6 +87,7 @@ const AppRoutes = () => {
   const location = useLocation();
 
   return (
+    <Suspense fallback={<RouteSkeletonLoader />}>
       <Routes location={location}>
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
@@ -142,6 +158,7 @@ const AppRoutes = () => {
           </div>
         } />
       </Routes>
+    </Suspense>
   );
 };
 

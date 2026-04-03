@@ -4,20 +4,7 @@ import { examService } from '@/services/exams';
 import { reportService } from '@/services/reports';
 import { formatDate, formatDateTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Stethoscope, FileText, Clock, Users, ChevronRight, Activity } from 'lucide-react';
-
-const StatCard = ({ title, value, icon: Icon, color }) => (
-  <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{title}</p>
-        <p className="text-3xl font-extrabold mt-2 text-slate-900 tracking-tight">{value}</p>
-      </div>
-      <div className={`h-14 w-14 rounded-2xl bg-${color}-50 text-${color}-600 border border-${color}-100 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-        <Icon className="h-7 w-7" />
-      </div>
-    </div>
-  </div>
-);
+import { StatCard } from '@/components/common/StatCard';
 
 export const RadiologueDashboard = () => {
   const { data: pendingExams = [] } = useQuery({
@@ -39,7 +26,7 @@ export const RadiologueDashboard = () => {
   });
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayExams = allExams.filter(e => e.dateRealisation?.startsWith(today));
+  const todayExams = allExams.filter(e => e.date_realisation?.startsWith(today));
 
   return (
     <div className="space-y-8">
@@ -67,11 +54,11 @@ export const RadiologueDashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 truncate">
-                    {exam.patient?.utilisateur?.prenom} {exam.patient?.utilisateur?.nom}
+                    {exam.patient?.utilisateurs?.prenom || exam.rendez_vous?.patient?.utilisateurs?.prenom} {exam.patient?.utilisateurs?.nom || exam.rendez_vous?.patient?.utilisateurs?.nom}
                   </p>
-                  <p className="text-xs text-slate-500 font-medium">{exam.service?.nom} • {formatDate(exam.dateRealisation)}</p>
+                  <p className="text-xs text-slate-500 font-medium">{exam.services?.nom} • {formatDate(exam.date_realisation || exam.dateRealisation)}</p>
                 </div>
-                <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor('pending'))}>
+                <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor('planifie'))}>
                   En attente
                 </span>
               </div>
@@ -97,7 +84,7 @@ export const RadiologueDashboard = () => {
                     Rapport #{report.id?.slice(0, 8)}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">
-                    {report.radiologue?.utilisateur?.prenom} {report.radiologue?.utilisateur?.nom}
+                    {report.radiologues?.utilisateurs?.prenom} {report.radiologues?.utilisateurs?.nom}
                   </p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', report.est_valide ? getStatusColor('confirmed') : getStatusColor('pending'))}>

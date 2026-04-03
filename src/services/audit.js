@@ -3,10 +3,10 @@ import { supabase } from '../lib/supabase';
 export const auditService = {
   async fetchAuditLogs(options = {}) {
     let query = supabase
-      .from('audit_log')
+      .from('audit_logs')
       .select(`
         *,
-        utilisateur:utilisateur_id(nom, prenom, email, role)
+        utilisateur:utilisateurs!utilisateur_id(nom, prenom, email, role)
       `);
 
     if (options.startDate && options.endDate) {
@@ -14,7 +14,7 @@ export const auditService = {
     }
 
     if (options.role) {
-      query = query.eq('utilisateur.role', options.role);
+      query = query.eq('utilisateurs.role', options.role);
     }
 
     if (options.action) {
@@ -28,7 +28,7 @@ export const auditService = {
 
   async createAuditLog(action, details, userId) {
     const { data, error } = await supabase
-      .from('audit_log')
+      .from('audit_logs')
       .insert({
         action,
         details,

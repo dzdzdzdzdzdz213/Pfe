@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 export const reportService = {
   async fetchReports(options = {}) {
     let query = supabase
-      .from('compte_rendu')
+      .from('comptes_rendus')
       .select(`
         *,
         radiologue:radiologue_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom)),
@@ -25,7 +25,7 @@ export const reportService = {
 
   async createReport(reportData) {
     const { data, error } = await supabase
-      .from('compte_rendu')
+      .from('comptes_rendus')
       .insert(reportData)
       .select()
       .single();
@@ -35,7 +35,7 @@ export const reportService = {
 
   async updateReport(id, updates) {
     const { data, error } = await supabase
-      .from('compte_rendu')
+      .from('comptes_rendus')
       .update(updates)
       .eq('id', id)
       .select()
@@ -50,7 +50,7 @@ export const reportService = {
 
   async fetchReportById(id) {
     const { data, error } = await supabase
-      .from('compte_rendu')
+      .from('comptes_rendus')
       .select(`
         *,
         radiologue:radiologue_id(id, utilisateur_id, utilisateur:utilisateur_id(*)),

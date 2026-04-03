@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 export const notificationService = {
   async fetchNotifications(userId) {
     const { data, error } = await supabase
-      .from('notification')
+      .from('notifications')
       .select('*')
       .eq('utilisateur_id', userId)
       .order('date_envoi', { ascending: false });
@@ -13,7 +13,7 @@ export const notificationService = {
 
   async markAsRead(id) {
     const { data, error } = await supabase
-      .from('notification')
+      .from('notifications')
       .update({ lu: true })
       .eq('id', id)
       .select()
@@ -24,7 +24,7 @@ export const notificationService = {
 
   async createNotification(notification) {
     const { data, error } = await supabase
-      .from('notification')
+      .from('notifications')
       .insert({
         ...notification,
         date_envoi: new Date().toISOString(),
@@ -38,7 +38,7 @@ export const notificationService = {
 
   async fetchUnreadCount(userId) {
     const { count, error } = await supabase
-      .from('notification')
+      .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('utilisateur_id', userId)
       .eq('lu', false);
@@ -48,11 +48,11 @@ export const notificationService = {
 
   subscribeToNotifications(userId, onNotification) {
     return supabase
-      .channel('public:notification')
+      .channel('public:notifications')
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'notification', 
+        table: 'notifications', 
         filter: `utilisateur_id=eq.${userId}` 
       }, (payload) => {
         onNotification(payload.new);

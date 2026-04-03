@@ -1,25 +1,24 @@
 import { supabase } from '../lib/supabase';
-
-const isDemoMode = () => !!localStorage.getItem('demo_mock_session');
+import { isDemoMode, getMockData, saveMockData } from '../lib/demo';
 
 export const userService = {
   async fetchUsers() {
     if (isDemoMode()) {
-      const mockUsers = JSON.parse(localStorage.getItem('demo_mock_users') || '[]');
+      const mockUsers = getMockData('users', []);
       if (mockUsers.length === 0) {
-        mockUsers.push({ id: 'admin-1', nom: 'Démo', prenom: 'Administrateur', email: 'admin@demo.com', role: 'administrateur', telephone: '0555123456', dateCreationCompte: new Date().toISOString() });
-        localStorage.setItem('demo_mock_users', JSON.stringify(mockUsers));
+        mockUsers.push({ id: 'admin-1', nom: 'Démo', prenom: 'Administrateur', email: 'admin@demo.com', role: 'administrateur', telephone: '0555123456', date_creation_compte: new Date().toISOString() });
+        saveMockData('users', mockUsers);
       }
       return mockUsers;
     }
 
     const { data, error } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .select(`
         *,
-        radiologue:radiologue_id(id, matricule_sante, specialite_principale),
-        receptionniste:receptionniste_id(id),
-        administrateur:administrateur_id(id)
+        radiologue:radiologues!utilisateur_id(id, matricule_sante, specialite_principale),
+        receptionniste:receptionnistes!utilisateur_id(id),
+        administrateur:administrateurs!utilisateur_id(id)
       `);
     if (error) throw error;
     return data;
@@ -27,14 +26,14 @@ export const userService = {
 
   async createUser(userData) {
     if (isDemoMode()) {
-      const mockUsers = JSON.parse(localStorage.getItem('demo_mock_users') || '[]');
+      const mockUsers = getMockData('users', []);
       const newUser = { 
         ...userData, 
         id: 'mock-' + Date.now(), 
-        dateCreationCompte: new Date().toISOString() 
+        date_creation_compte: new Date().toISOString() 
       };
       mockUsers.push(newUser);
-      localStorage.setItem('demo_mock_users', JSON.stringify(mockUsers));
+      saveMockData('users', mockUsers);
       // Simulate network delay
       await new Promise(resolve => setTimeout(resolve, 500));
       return newUser;
@@ -52,7 +51,7 @@ export const userService = {
 
     // Create user in utilisateur table
     const { data: user, error: userError } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .insert({
         id: authUser.user.id,
         nom,
@@ -69,7 +68,7 @@ export const userService = {
     // Handle role-specific tables
     if (role === 'radiologue') {
       const { error: roleError } = await supabase
-        .from('radiologue')
+        .from('radiologues')
         .insert({
           utilisateur_id: user.id,
           matricule_sante: rest.matricule_sante,
@@ -78,12 +77,12 @@ export const userService = {
       if (roleError) throw roleError;
     } else if (role === 'receptionniste') {
       const { error: roleError } = await supabase
-        .from('receptionniste')
+        .from('receptionnistes')
         .insert({ utilisateur_id: user.id });
       if (roleError) throw roleError;
     } else if (role === 'administrateur') {
       const { error: roleError } = await supabase
-        .from('administrateur')
+        .from('administrateurs')
         .insert({ utilisateur_id: user.id });
       if (roleError) throw roleError;
     }
@@ -93,15 +92,15 @@ export const userService = {
 
   async updateUser(id, updates) {
     if (isDemoMode()) {
-      let mockUsers = JSON.parse(localStorage.getItem('demo_mock_users') || '[]');
+      let mockUsers = getMockData('users', []);
       mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
-      localStorage.setItem('demo_mock_users', JSON.stringify(mockUsers));
+      saveMockData('users', mockUsers);
       await new Promise(resolve => setTimeout(resolve, 300));
       return mockUsers.find(u => u.id === id);
     }
 
     const { data, error } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .update(updates)
       .eq('id', id)
       .select()
@@ -112,16 +111,16 @@ export const userService = {
 
   async deleteUser(id) {
     if (isDemoMode()) {
-      let mockUsers = JSON.parse(localStorage.getItem('demo_mock_users') || '[]');
+      let mockUsers = getMockData('users', []);
       mockUsers = mockUsers.filter(u => u.id !== id);
-      localStorage.setItem('demo_mock_users', JSON.stringify(mockUsers));
+      saveMockData('users', mockUsers);
       await new Promise(resolve => setTimeout(resolve, 300));
       return true;
     }
 
     // Note: This would typically be a soft delete or handle cascade in the DB
     const { error } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .delete()
       .eq('id', id);
     if (error) throw error;
@@ -130,12 +129,12 @@ export const userService = {
 
   async fetchUserById(id) {
     const { data, error } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .select(`
         *,
-        radiologue:radiologue_id(*),
-        receptionniste:receptionniste_id(*),
-        administrateur:administrateur_id(*)
+        radiologue:radiologues!utilisateur_id(*),
+        receptionniste:receptionnistes!utilisateur_id(*),
+        administrateur:administrateurs!utilisateur_id(*)
       `)
       .eq('id', id)
       .single();
@@ -145,7 +144,7 @@ export const userService = {
 
   async fetchStaff() {
     const { data, error } = await supabase
-      .from('utilisateur')
+      .from('utilisateurs')
       .select('*')
       .neq('role', 'patient');
     if (error) throw error;

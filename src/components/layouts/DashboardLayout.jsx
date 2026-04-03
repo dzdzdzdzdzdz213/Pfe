@@ -1,8 +1,12 @@
-import { useState, Fragment } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { PageTransition } from '@/components/common/PageTransition';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
+import { supabase, isDemoMode, getMockData } from '@/lib/supabase'; // Or we can directly use supabase and demo
+import { notificationService } from '@/services/notifications';
+import { useLanguage } from '@/contexts/LanguageContext';
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +21,8 @@ import {
   ChevronRight,
   Stethoscope,
   FolderOpen,
-  Search
+  Search,
+  Languages
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
@@ -25,19 +30,82 @@ export const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, role, logout } = useAuth();
+  const { lang, toggleLang } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [notifications, setNotifications] = useState([
-    { id: 1, text: "Nouveau rendez-vous confirmé", time: "Il y a 5 min", unread: true },
-    { id: 2, text: "Compte rendu IRM disponible", time: "Il y a 12 min", unread: true },
-    { id: 3, text: "Maintenance système prévue", time: "Hier", unread: false }
-  ]);
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [location]);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  const { data: notifications = [], refetch: refetchNotifs } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('utilisateur_id', user.id)
+        .order('date_envoi', { ascending: false })
+        .limit(10);
+      
+      // If we're in a demo and db fails, just return empty gracefully
+      if (error) {
+        if (error.code) return [];
+        throw error;
+      }
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+  const { data: userData } = useQuery({
+    queryKey: ['userProfile', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      // Demo logic fallback
+      if (user.id.startsWith('demo-')) {
+         return { nom: 'Démo', prenom: role === 'patient' ? 'Patient' : 'Utilisateur' };
+      }
+
+      const { data, error } = await supabase
+        .from('utilisateurs')
+        .select('nom, prenom')
+        .eq('id', user.id)
+        .single();
+      if (error) return null;
+      return data;
+    },
+    enabled: !!user?.id,
+  });
+
+  const displayName = userData?.prenom 
+    ? `${userData.prenom} ${userData.nom}` 
+    : (user?.email?.split('@')[0] || 'Utilisateur');
+
+  const translateRole = (r) => {
+    switch (r) {
+      case 'administrateur': return 'Administrateur';
+      case 'radiologue': return 'Radiologue';
+      case 'receptionniste': return 'Réceptionniste';
+      case 'patient': return 'Patient';
+      default: return r || 'Visiteur';
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.lu).length;
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadIds = notifications.filter(n => !n.lu).map(n => n.id);
+      if (unreadIds.length === 0) return;
+      
+      await supabase.from('notifications').update({ lu: true }).in('id', unreadIds);
+      refetchNotifs();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleLogout = async () => {
@@ -152,8 +220,8 @@ export const DashboardLayout = () => {
                 <User className="h-5 w-5 text-slate-400" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-900 truncate tracking-tight">{user?.email?.split('@')[0]}</p>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider truncate leading-none mt-0.5">{role}</p>
+                <p className="text-sm font-bold text-slate-900 truncate tracking-tight">{displayName}</p>
+                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider truncate leading-none mt-0.5">{translateRole(role)}</p>
               </div>
             </div>
             <button
@@ -185,13 +253,22 @@ export const DashboardLayout = () => {
               <div className="flex items-center text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                 <span>Clinique Chemloul</span>
                 <ChevronRight className="h-3 w-3 mx-1 opacity-50" />
-                <span className="text-primary/70">{role}</span>
+                <span className="text-primary/70">{translateRole(role)}</span>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-3 relative">
             
+            {/* Lang Switcher */}
+            <button 
+              onClick={toggleLang}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition-colors"
+            >
+              <Languages className="h-3.5 w-3.5" />
+              {lang === 'fr' ? 'AR' : 'FR'}
+            </button>
+
             {/* Notifications Container */}
             <div className="relative">
               <button 
@@ -217,20 +294,29 @@ export const DashboardLayout = () => {
                     <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                       <h3 className="font-bold text-slate-800">Notifications</h3>
                       {unreadCount > 0 && (
-                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">{unreadCount} non lus</span>
+                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">{unreadCount} non lues</span>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
-                      {notifications.map((notif) => (
-                        <div 
-                          key={notif.id} 
-                          onClick={() => setNotifications(notifications.map(n => n.id === notif.id ? { ...n, unread: false } : n))}
-                          className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${notif.unread ? 'bg-blue-50/30' : ''}`}
-                        >
-                          <p className={`text-sm ${notif.unread ? 'font-bold text-slate-800' : 'font-medium text-slate-600'}`}>{notif.text}</p>
-                          <p className="text-xs text-slate-400 mt-1 font-medium">{notif.time}</p>
-                        </div>
-                      ))}
+                      {notifications.length === 0 ? (
+                        <div className="p-6 text-center text-slate-400 text-sm font-medium">Aucune notification</div>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div 
+                            key={notif.id} 
+                            onClick={async () => {
+                              if (!notif.lu) {
+                                await supabase.from('notifications').update({ lu: true }).eq('id', notif.id);
+                                refetchNotifs();
+                              }
+                            }}
+                            className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${!notif.lu ? 'bg-blue-50/30' : ''}`}
+                          >
+                            <p className={`text-sm ${!notif.lu ? 'font-bold text-slate-800' : 'font-medium text-slate-600'}`}>{notif.contenu}</p>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">{new Date(notif.date_envoi).toLocaleDateString()}</p>
+                          </div>
+                        ))
+                      )}
                     </div>
                     <button 
                       onClick={markAllAsRead}
@@ -264,8 +350,8 @@ export const DashboardLayout = () => {
                     className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 origin-top-right"
                   >
                     <div className="p-4 border-b border-slate-100 bg-slate-50/50">
-                      <p className="text-sm font-bold text-slate-900 truncate">{user?.email}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{role}</p>
+                      <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{translateRole(role)}</p>
                     </div>
                     <div className="p-2 space-y-1">
                       <button 

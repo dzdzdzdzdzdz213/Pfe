@@ -1,5 +1,6 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import { setDemoMode } from '../lib/demo';
 
 export const AuthContext = createContext();
 
@@ -8,24 +9,15 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isDemoRef = useRef(false);
 
   useEffect(() => {
     // Check active sessions and sets the user
     const initializeAuth = async () => {
       try {
+        if (isDemoRef.current) return;
         const { data: { session }, error } = await supabase.auth.getSession();
         
-        // --- DEVELOPER MOCK SESSION BYPASS ---
-        const mockSessionStr = localStorage.getItem('demo_mock_session');
-        if (mockSessionStr) {
-          const mockData = JSON.parse(mockSessionStr);
-          setSession(mockData.session);
-          setUser(mockData.user);
-          setRole(mockData.role);
-          setLoading(false);
-          return;
-        }
-
         if (error) {
           throw error;
         }
@@ -39,7 +31,9 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Error fetching session:', error.message);
       } finally {
-        setLoading(false);
+        if (!isDemoRef.current) {
+          setLoading(false);
+        }
       }
     };
 
@@ -49,7 +43,7 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
         // Skip processing if in demo mock mode
-        if (localStorage.getItem('demo_mock_session')) return;
+        if (isDemoRef.current) return;
 
         setSession(session);
         setUser(session?.user || null);
@@ -74,7 +68,7 @@ export const AuthProvider = ({ children }) => {
   const fetchUserRole = async (authUser) => {
     try {
       const { data, error } = await supabase
-        .from('utilisateur')
+        .from('utilisateurs')
         .select('role')
         .eq('id', authUser.id)
         .single();
@@ -88,7 +82,7 @@ export const AuthProvider = ({ children }) => {
           const finalPrenom = prenom || 'Nouveau';
 
           const { error: insertError } = await supabase
-            .from('utilisateur')
+            .from('utilisateurs')
             .insert({
               id: authUser.id,
               email: authUser.email,
@@ -109,7 +103,7 @@ export const AuthProvider = ({ children }) => {
           } else {
             // Try to create the patient record quietly
             try {
-              await supabase.from('patient').insert({ utilisateur_id: authUser.id, date_naissance: new Date().toISOString() });
+              await supabase.from('patients').insert({ utilisateur_id: authUser.id, date_naissance: new Date().toISOString() });
             } catch (err) {
               console.error('Could not create patient record', err);
             }
@@ -156,15 +150,11 @@ export const AuthProvider = ({ children }) => {
       const mockUser = { id: `demo-${mockRole}-id`, email };
       const mockSession = { access_token: 'demo-token', user: mockUser };
       
+      isDemoRef.current = true;
+      setDemoMode(true);
       setUser(mockUser);
       setSession(mockSession);
       setRole(mockRole);
-      
-      localStorage.setItem('demo_mock_session', JSON.stringify({
-        user: mockUser,
-        session: mockSession,
-        role: mockRole
-      }));
       
       return { user: mockUser, session: mockSession };
     }
@@ -180,8 +170,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     // --- DEVELOPER MOCK SESSION LOGOUT ---
-    if (localStorage.getItem('demo_mock_session')) {
-      localStorage.removeItem('demo_mock_session');
+    if (isDemoRef.current) {
+      isDemoRef.current = false;
+      setDemoMode(false);
       setUser(null);
       setSession(null);
       setRole(null);
