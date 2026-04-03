@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user || null);
 
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          await fetchUserRole(session.user);
         }
       } catch (error) {
         console.error('Error fetching session:', error.message);
@@ -55,7 +55,7 @@ export const AuthProvider = ({ children }) => {
         setUser(session?.user || null);
         
         if (session?.user) {
-          await fetchUserRole(session.user.id);
+          await fetchUserRole(session.user);
         } else {
           setRole(null);
         }
@@ -67,17 +67,45 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId) => {
+  const fetchUserRole = async (authUser) => {
     try {
       const { data, error } = await supabase
         .from('utilisateur')
         .select('role')
-        .eq('id', userId)
+        .eq('id', authUser.id)
         .single();
         
       if (error) {
-        console.error('Error fetching role:', error.message);
-        setRole(null);
+        if (error.code === 'PGRST116') {
+          // No row found, this is a new user (likely via Google OAuth)
+          const [prenom, ...nomParts] = (authUser.user_metadata?.full_name || '').split(' ');
+          const nom = nomParts.length > 0 ? nomParts.join(' ') : (authUser.user_metadata?.name || '');
+          const finalNom = nom || authUser.email?.split('@')[0] || 'Patient';
+          const finalPrenom = prenom || 'Nouveau';
+
+          const { error: insertError } = await supabase
+            .from('utilisateur')
+            .insert({
+              id: authUser.id,
+              email: authUser.email,
+              nom: finalNom,
+              prenom: finalPrenom,
+              role: 'patient',
+              telephone: ''
+            });
+
+          if (insertError) {
+            console.error('Error creating user profile:', insertError.message);
+            setRole(null);
+          } else {
+            // Try to create the patient record quietly
+            await supabase.from('patient').insert({ utilisateur_id: authUser.id }).catch(() => {});
+            setRole('patient');
+          }
+        } else {
+          console.error('Error fetching role:', error.message);
+          setRole(null);
+        }
       } else {
         setRole(data?.role || null);
       }
