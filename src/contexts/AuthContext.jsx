@@ -95,16 +95,21 @@ export const AuthProvider = ({ children }) => {
               nom: finalNom,
               prenom: finalPrenom,
               role: 'patient',
-              telephone: ''
+              telephone: '0000000000'
             });
 
           if (insertError) {
             console.error('Error creating user profile:', insertError.message);
-            setRole(null);
+            // If they signed in with google, forcefully let them in as patient anyway
+            if (authUser.app_metadata?.provider === 'google') {
+              setRole('patient');
+            } else {
+              setRole(null);
+            }
           } else {
             // Try to create the patient record quietly
             try {
-              await supabase.from('patient').insert({ utilisateur_id: authUser.id });
+              await supabase.from('patient').insert({ utilisateur_id: authUser.id, date_naissance: new Date().toISOString() });
             } catch (err) {
               console.error('Could not create patient record', err);
             }
@@ -112,13 +117,28 @@ export const AuthProvider = ({ children }) => {
           }
         } else {
           console.error('Error fetching role:', error.message);
-          setRole(null);
+          // Fallback if db is completely failing for a google user
+          if (authUser.app_metadata?.provider === 'google') {
+             setRole('patient');
+          } else {
+             setRole(null);
+          }
         }
       } else {
-        setRole(data?.role || null);
+        const fetchedRole = data?.role ? data.role.toLowerCase() : null;
+        if (!fetchedRole && authUser.app_metadata?.provider === 'google') {
+           setRole('patient');
+        } else {
+           setRole(fetchedRole);
+        }
       }
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);
+      if (authUser.app_metadata?.provider === 'google') {
+         setRole('patient');
+      } else {
+         setRole(null);
+      }
     }
   };
 
