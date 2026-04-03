@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus } from 'lucide-react';
@@ -187,6 +188,11 @@ const PatientCard = ({ patient }) => {
   const [expanded, setExpanded] = useState(false);
   const [sendModal, setSendModal] = useState(null); // { patient, exam }
 
+  // Extract exams safely from rendez_vous relationship
+  const patientExams = patient.rendez_vous 
+    ? patient.rendez_vous.map(rv => rv.examens).filter(Boolean)
+    : patient.examens || [];
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
       {/* Header */}
@@ -205,7 +211,7 @@ const PatientCard = ({ patient }) => {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            {patient.examens.length} examen{patient.examens.length !== 1 ? 's' : ''}
+            {patientExams.length} examen{patientExams.length !== 1 ? 's' : ''}
           </span>
           <button
             onClick={e => { e.stopPropagation(); setSendModal({ patient, exam: null }); }}
@@ -220,25 +226,26 @@ const PatientCard = ({ patient }) => {
       {/* Exams Accordion */}
       {expanded && (
         <div className="border-t border-slate-50 divide-y divide-slate-50">
-          {patient.examens.length === 0 ? (
+          {patientExams.length === 0 ? (
             <div className="px-6 py-8 text-center text-slate-400">
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
               <p className="text-xs font-bold">Aucun examen enregistré</p>
             </div>
-          ) : patient.examens.map(exam => (
+          ) : patientExams.map(exam => (
             <div key={exam.id} className="px-5 py-4 flex items-start gap-4 hover:bg-slate-50/50 transition-colors">
               <div className="mt-0.5 h-9 w-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
                 <FileText className="h-4 w-4 text-slate-400" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-sm font-bold text-slate-800">{exam.service?.nom}</p>
-                  <DocBadge type={exam.compte_rendu ? 'compte_rendu' : 'resultat'} />
+                  <p className="text-sm font-bold text-slate-800">{exam.service?.nom || exam.services?.nom}</p>
+                  <DocBadge type={exam.compte_rendu || exam.comptes_rendus?.length ? 'compte_rendu' : 'resultat'} />
                 </div>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">{formatDate(exam.dateRealisation)}</p>
-                {exam.compte_rendu && (
+                <p className="text-xs text-slate-400 font-medium mt-0.5">{formatDate(exam.dateRealisation || exam.date_realisation)}</p>
+                {/* Handle both singular and plural nested compte rendus */}
+                {(exam.compte_rendu || (exam.comptes_rendus && exam.comptes_rendus[0])) && (
                   <p className="text-xs text-slate-600 font-medium mt-2 bg-blue-50/50 border border-blue-100/50 px-3 py-2 rounded-xl leading-relaxed line-clamp-2">
-                    {exam.compte_rendu.contenu}
+                    {exam.compte_rendu?.contenu || exam.comptes_rendus[0]?.description_detaillee}
                   </p>
                 )}
               </div>
@@ -270,11 +277,12 @@ const PatientCard = ({ patient }) => {
 // ---------------------------------------------------------------------------
 export const RadiologuePatientSearch = () => {
   const [query, setQuery] = useState('');
+  const { user } = useAuth();
 
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['radiologue-patients', query],
     queryFn: async () => {
-      if (localStorage.getItem('demo_mock_session')) {
+      if (user?.id?.startsWith('demo-')) {
         if (!query.trim()) return MOCK_PATIENTS;
         return MOCK_PATIENTS.filter(p =>
           `${p.utilisateur.prenom} ${p.utilisateur.nom} ${p.utilisateur.email}`
@@ -283,25 +291,29 @@ export const RadiologuePatientSearch = () => {
         );
       }
 
-      // Real Supabase query
-      let q = supabase.from('patient').select(`
+      // Real Supabase query linking through rendez_vous to get examens. 
+      // Also using snake_case and pluralized table references.
+      let q = supabase.from('patients').select(`
         id,
         utilisateur:utilisateur_id(prenom, nom, email, telephone),
-        examens:examen(
-          id, dateRealisation, statut,
-          service:service_id(nom),
-          compte_rendu:compte_rendu(contenu, est_valide)
+        rendez_vous(
+           examens:examen_id(
+             id, date_realisation, statut,
+             services:service_id(nom),
+             comptes_rendus(description_detaillee, est_valide)
+           )
         )
       `);
 
       if (query.trim()) {
-        q = q.or(`utilisateur.prenom.ilike.%${query}%,utilisateur.nom.ilike.%${query}%`);
+        q = q.or(`prenom.ilike.%${query}%,nom.ilike.%${query}%`, { foreignTable: 'utilisateur' });
       }
 
       const { data, error } = await q.limit(20);
       if (error) throw error;
       return data || [];
     },
+
     placeholderData: [],
   });
 

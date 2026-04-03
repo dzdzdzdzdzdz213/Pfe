@@ -1,5 +1,9 @@
 export let demoModeActive = false;
 
+// Simple in-memory storage, mimicking a database session temporarily without using localStorage.
+// All mock states reset per refresh to prevent liability leaks.
+const memoryStore = {};
+
 export const setDemoMode = (active) => {
   demoModeActive = active;
 };
@@ -7,13 +11,12 @@ export const setDemoMode = (active) => {
 export const isDemoMode = () => demoModeActive;
 
 export const getMockData = (key, defaultData = []) => {
-  try {
-    return JSON.parse(localStorage.getItem(`demo_mock_${key}`) || JSON.stringify(defaultData));
-  } catch (e) {
-    return defaultData;
+  if (memoryStore[`demo_mock_${key}`] !== undefined) {
+    return JSON.parse(JSON.stringify(memoryStore[`demo_mock_${key}`]));
   }
+  return JSON.parse(JSON.stringify(defaultData));
 };
 
 export const saveMockData = (key, data) => {
-  localStorage.setItem(`demo_mock_${key}`, JSON.stringify(data));
+  memoryStore[`demo_mock_${key}`] = JSON.parse(JSON.stringify(data));
 };
