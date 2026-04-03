@@ -54,13 +54,17 @@ export const AuthProvider = ({ children }) => {
         setSession(session);
         setUser(session?.user || null);
         
-        if (session?.user) {
-          await fetchUserRole(session.user);
-        } else {
-          setRole(null);
+        try {
+          if (session?.user) {
+            await fetchUserRole(session.user);
+          } else {
+            setRole(null);
+          }
+        } catch (err) {
+          console.error("Error in auth state change:", err);
+        } finally {
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -99,7 +103,11 @@ export const AuthProvider = ({ children }) => {
             setRole(null);
           } else {
             // Try to create the patient record quietly
-            await supabase.from('patient').insert({ utilisateur_id: authUser.id }).catch(() => {});
+            try {
+              await supabase.from('patient').insert({ utilisateur_id: authUser.id });
+            } catch (err) {
+              console.error('Could not create patient record', err);
+            }
             setRole('patient');
           }
         } else {
