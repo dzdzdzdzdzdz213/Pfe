@@ -8,7 +8,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
   const isDemoRef = useRef(false);
 
   useEffect(() => {
@@ -17,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       try {
         if (isDemoRef.current) return;
         const { data: { session }, error } = await supabase.auth.getSession();
-        
+
         if (error) {
           throw error;
         }
@@ -33,6 +34,7 @@ export const AuthProvider = ({ children }) => {
       } finally {
         if (!isDemoRef.current) {
           setLoading(false);
+          setAuthInitialized(true);
         }
       }
     };
@@ -47,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
         setSession(session);
         setUser(session?.user || null);
-        
+
         try {
           if (session?.user) {
             await fetchUserRole(session.user);
@@ -58,6 +60,7 @@ export const AuthProvider = ({ children }) => {
           console.error("Error in auth state change:", err);
         } finally {
           setLoading(false);
+          setAuthInitialized(true);
         }
       }
     );
@@ -72,7 +75,7 @@ export const AuthProvider = ({ children }) => {
         .select('role')
         .eq('id', authUser.id)
         .single();
-        
+
       if (error) {
         if (error.code === 'PGRST116') {
           // No row found, this is a new user (likely via Google OAuth)
@@ -113,25 +116,25 @@ export const AuthProvider = ({ children }) => {
           console.error('Error fetching role:', error.message);
           // Fallback if db is completely failing for a google user
           if (authUser.app_metadata?.provider === 'google') {
-             setRole('patient');
+            setRole('patient');
           } else {
-             setRole(null);
+            setRole(null);
           }
         }
       } else {
         const fetchedRole = data?.role ? data.role.toLowerCase() : null;
         if (!fetchedRole && authUser.app_metadata?.provider === 'google') {
-           setRole('patient');
+          setRole('patient');
         } else {
-           setRole(fetchedRole);
+          setRole(fetchedRole);
         }
       }
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);
       if (authUser.app_metadata?.provider === 'google') {
-         setRole('patient');
+        setRole('patient');
       } else {
-         setRole(null);
+        setRole(null);
       }
     }
   };
@@ -149,13 +152,13 @@ export const AuthProvider = ({ children }) => {
       const mockRole = mockRoles[email];
       const mockUser = { id: `demo-${mockRole}-id`, email };
       const mockSession = { access_token: 'demo-token', user: mockUser };
-      
+
       isDemoRef.current = true;
       setDemoMode(true);
       setUser(mockUser);
       setSession(mockSession);
       setRole(mockRole);
-      
+
       return { user: mockUser, session: mockSession };
     }
 
@@ -163,7 +166,7 @@ export const AuthProvider = ({ children }) => {
       email,
       password,
     });
-    
+
     if (error) throw error;
     return data;
   };
@@ -204,7 +207,8 @@ export const AuthProvider = ({ children }) => {
     login,
     loginWithGoogle,
     logout,
-    loading
+    loading,
+    authInitialized
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
