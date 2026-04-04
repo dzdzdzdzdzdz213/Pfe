@@ -84,7 +84,7 @@ export const Booking = () => {
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center flex-1 last:flex-none">
                 <div className={`
-                  flex items-center justify-center w-10 h-10 rounded-2xl font-bold text-sm transition-all duration-300
+                  flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all duration-300
                   ${step >= i ? 'bg-primary text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
                 `}>
                   {i}
@@ -95,7 +95,7 @@ export const Booking = () => {
               </div>
             ))}
           </div>
-          <h2 className="text-2xl font-black text-slate-800 text-center tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-800 text-center tracking-tight">
             {step === 1 && t('booking_choose_service')}
             {step === 2 && t('booking_choose_date')}
             {step === 3 && t('booking_details')}

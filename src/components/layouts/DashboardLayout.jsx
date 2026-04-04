@@ -178,13 +178,14 @@ export const DashboardLayout = () => {
 
       {/* Sidebar Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
-        ${sidebarOpen ? 'translate-x-0 overflow-y-auto' : '-translate-x-full'}
+        fixed inset-y-0 z-50 w-72 bg-white transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0
+        ${lang === 'ar' ? 'right-0 border-l border-slate-200 shadow-[-10px_0_30px_rgba(0,0,0,0.05)]' : 'left-0 border-r border-slate-200 shadow-[10px_0_30px_rgba(0,0,0,0.05)]'}
+        ${sidebarOpen ? 'translate-x-0 overflow-y-auto' : (lang === 'ar' ? 'translate-x-[100%]' : '-translate-x-full')}
       `}>
         <div className="flex flex-col h-full ring-1 ring-slate-100 shadow-sm">
           {/* Sidebar Header */}
           <div className="h-20 flex items-center px-4 border-b border-slate-100 bg-white sticky top-0 z-10 justify-between">
-            <Link to="/" className="flex-shrink-0 -ml-2">
+            <Link to="/" className="flex-shrink-0 rtl:mr-0 ltr:-ml-2">
               <img src="/logo.png" alt={t('clinic_name')} className="h-16 w-auto object-contain transition-transform hover:scale-105 mix-blend-multiply" />
             </Link>
             <button className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors" onClick={() => setSidebarOpen(false)}>
@@ -207,9 +208,9 @@ export const DashboardLayout = () => {
                       : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 border border-transparent'}
                   `}
                 >
-                  <item.icon className={`mr-3.5 h-5 w-5 transition-transform duration-200 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-70 group-hover:scale-110'}`} />
+                  <item.icon className={`h-5 w-5 transition-transform duration-200 ltr:mr-3.5 rtl:ml-3.5 ${isActive ? 'scale-110 drop-shadow-sm' : 'opacity-70 group-hover:scale-110'}`} />
                   {item.name}
-                  {isActive && <div className="absolute right-3 w-1.5 h-1.5 rounded-full bg-primary" />}
+                  {isActive && <div className={`absolute w-1.5 h-1.5 rounded-full bg-primary ${lang === 'ar' ? 'left-3' : 'right-3'}`} />}
                 </Link>
               );
             })}
@@ -218,7 +219,7 @@ export const DashboardLayout = () => {
           {/* User Section Bottom */}
           <div className="p-4 border-t border-slate-100 bg-slate-50/50">
             <div className="flex items-center px-4 py-3 mb-2 rounded-xl bg-white border border-slate-200 shadow-sm">
-              <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center mr-3 flex-shrink-0">
+              <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center ltr:mr-3 rtl:ml-3 flex-shrink-0">
                 <User className="h-5 w-5 text-slate-400" />
               </div>
               <div className="flex-1 min-w-0">
@@ -230,7 +231,7 @@ export const DashboardLayout = () => {
               onClick={handleLogout}
               className="flex w-full items-center px-4 py-2.5 text-sm font-bold text-danger hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 group"
             >
-              <LogOut className="mr-3.5 h-5 w-5 transition-transform group-hover:-translate-x-1" />
+              <LogOut className={`h-5 w-5 transition-transform ltr:mr-3.5 rtl:ml-3.5 ltr:group-hover:-translate-x-1 rtl:group-hover:translate-x-1 ${lang === 'ar' ? 'rotate-180' : ''}`} />
               {t('logout')}
             </button>
           </div>
@@ -243,7 +244,7 @@ export const DashboardLayout = () => {
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center">
             <button
-              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 mr-4 transition-colors"
+              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 ltr:mr-4 rtl:ml-4 transition-colors"
               onClick={() => setSidebarOpen(true)}
             >
               <Menu className="h-6 w-6" />
@@ -254,13 +255,13 @@ export const DashboardLayout = () => {
               </h2>
               <div className="flex items-center text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
                 <span>{t('clinic_name')}</span>
-                <ChevronRight className="h-3 w-3 mx-1 opacity-50" />
+                <ChevronRight className="h-3 w-3 mx-1 opacity-50 rtl:rotate-180" />
                 <span className="text-primary/70">{translateRole(role)}</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 relative">
+          <div className="flex items-center ltr:space-x-3 rtl:space-x-reverse rtl:space-x-3 relative">
             
             {/* Lang Switcher */}
             <button 
@@ -279,7 +280,7 @@ export const DashboardLayout = () => {
               >
                 <Bell className="h-5 w-5 transition-transform group-hover:scale-110" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-3 right-3 h-2 w-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 animate-pulse" />
+                  <span className={`absolute top-3 h-2 w-2 bg-red-500 rounded-full border-2 border-white ring-2 ring-red-100 ${lang === 'ar' ? 'left-3' : 'right-3'} animate-pulse`} />
                 )}
               </button>
               
@@ -349,7 +350,7 @@ export const DashboardLayout = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
-                    className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 origin-top-right"
+                    className={`absolute mt-3 w-56 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 ${lang === 'ar' ? 'left-0 origin-top-left' : 'right-0 origin-top-right'}`}
                   >
                     <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                       <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
@@ -360,13 +361,13 @@ export const DashboardLayout = () => {
                         onClick={() => { navigate(`/${getRoleBasePath(role)}/profile`); setShowUserMenu(false); }}
                         className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
                       >
-                        <User className="h-4 w-4 mr-3" /> {t('profile')}
+                        <User className="h-4 w-4 ltr:mr-3 rtl:ml-3" /> {t('profile')}
                       </button>
                       <button 
                         onClick={() => { navigate(`/${getRoleBasePath(role)}/settings`); setShowUserMenu(false); }}
                         className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
                       >
-                        <Settings className="h-4 w-4 mr-3" /> {t('settings')}
+                        <Settings className="h-4 w-4 ltr:mr-3 rtl:ml-3" /> {t('settings')}
                       </button>
                     </div>
                     <div className="p-2 border-t border-slate-100">
@@ -374,7 +375,7 @@ export const DashboardLayout = () => {
                         onClick={handleLogout}
                         className="w-full flex items-center px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
                       >
-                        <LogOut className="h-4 w-4 mr-3" /> {t('logout')}
+                        <LogOut className={`h-4 w-4 ltr:mr-3 rtl:ml-3 ${lang === 'ar' ? 'rotate-180' : ''}`} /> {t('logout')}
                       </button>
                     </div>
                   </motion.div>

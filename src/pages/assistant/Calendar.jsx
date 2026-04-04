@@ -12,6 +12,7 @@ import { Plus, ChevronLeft, ChevronRight, Calendar as CalIcon } from 'lucide-rea
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealTime } from '@/hooks/useRealTime';
 
 
 const locales = { 'fr': fr, 'ar': arDZ };
@@ -90,17 +91,8 @@ export const AssistantCalendar = () => {
     queryFn: () => appointmentService.fetchAppointments({ startDate: start, endDate: end }),
   });
 
-  // Real-time subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('calendar-appointments')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rendez_vous' }, () => {
-        queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      })
-      .subscribe();
-
-    return () => { channel.unsubscribe(); };
-  }, [queryClient]);
+  // Real-time synchronization (INSERT/UPDATE only as per security requirements)
+  useRealTime('rendez_vous', ['appointments'], { event: ['INSERT', 'UPDATE'] });
 
   const events = useMemo(() => {
     return appointments.map((appt, i) => ({

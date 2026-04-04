@@ -6,16 +6,20 @@ import { DataTable } from '@/components/common/DataTable';
 import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Stethoscope, FileText, Play, Eye, Filter } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealTime } from '@/hooks/useRealTime';
 
 export const RadiologueExams = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data: exams = [], isLoading } = useQuery({
+  const { data: exams = [], isLoading, refetch } = useQuery({
     queryKey: ['exams'],
     queryFn: () => examService.fetchExams(),
   });
+
+  // Subscribe to INSERT and UPDATE only for patient safety and data integrity
+  useRealTime('examens', ['exams'], { event: ['INSERT', 'UPDATE'] });
 
   const filteredExams = statusFilter === 'all' ? exams : exams.filter(e => e.statut === statusFilter);
 

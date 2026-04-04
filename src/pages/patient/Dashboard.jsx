@@ -6,6 +6,7 @@ import { appointmentService } from '@/services/appointments';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Calendar, FileText, Bell, User, ChevronRight, Plus, Clock } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealTime } from '@/hooks/useRealTime';
 
 export const PatientDashboard = () => {
   const { user } = useAuth();
@@ -63,16 +64,16 @@ export const PatientDashboard = () => {
         <div className="absolute -right-10 -top-10 h-40 w-40 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute -right-20 -bottom-20 h-60 w-60 bg-white/5 rounded-full blur-3xl" />
         <div className="relative z-10">
-          <p className="text-blue-200 font-bold text-sm tracking-wide">{t('welcome_back')} 👋</p>
-          <h1 className="text-3xl font-extrabold mt-1 tracking-tight">{prenom}</h1>
-          <p className="text-blue-200 mt-2 text-sm font-medium max-w-md">
+          <p className="text-blue-200 font-bold text-xs sm:text-sm tracking-wide">{t('welcome_back')} 👋</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1 tracking-tight">{prenom}</h1>
+          <p className="text-blue-100/80 mt-2 text-xs sm:text-sm font-medium max-w-md">
             {t('patient_dashboard_desc')}
           </p>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <a href="/patient/appointments" className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
           <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
             <Plus className="h-6 w-6" />

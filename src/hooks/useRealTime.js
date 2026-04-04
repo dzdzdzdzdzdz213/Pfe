@@ -18,12 +18,17 @@ export const useRealTime = (table, queryKeys = [], options = {}) => {
 
     const channelName = `realtime-${table}-${JSON.stringify(options.filter || {})}`;
 
-    const channel = supabase
-      .channel(channelName)
-      .on(
+    const channel = supabase.channel(channelName);
+    
+    const events = Array.isArray(options.event) 
+      ? options.event 
+      : [options.event || '*'];
+
+    events.forEach(event => {
+      channel.on(
         'postgres_changes',
         {
-          event: options.event || '*',
+          event: event,
           schema: 'public',
           table,
           ...(options.filter ? { filter: options.filter } : {}),
@@ -39,8 +44,10 @@ export const useRealTime = (table, queryKeys = [], options = {}) => {
             options.onReceive(payload);
           }
         }
-      )
-      .subscribe();
+      );
+    });
+
+    channel.subscribe();
 
     return () => {
       supabase.removeChannel(channel);

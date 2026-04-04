@@ -14,7 +14,7 @@ import {
   Save, CheckCircle, FileText, User, Calendar, Stethoscope,
   ZoomIn, ZoomOut, RotateCw, Loader2, ArrowLeft, Download,
   Bold, Italic, List, ListOrdered, Heading2, Undo, Redo, Minus,
-  Printer, Image as ImageIcon
+  Printer, Image as ImageIcon, Pill
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { arDZ } from 'date-fns/locale';
@@ -151,6 +151,7 @@ export const ReportEditor = () => {
   const [rotation, setRotation] = useState(0);
   const [isValidated, setIsValidated] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [ordonnance, setOrdonnance] = useState({ medications: '', notes: '' });
 
   const { data: exam, isLoading: loadingExam } = useQuery({
     queryKey: ['exam', id],
@@ -185,16 +186,48 @@ export const ReportEditor = () => {
       editor?.commands.setContent(existing.description_detaillee || '');
       setIsValidated(existing.est_valide || false);
     }
-  }, [exam, editor]);
+    // Load existing ordonnance
+    const fetchOrdonnance = async () => {
+      const { data } = await supabase
+        .from('ordonnances')
+        .select('*')
+        .eq('examen_id', id)
+        .maybeSingle();
+      if (data) {
+        setOrdonnance({ medications: data.medicaments || '', notes: data.notes_generales || '' });
+      }
+    };
+    fetchOrdonnance();
+  }, [exam, editor, id]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
       const content = editor?.getHTML();
+      
+      // Save Report
       const report = await reportService.createReport({
         description_detaillee: content,
         est_valide: isValidated,
         radiologue_id: user?.id,
+        examen_id: id // Ensure link to exam
       });
+      
+      // Save Ordonnance if content exists
+      if (ordonnance.medications.trim()) {
+        const { error: ordError } = await supabase
+          .from('ordonnances')
+          .upsert({
+            examen_id: id,
+            patient_id: exam.patient_id,
+            radiologue_id: user?.id,
+            medicaments: ordonnance.medications,
+            notes_generales: ordonnance.notes,
+            date_creation: new Date().toISOString()
+          }, { onConflict: 'examen_id' });
+        
+        if (ordError) throw ordError;
+      }
+
       if (isValidated) await examService.updateExamStatus(id, 'completed');
       return report;
     },
@@ -312,6 +345,33 @@ export const ReportEditor = () => {
               <p className="text-sm text-slate-600 font-medium leading-relaxed">{exam.observations_cliniques || exam.observationsCliniques}</p>
             </div>
           )}
+          
+          <div className="pt-4 border-t border-slate-100 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Pill className="h-4 w-4 text-violet-500" />
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('ordonnance_label')}</h3>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('medications_label')}</label>
+                <textarea 
+                  value={ordonnance.medications}
+                  onChange={(e) => setOrdonnance(prev => ({ ...prev, medications: e.target.value }))}
+                  placeholder="Ex: Paracétamol 500mg, 1 tab x 3/jour..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all min-h-[100px] resize-none"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('notes_label')}</label>
+                <textarea 
+                  value={ordonnance.notes}
+                  onChange={(e) => setOrdonnance(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder={t('ordonnance_notes_placeholder')}
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all min-h-[60px] resize-none"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Center Panel: Image Viewer */}

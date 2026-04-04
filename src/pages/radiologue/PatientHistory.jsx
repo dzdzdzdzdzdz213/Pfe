@@ -269,6 +269,12 @@ export const PatientHistory = () => {
                 {selectedPatient.date_naissance && (
                   <p className="text-slate-600 font-medium">🎂 {formatDate(selectedPatient.date_naissance)}</p>
                 )}
+                {selectedPatient.adresse && (
+                  <p className="text-slate-600 font-medium">📍 {selectedPatient.adresse}</p>
+                )}
+                {selectedPatient.telephone_urgence && (
+                  <p className="text-rose-600 font-bold">🚨 {t('emergency_phone_short')}: {selectedPatient.telephone_urgence}</p>
+                )}
               </div>
               <button
                 onClick={() => { setSelectedPatient(null); setSearchTerm(''); }}
@@ -369,12 +375,22 @@ export const PatientHistory = () => {
                         <span className="px-3 py-1.5 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-bold">{t('status_planifie')}</span>
                       )}
                     </div>
-                    {cr.description_detaillee && (
-                      <div
-                        className="prose prose-sm max-w-none text-slate-600 border-t border-slate-50 pt-3 line-clamp-3"
-                        dangerouslySetInnerHTML={{ __html: cr.description_detaillee }}
-                      />
-                    )}
+                    <div className="flex items-center justify-between flex-wrap gap-4 pt-3 border-t border-slate-50">
+                      {cr.description_detaillee && (
+                        <div
+                          className="prose prose-sm max-w-none text-slate-600 flex-1 line-clamp-3"
+                          dangerouslySetInnerHTML={{ __html: cr.description_detaillee }}
+                        />
+                      )}
+                      {cr.est_valide && (
+                        <button 
+                          onClick={() => window.print()} 
+                          className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+                        >
+                          <ScrollText className="h-3.5 w-3.5" /> {t('print_report_title')}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

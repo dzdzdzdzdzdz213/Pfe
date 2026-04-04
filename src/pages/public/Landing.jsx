@@ -50,7 +50,7 @@ export const Landing = () => {
               {t('cabinet_ouvert')}
             </div>
             
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
+            <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
               {t('imagerie_haute_precision').split('\n').map((line, i) => (
                 <React.Fragment key={i}>
                   {i === 1 ? (
