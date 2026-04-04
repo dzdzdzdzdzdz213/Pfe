@@ -14,10 +14,6 @@ export const PatientDashboard = () => {
   const { data: patientRecord } = useQuery({
     queryKey: ['patient-record', user?.id],
     queryFn: async () => {
-      // In demo mode or normally, fetch from patients + utilisateurs
-      if (user?.id?.startsWith('demo-')) {
-        return { id: 'demo', utilisateurs: { prenom: 'Patient', nom: 'Démo', email: user.email } };
-      }
       const { data, error } = await supabase
         .from('patients')
         .select('*, utilisateurs!inner(nom, prenom, email)')

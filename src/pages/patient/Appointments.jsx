@@ -30,10 +30,6 @@ export const PatientAppointments = () => {
   const { data: patientRecord } = useQuery({
     queryKey: ['patient-record', user?.id],
     queryFn: async () => {
-      if (user?.id?.startsWith('demo-')) {
-        // Return a fake patient record for demo mode
-        return { id: 'demo-patient-record', utilisateur_id: user?.id };
-      }
       const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', user?.id).single();
       return data;
     },
@@ -46,23 +42,12 @@ export const PatientAppointments = () => {
     enabled: !!patientRecord?.id,
   });
 
-  const MOCK_SERVICES = [
-    { id: '1', nom: 'Scanner (Tomodensitométrie)', description: 'Imagerie en coupes fines des organes internes' },
-    { id: '2', nom: 'Radiographie', description: 'Visualisation des os et organes par rayons X' },
-    { id: '3', nom: 'Échographie', description: 'Exploration par ultrasons en temps réel' },
-    { id: '4', nom: 'Doppler', description: 'Étude de la circulation sanguine' },
-    { id: '5', nom: 'Mammographie', description: 'Exploration radiologique du sein' },
-    { id: '6', nom: 'Microbiopsie', description: 'Prélèvement tissulaire guidé' },
-    { id: '7', nom: 'Cytoponction', description: 'Prélèvement cellulaire par fine aiguille' },
-    { id: '8', nom: 'DMO - Densitométrie Osseuse', description: 'Mesure de la densité minérale des os' },
-  ];
 
   const { data: services = [] } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      if (user?.id?.startsWith('demo-')) return MOCK_SERVICES;
       const { data } = await supabase.from('services').select('*');
-      return data?.length ? data : MOCK_SERVICES;
+      return data || [];
     },
   });
 

@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { isDemoMode, getMockData, saveMockData } from '../lib/demo';
 
 /**
  * @fileoverview User service — admin CRUD for the `utilisateurs` table.
@@ -31,23 +30,6 @@ export const userService = {
    * }>>} All users with nested role profiles.
    */
   async fetchUsers() {
-    if (isDemoMode()) {
-      const mockUsers = getMockData('users', []);
-      if (mockUsers.length === 0) {
-        mockUsers.push({
-          id: 'admin-1',
-          nom: 'Démo',
-          prenom: 'Administrateur',
-          email: 'admin@demo.com',
-          role: 'administrateur',
-          telephone: '0555123456',
-          date_creation_compte: new Date().toISOString()
-        });
-        saveMockData('users', mockUsers);
-      }
-      return mockUsers;
-    }
-
     const { data, error } = await supabase
       .from('utilisateurs')
       .select(`
@@ -83,19 +65,6 @@ export const userService = {
    * @returns {Promise<object>} The created `utilisateurs` row.
    */
   async createUser(userData) {
-    if (isDemoMode()) {
-      const mockUsers = getMockData('users', []);
-      const newUser = {
-        ...userData,
-        id: 'mock-' + Date.now(),
-        date_creation_compte: new Date().toISOString()
-      };
-      mockUsers.push(newUser);
-      saveMockData('users', mockUsers);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return newUser;
-    }
-
     const { nom, prenom, email, telephone, role, password, ...rest } = userData;
 
     // Step 1: Auth signup
@@ -141,14 +110,6 @@ export const userService = {
    * @returns {Promise<object>} Updated utilisateurs row.
    */
   async updateUser(id, updates) {
-    if (isDemoMode()) {
-      let mockUsers = getMockData('users', []);
-      mockUsers = mockUsers.map(u => u.id === id ? { ...u, ...updates } : u);
-      saveMockData('users', mockUsers);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return mockUsers.find(u => u.id === id);
-    }
-
     const { data, error } = await supabase
       .from('utilisateurs')
       .update(updates)
@@ -168,14 +129,15 @@ export const userService = {
    * @returns {Promise<true>} Returns `true` on successful deletion.
    */
   async deleteUser(id) {
-    if (isDemoMode()) {
-      let mockUsers = getMockData('users', []);
-      mockUsers = mockUsers.filter(u => u.id !== id);
-      saveMockData('users', mockUsers);
-      await new Promise(resolve => setTimeout(resolve, 300));
-      return true;
-    }
+    // Delete from role-specific tables first to maintain referential integrity
+    await Promise.all([
+      supabase.from('administrateurs').delete().eq('utilisateur_id', id),
+      supabase.from('radiologues').delete().eq('utilisateur_id', id),
+      supabase.from('receptionnistes').delete().eq('utilisateur_id', id),
+      supabase.from('patients').delete().eq('utilisateur_id', id)
+    ]);
 
+    // Finally delete from utilisateurs
     const { error } = await supabase
       .from('utilisateurs')
       .delete()

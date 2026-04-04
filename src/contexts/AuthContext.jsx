@@ -1,6 +1,5 @@
-import React, { createContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { setDemoMode } from '../lib/demo';
 
 export const AuthContext = createContext();
 
@@ -10,13 +9,10 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(false);
   const [authInitialized, setAuthInitialized] = useState(false);
-  const isDemoRef = useRef(false);
 
   useEffect(() => {
-    // Check active sessions and sets the user
     const initializeAuth = async () => {
       try {
-        if (isDemoRef.current) return;
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error) {
@@ -32,10 +28,8 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Error fetching session:', error.message);
       } finally {
-        if (!isDemoRef.current) {
-          setLoading(false);
-          setAuthInitialized(true);
-        }
+        setLoading(false);
+        setAuthInitialized(true);
       }
     };
 
@@ -44,8 +38,6 @@ export const AuthProvider = ({ children }) => {
     // Listen for changes on auth state (logged in, signed out, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        // Skip processing if in demo mock mode
-        if (isDemoRef.current) return;
 
         setSession(session);
         setUser(session?.user || null);
@@ -139,29 +131,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
   const login = async (email, password) => {
-    // --- DEVELOPER MOCK LOGIN BYPASS ---
-    const mockRoles = {
-      'admin@demo.com': 'administrateur',
-      'radiologue@demo.com': 'radiologue',
-      'assistant@demo.com': 'receptionniste',
-      'patient@demo.com': 'patient'
-    };
-
-    if (mockRoles[email] && password === 'demo') {
-      const mockRole = mockRoles[email];
-      const mockUser = { id: `demo-${mockRole}-id`, email };
-      const mockSession = { access_token: 'demo-token', user: mockUser };
-
-      isDemoRef.current = true;
-      setDemoMode(true);
-      setUser(mockUser);
-      setSession(mockSession);
-      setRole(mockRole);
-
-      return { user: mockUser, session: mockSession };
-    }
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -172,15 +143,6 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // --- DEVELOPER MOCK SESSION LOGOUT ---
-    if (isDemoRef.current) {
-      isDemoRef.current = false;
-      setDemoMode(false);
-      setUser(null);
-      setSession(null);
-      setRole(null);
-      return;
-    }
 
     const { error } = await supabase.auth.signOut();
     if (error) throw error;

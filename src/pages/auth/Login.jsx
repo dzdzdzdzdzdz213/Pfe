@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Eye, EyeOff, Loader2, Lock, Mail, ArrowRight, ShieldCheck, X } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Lock, Mail, ArrowRight, X } from 'lucide-react';
 import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition';
 import { supabase } from '@/lib/supabase';
 
@@ -45,18 +45,8 @@ export const Login = () => {
       if (result.user) {
         toast.success(t('login_success'));
         
-        if (result.user.email === 'admin@demo.com') {
-          navigate('/admin/dashboard', { replace: true });
-        } else if (result.user.email === 'radiologue@demo.com') {
-          navigate('/radiologue/dashboard', { replace: true });
-        } else if (result.user.email === 'assistant@demo.com') {
-          navigate('/assistant/dashboard', { replace: true });
-        } else if (result.user.email === 'patient@demo.com') {
-          navigate('/patient/dashboard', { replace: true });
-        } else {
-          const from = location.state?.from?.pathname || "/";
-          navigate(from, { replace: true });
-        }
+        const from = location.state?.from?.pathname || "/";
+        navigate(from, { replace: true });
       }
     } catch (error) {
       console.error(error);
@@ -66,10 +56,6 @@ export const Login = () => {
     }
   }, [login, t, navigate, location]);
 
-  const handleDemoMode = useCallback((role) => {
-    const data = { email: `${role}@demo.com`, password: 'demo' };
-    onSubmit(data);
-  }, [onSubmit]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -100,47 +86,6 @@ export const Login = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           
-          {/* Demo Access Panel */}
-          <FadeInItem className="bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 rounded-2xl p-4 space-y-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center mb-1">{t('login_demo')}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => handleDemoMode('admin')}
-                className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
-              >
-                <ShieldCheck className="h-3.5 w-3.5" /> {t('role_admin')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoMode('radiologue')}
-                className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
-              >
-                🩺 {t('role_radiologue')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoMode('assistant')}
-                className="flex items-center justify-center bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
-              >
-                🎧 {t('role_receptionniste')}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoMode('patient')}
-                className="flex items-center justify-center bg-violet-600 hover:bg-violet-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
-              >
-                👤 {t('role_patient')}
-              </button>
-            </div>
-            <p className="text-[10px] text-slate-400 font-medium text-center">{t('login_demo_password')} : <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-600">demo</code></p>
-          </FadeInItem>
-
-          <FadeInItem className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-100" />
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('or')}</span>
-            <div className="flex-1 h-px bg-slate-100" />
-          </FadeInItem>
 
           <FadeInItem className="space-y-1.5 mt-4">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center" htmlFor="email">

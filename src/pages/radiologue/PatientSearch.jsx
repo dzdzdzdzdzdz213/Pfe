@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus, Filter } from 'lucide-react';
@@ -8,33 +7,6 @@ import { formatDate, cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 // ---------------------------------------------------------------------------
-// Mock data for demo mode
-// ---------------------------------------------------------------------------
-const MOCK_PATIENTS = [
-  {
-    id: 'p1',
-    utilisateur: { prenom: 'Amina', nom: 'Boukhelif', email: 'amina.boukhelif@example.com', telephone: '0551 234 567' },
-    examens: [
-      { id: 'e1', service: { nom: 'Scanner thoracique' }, dateRealisation: '2026-03-15T09:00:00Z', statut: 'completed',
-        compte_rendu: { contenu: 'Absence de lésion parenchymateuse pulmonaire. Pas d\'épanchement pleural. Médiastin normal.', est_valide: true } },
-      { id: 'e2', service: { nom: 'Radiographie du genou' }, dateRealisation: '2026-02-10T14:30:00Z', statut: 'completed',
-        compte_rendu: null },
-    ],
-  },
-  {
-    id: 'p2',
-    utilisateur: { prenom: 'Karim', nom: 'Meddah', email: 'karim.meddah@example.com', telephone: '0661 987 654' },
-    examens: [
-      { id: 'e3', service: { nom: 'Échographie abdominale' }, dateRealisation: '2026-03-28T11:00:00Z', statut: 'completed',
-        compte_rendu: { contenu: 'Foie de taille et d\'échostructure normales. Vésicule biliaire bien visible sans calcul. Reins normaux.', est_valide: true } },
-    ],
-  },
-  {
-    id: 'p3',
-    utilisateur: { prenom: 'Sara', nom: 'Cherif', email: 'sara.cherif@example.com', telephone: '0550 111 222' },
-    examens: [],
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Document type badge
@@ -305,7 +277,6 @@ export const RadiologuePatientSearch = () => {
   const [serviceFilter, setServiceFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const { user } = useAuth();
 
   // Fetch services for filter dropdown
   const { data: services = [] } = useQuery({
@@ -321,14 +292,6 @@ export const RadiologuePatientSearch = () => {
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['radiologue-patients', query, dateFrom, dateTo, serviceFilter, statusFilter],
     queryFn: async () => {
-      if (user?.id?.startsWith('demo-')) {
-        if (!query.trim()) return MOCK_PATIENTS;
-        return MOCK_PATIENTS.filter(p =>
-          `${p.utilisateur.prenom} ${p.utilisateur.nom} ${p.utilisateur.email}`
-            .toLowerCase()
-            .includes(query.toLowerCase())
-        );
-      }
 
       let q = supabase.from('patients').select(`
         id,

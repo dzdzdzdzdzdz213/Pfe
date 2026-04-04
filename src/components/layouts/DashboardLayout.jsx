@@ -50,11 +50,7 @@ export const DashboardLayout = () => {
         .order('date_envoi', { ascending: false })
         .limit(10);
       
-      // If we're in a demo and db fails, just return empty gracefully
-      if (error) {
-        if (error.code) return [];
-        throw error;
-      }
+      if (error) throw error;
       return data || [];
     },
     enabled: !!user?.id,
@@ -65,10 +61,6 @@ export const DashboardLayout = () => {
     queryFn: async () => {
       if (!user?.id) return null;
       
-      // Demo logic fallback
-      if (user.id.startsWith('demo-')) {
-         return { nom: t('login_demo'), prenom: role === 'patient' ? t('role_patient') : t('role_visiteur') };
-      }
 
       const { data, error } = await supabase
         .from('utilisateurs')
@@ -102,11 +94,9 @@ export const DashboardLayout = () => {
     // Optimistic update in cache
     queryClient.setQueryData(['notifications', user?.id], prev => (prev || []).map(n => ({ ...n, lu: true })));
     
-    // Persist to DB for real notifications (non-demo)
+    // Persist to DB for real notifications
     for (const n of unread) {
-      if (typeof n.id === 'string' && !n.id.startsWith('demo')) {
-        await supabase.from('notifications').update({ lu: true }).eq('id', n.id);
-      }
+      await supabase.from('notifications').update({ lu: true }).eq('id', n.id);
     }
     refetchNotifs();
   };

@@ -243,7 +243,7 @@ export const AdminUsers = () => {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={() => deleteTarget && deleteMutation.mutate(deleteTarget.id)}
         title={t('confirm_delete_user_title')}
-        description={t('confirm_delete_user_desc').replace('{name}', `${deleteTarget?.prenom} ${deleteTarget?.nom}`)}
+        description={t('confirm_delete_user_desc').replace('{name}', `${deleteTarget?.prenom} ${deleteTarget?.nom}`) + " Cette action supprimera définitivement toutes les données cliniques, dossiers et paramètres de cet utilisateur."}
         variant="destructive"
         confirmText={t('delete')}
       />

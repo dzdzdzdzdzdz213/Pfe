@@ -9,6 +9,8 @@ export const ProfileSettings = () => {
   const { user, role } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [notifications, setNotifications] = useState({
     email: true,
     sms: false,
@@ -48,6 +50,37 @@ export const ProfileSettings = () => {
       toast.error(err.message);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!user?.id) return;
+    setIsDeleting(true);
+    try {
+      // 1. Delete application data (cascading across role tables)
+      // NOTE: Supabase Auth credentials (login) can only be fully deleted via the 
+      // Supabase dashboard or a service role Edge Function.
+      await Promise.all([
+        supabase.from('administrateurs').delete().eq('utilisateur_id', user.id),
+        supabase.from('radiologues').delete().eq('utilisateur_id', user.id),
+        supabase.from('receptionnistes').delete().eq('utilisateur_id', user.id),
+        supabase.from('patients').delete().eq('utilisateur_id', user.id)
+      ]);
+      
+      const { error: dataError } = await supabase
+        .from('utilisateurs')
+        .delete()
+        .eq('id', user.id);
+      if (dataError) throw dataError;
+
+      // 2. Sign out and redirect
+      await supabase.auth.signOut();
+      window.location.href = '/';
+      toast.success('Votre compte a été supprimé');
+    } catch (err) {
+      toast.error(err.message);
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -196,11 +229,68 @@ export const ProfileSettings = () => {
                   Modifier (Désactivé en Démo)
                 </button>
               </div>
+
+              {/* Danger Zone */}
+              <div className="mt-12 p-6 border-2 border-red-50 rounded-2xl bg-red-50/30">
+                <div className="flex items-start gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-bold text-red-900">Zone de Danger</h4>
+                    <p className="text-sm font-medium text-red-700/80 mt-1">
+                      La suppression de votre compte est irréversible. Toutes vos données cliniques et vos informations de profil seront définitivement effacées.
+                    </p>
+                    <button 
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="mt-4 px-6 py-2.5 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 shadow-lg shadow-red-100 transition-all"
+                    >
+                      Supprimer mon compte
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
         )}
       </motion.div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !isDeleting && setShowDeleteConfirm(false)} />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-[2.5rem] p-8 max-w-md w-full relative z-10 shadow-2xl border border-slate-100"
+          >
+            <div className="h-20 w-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-600 mb-6 mx-auto">
+              <AlertTriangle className="h-10 w-10" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 text-center mb-4">Êtes-vous absolument sûr ?</h3>
+            <p className="text-slate-600 text-center font-medium leading-relaxed mb-8">
+              Cette action supprimera définitivement votre profil, vos résultats et vos paramètres. Vous ne pourrez pas récupérer ces données.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button 
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 shadow-xl shadow-red-200 transition-all flex items-center justify-center"
+              >
+                {isDeleting ? <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Suppression...</> : "Oui, supprimer mon compte"}
+              </button>
+              <button 
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

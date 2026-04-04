@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase';
-import { isDemoMode, getMockData, saveMockData } from '../lib/demo';
 
 /**
  * @fileoverview Appointment service — CRUD operations for the `rendez_vous` table.
@@ -32,14 +31,6 @@ export const appointmentService = {
    * @returns {Promise<Array<object>>} Appointments with nested patient, assistant, service.
    */
   async fetchAppointments(options = {}) {
-    if (isDemoMode()) {
-      let list = getMockData('appointments', []);
-      if (options.patientId) {
-        list = list.filter(a => a.patient_id === options.patientId);
-      }
-      return list;
-    }
-
     let query = supabase
       .from('rendez_vous')
       .select(`
@@ -79,18 +70,6 @@ export const appointmentService = {
    * @returns {Promise<object>} The created appointment row.
    */
   async createAppointment(appointmentData) {
-    if (isDemoMode()) {
-      const list = getMockData('appointments', []);
-      const newAppt = {
-        ...appointmentData,
-        id: 'appt-' + Date.now(),
-        createdAt: new Date().toISOString(),
-      };
-      list.push(newAppt);
-      saveMockData('appointments', list);
-      await new Promise(r => setTimeout(r, 600));
-      return newAppt;
-    }
 
     const { data, error } = await supabase
       .from('rendez_vous')
@@ -115,14 +94,6 @@ export const appointmentService = {
    * @returns {Promise<object>} The updated appointment row.
    */
   async updateAppointment(id, updates) {
-    if (isDemoMode()) {
-      const list = getMockData('appointments', []).map(a =>
-        a.id === id ? { ...a, ...updates } : a
-      );
-      saveMockData('appointments', list);
-      await new Promise(r => setTimeout(r, 400));
-      return list.find(a => a.id === id);
-    }
 
     const { data, error } = await supabase
       .from('rendez_vous')
@@ -142,14 +113,6 @@ export const appointmentService = {
    * @returns {Promise<object>} Updated appointment row.
    */
   async cancelAppointment(id, reason) {
-    if (isDemoMode()) {
-      const list = getMockData('appointments', []).map(a =>
-        a.id === id ? { ...a, statut: 'annule', motif: reason } : a
-      );
-      saveMockData('appointments', list);
-      await new Promise(r => setTimeout(r, 400));
-      return list.find(a => a.id === id);
-    }
 
     const { data, error } = await supabase
       .from('rendez_vous')
@@ -171,7 +134,6 @@ export const appointmentService = {
    * @returns {Promise<boolean>} `true` if the slot is free, `false` if conflicting.
    */
   async checkAvailability(startTime, endTime, excludeId = null) {
-    if (isDemoMode()) return true;
 
     let query = supabase
       .from('rendez_vous')
