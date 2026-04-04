@@ -4,9 +4,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { appointmentService } from '@/services/appointments';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { Calendar, FileText, Bell, User, ChevronRight, Plus, Clock } from 'lucide-react';
+import { Calendar, FileText, Bell, User, ChevronRight, Plus } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useRealTime } from '@/hooks/useRealTime';
 
 export const PatientDashboard = () => {
   const { user } = useAuth();
@@ -53,7 +52,6 @@ export const PatientDashboard = () => {
   });
 
   const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) > new Date() && a.statut !== 'cancelled');
-  const pastAppointments = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) <= new Date());
   
   const prenom = patientRecord?.utilisateurs?.prenom || patientRecord?.utilisateur?.prenom || 'Patient';
 

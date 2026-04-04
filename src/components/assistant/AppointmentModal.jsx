@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
@@ -6,10 +6,10 @@ import { consentementService } from '@/services/consentements';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { X, Search, UserPlus, Clock, Calendar, FileText, Loader2, ChevronRight, Check, ShieldAlert } from 'lucide-react';
+import { X, Search, UserPlus, Loader2, ChevronRight, Check, ShieldAlert, FileText, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr, arDZ } from 'date-fns/locale';
-import { cn, getStatusColor, getStatusLabel } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { FileUpload } from '@/components/common/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -139,7 +139,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
         statut: formData.statut,
         ...(examenId && { examen_id: examenId }),
       };
-      const rdv = await appointmentService.createAppointment(rdvData);
+      await appointmentService.createAppointment(rdvData);
 
       // 3. Create consentement if invasive
       if (isInvasive && examenId) {
@@ -408,7 +408,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
 
               <div>
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_prescription')}</label>
-                <FileUpload bucket="documents" folder="prescriptions" onUploadComplete={(files) => console.log('Uploaded:', files)} />
+                <FileUpload bucket="documents" folder="prescriptions" onUploadComplete={(_files) => {}} />
               </div>
 
               {/* Summary */}

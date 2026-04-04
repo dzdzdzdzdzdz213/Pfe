@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -12,12 +12,11 @@ import { formatDate, cn } from '@/lib/utils';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import {
   Save, CheckCircle, FileText, User, Calendar, Stethoscope,
-  ZoomIn, ZoomOut, RotateCw, Loader2, ArrowLeft, Download,
+  ZoomIn, ZoomOut, RotateCw, Loader2, ArrowLeft,
   Bold, Italic, List, ListOrdered, Heading2, Undo, Redo, Minus,
   Printer, Image as ImageIcon, Pill
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { arDZ } from 'date-fns/locale';
 
 // ---------------------------------------------------------------------------
 // TipTap Toolbar

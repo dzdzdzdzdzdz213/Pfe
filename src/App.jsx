@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
 import { AuthProvider } from './contexts/AuthContext';
@@ -8,9 +7,12 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { ScrollToTop } from './components/common/ScrollToTop';
 import { AuthLayout } from './components/layouts/AuthLayout';
-import { DashboardLayout } from './components/layouts/DashboardLayout';
 import { PublicLayout } from './components/layouts/PublicLayout';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+
+const DashboardLayout = React.lazy(() =>
+  import('./components/layouts/DashboardLayout').then(m => ({ default: m.DashboardLayout }))
+);
 
 const withErrorBoundary = (Component) => (props) => (
   <ErrorBoundary>
@@ -39,7 +41,6 @@ const AssistantPatientsSafe = withErrorBoundary(React.lazy(() => import('./pages
 const RadiologueDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/Dashboard').then(m => ({ default: m.RadiologueDashboard }))));
 const RadiologueExamsSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/Exams').then(m => ({ default: m.RadiologueExams }))));
 const ReportEditorSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/ReportEditor').then(m => ({ default: m.ReportEditor }))));
-const PatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.PatientSearch }))));
 const PatientHistorySafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientHistory').then(m => ({ default: m.PatientHistory }))));
 const RadiologuePatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.PatientSearch }))));
 

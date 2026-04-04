@@ -1,14 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { fr, arDZ } from 'date-fns/locale';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
-import { supabase } from '@/lib/supabase';
-import { getStatusColor, getStatusLabel, getServiceColor } from '@/lib/utils';
 import { AppointmentModal } from '@/components/assistant/AppointmentModal';
-import { toast } from 'sonner';
-import { Plus, ChevronLeft, ChevronRight, Calendar as CalIcon } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -81,7 +78,6 @@ export const AssistantCalendar = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
-  const queryClient = useQueryClient();
 
   const start = startOfMonth(subMonths(currentDate, 1)).toISOString();
   const end = endOfMonth(addMonths(currentDate, 1)).toISOString();
@@ -95,7 +91,7 @@ export const AssistantCalendar = () => {
   useRealTime('rendez_vous', ['appointments'], { event: ['INSERT', 'UPDATE'] });
 
   const events = useMemo(() => {
-    return appointments.map((appt, i) => ({
+    return appointments.map((appt, _i) => ({
       id: appt.id,
       title: `${appt.patient?.utilisateur?.prenom || ''} ${appt.patient?.utilisateur?.nom || 'Patient'}`,
       start: new Date(appt.dateHeureDebut),

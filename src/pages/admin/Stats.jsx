@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { formatDate } from '@/lib/utils';
+
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, BarChart, Bar
 } from 'recharts';
-import { TrendingUp, PieChart as PieIcon, Users, CheckCircle, Loader2, BarChart2 } from 'lucide-react';
+import { TrendingUp, PieChart as PieIcon, CheckCircle, Loader2, BarChart2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const COLORS = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];

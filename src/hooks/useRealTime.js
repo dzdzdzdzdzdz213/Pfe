@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -12,36 +12,41 @@ import { useQueryClient } from '@tanstack/react-query';
  */
 export const useRealTime = (table, queryKeys = [], options = {}) => {
   const queryClient = useQueryClient();
+  const queryKeysRef = useRef(queryKeys);
+  const optionsRef = useRef(options);
 
   useEffect(() => {
     if (!table) return;
 
-    const channelName = `realtime-${table}-${JSON.stringify(options.filter || {})}`;
+    const currentOptions = optionsRef.current;
+    const currentQueryKeys = queryKeysRef.current;
+    const filter = currentOptions.filter || {};
+    const event = currentOptions.event || '*';
+    const onReceive = currentOptions.onReceive;
 
+    const channelName = `realtime-${table}-${JSON.stringify(filter)}`;
     const channel = supabase.channel(channelName);
     
-    const events = Array.isArray(options.event) 
-      ? options.event 
-      : [options.event || '*'];
+    const events = Array.isArray(event) ? event : [event];
 
-    events.forEach(event => {
+    events.forEach(evt => {
       channel.on(
         'postgres_changes',
         {
-          event: event,
+          event: evt,
           schema: 'public',
           table,
-          ...(options.filter ? { filter: options.filter } : {}),
+          ...(filter ? { filter } : {}),
         },
         (payload) => {
           // Invalidate all related query keys
-          queryKeys.forEach((key) => {
+          currentQueryKeys.forEach((key) => {
             queryClient.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] });
           });
 
           // Call optional callback
-          if (options.onReceive) {
-            options.onReceive(payload);
+          if (onReceive) {
+            onReceive(payload);
           }
         }
       );
@@ -52,5 +57,5 @@ export const useRealTime = (table, queryKeys = [], options = {}) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, JSON.stringify(queryKeys), JSON.stringify(options.filter)]);
+  }, [table, queryClient]);
 };

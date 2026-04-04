@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { auditService } from '@/services/audit';
 import { DataTable } from '@/components/common/DataTable';
 import { formatDateTime, cn } from '@/lib/utils';
-import { Download, Filter, ClipboardList, Calendar } from 'lucide-react';
+import { Download } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const ACTION_COLORS = {

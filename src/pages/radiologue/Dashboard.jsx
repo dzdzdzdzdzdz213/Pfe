@@ -2,8 +2,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { examService } from '@/services/exams';
 import { reportService } from '@/services/reports';
-import { formatDate, formatDateTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { Stethoscope, FileText, Clock, Users, ChevronRight, Activity } from 'lucide-react';
+import { formatDate, cn, getStatusColor } from '@/lib/utils';
+import { Stethoscope, FileText, Clock, ChevronRight, Activity } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { auditService } from '@/services/audit';
-import { formatDate, formatDateTime, timeAgo } from '@/lib/utils';
+import { timeAgo } from '@/lib/utils';
 import { Users, Calendar, Activity, FileText, ClipboardList, TrendingUp, Database, Shield, ChevronRight } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -10,7 +10,6 @@ import { useLanguage } from '@/contexts/LanguageContext';
 export const AdminDashboard = () => {
   const { t, lang } = useLanguage();
   const today = new Date();
-  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const startOf7DaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
 

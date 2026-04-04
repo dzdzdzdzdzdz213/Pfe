@@ -5,8 +5,7 @@ import {
   ChevronsUpDown, 
   Search, 
   ChevronLeft, 
-  ChevronRight,
-  MoreHorizontal 
+  ChevronRight
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

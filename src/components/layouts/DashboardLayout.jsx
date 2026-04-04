@@ -1,11 +1,10 @@
-import { useState, useEffect, Fragment } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { PageTransition } from '@/components/common/PageTransition';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { supabase, isDemoMode, getMockData } from '@/lib/supabase'; // Or we can directly use supabase and demo
-import { notificationService } from '@/services/notifications';
+import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   LayoutDashboard,

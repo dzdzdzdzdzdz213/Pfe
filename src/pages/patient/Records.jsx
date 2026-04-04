@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { FileText, Download, Image, Eye, Calendar, Stethoscope, Clock, Printer, CheckCircle, X } from 'lucide-react';
+import { FileText, Image, Eye, Calendar, Stethoscope, Printer, CheckCircle, X } from 'lucide-react';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -56,7 +56,7 @@ const PrintableReport = ({ exam, report, patientName, t, lang }) => (
 // ---------------------------------------------------------------------------
 // Report Viewer Modal
 // ---------------------------------------------------------------------------
-const ReportModal = ({ report, exam, patientName, onClose, t }) => (
+const ReportModal = ({ report, exam, _patientName, onClose, t }) => (
   <>
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
     <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">

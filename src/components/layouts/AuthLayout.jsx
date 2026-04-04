@@ -1,10 +1,9 @@
-import { Outlet, useLocation, Navigate } from 'react-router-dom';
+import { Outlet, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AuthLayout = () => {
   const { user, role, loading } = useAuth();
-  const location = useLocation();
 
   const { t } = useLanguage();
 
@@ -12,7 +11,7 @@ export const AuthLayout = () => {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="flex justify-center">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       </div>
     );

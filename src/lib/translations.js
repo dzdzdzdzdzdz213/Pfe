@@ -228,7 +228,6 @@ export const translations = {
     report_content_default: '<h2>Résultats</h2><p></p><h2>Impression</h2><p></p><h2>Recommandations</h2><p></p>',
 
     // ── Patient Search (Radiologue) ──────────────────────────────────────────
-    patient_search: 'Recherche Patient',
     patient_search_subtitle: 'Trouvez un patient, consultez ses examens et envoyez-lui ses documents',
     patient_search_placeholder_alt: 'Rechercher par nom, prénom ou email...',
     patient_count_found: '{count} patient{count !== 1 ? "s" : ""} trouvé{count !== 1 ? "s" : ""}',
@@ -251,7 +250,6 @@ export const translations = {
     filter_status: 'Statut examen',
     all_services: 'Tous les services',
     all_statuses: 'Tous les statuts',
-    clear_filters: 'Effacer les filtres',
     no_patient_found: 'Aucun patient trouvé',
     search_modify_hint: 'Modifiez votre recherche ou vos filtres.',
     search_initial_hint: 'Entrez un nom ou utilisez les filtres pour lancer la recherche',
@@ -328,8 +326,6 @@ export const translations = {
     n_entries: '{count} entrée{count !== 1 ? "s" : ""}',
     export_csv: 'Exporter CSV',
     audit_search_placeholder: 'Rechercher dans les logs...',
-    filter_date_from: 'Date début',
-    filter_date_to: 'Date fin',
     filter_action_type: 'Type d\'action',
     action_type_login: 'Connexion',
     action_type_create: 'Création',
@@ -428,7 +424,6 @@ export const translations = {
 
     // ── Admin Stats ────────────────────────────────────────────────────────────
     stats_title: 'Statistiques & Analyses',
-    stats_subtitle: 'Tableau de bord analytique de la clinique',
     stats_monthly: 'Tendance Mensuelle des RDV',
     stats_by_service: 'Examens par Service',
     stats_validation_rate: 'Taux de Validation des Rapports',
@@ -734,7 +729,6 @@ export const translations = {
     report_content_default: '<h2>النتائج</h2><p></p><h2>الانطباع</h2><p></p><h2>التوصيات</h2><p></p>',
 
     // ── Patient Search (Radiologue) ──────────────────────────────────────────
-    patient_search: 'البحث عن مريض',
     patient_search_subtitle: 'ابحث عن مريض، واطلع على فحوصاته وأرسل له مستنداته',
     patient_search_placeholder_alt: 'البحث بالاسم أو البريد الإلكتروني...',
     patient_count_found: 'تم العثور على {count} مريض',
@@ -757,7 +751,6 @@ export const translations = {
     filter_status: 'حالة الفحص',
     all_services: 'جميع الخدمات',
     all_statuses: 'جميع الحالات',
-    clear_filters: 'مسح التصفية',
     no_patient_found: 'لم يتم العثور على أي مريض',
     search_modify_hint: 'قم بتعديل البحث أو الفلاتر.',
     search_initial_hint: 'أدخل اسماً أو استخدم الفلاتر لبدء البحث',
@@ -834,8 +827,6 @@ export const translations = {
     n_entries: '{count} مدخل',
     export_csv: 'تصدير CSV',
     audit_search_placeholder: 'البحث في السجلات...',
-    filter_date_from: 'من تاريخ',
-    filter_date_to: 'إلى تاريخ',
     filter_action_type: 'نوع العملية',
     action_type_login: 'تسجيل الدخول',
     action_type_create: 'إنشاء',
@@ -934,7 +925,6 @@ export const translations = {
 
     // ── Admin Stats ────────────────────────────────────────────────────────────
     stats_title: 'الإحصائيات والتحليلات',
-    stats_subtitle: 'لوحة تحليلية للعيادة',
     stats_monthly: 'اتجاه المواعيد الشهري',
     stats_by_service: 'الفحوصات حسب الخدمة',
     stats_validation_rate: 'معدل التحقق من التقارير',

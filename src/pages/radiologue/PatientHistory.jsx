@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { Search, User, Calendar, Stethoscope, FileText, Clock, AlertCircle, Activity, Droplets, Pill, ScrollText, Image, ChevronDown, ChevronUp, CheckCircle, Eye } from 'lucide-react';
+import { Search, Calendar, Stethoscope, FileText, Clock, AlertCircle, Activity, Droplets, Pill, ScrollText, Image, ChevronDown, ChevronUp, CheckCircle, Eye } from 'lucide-react';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 

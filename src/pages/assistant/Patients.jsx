@@ -5,7 +5,7 @@ import { DataTable } from '@/components/common/DataTable';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { toast } from 'sonner';
 import { UserPlus, X, Edit, Trash2, Eye, Phone, Mail, MapPin, Loader2, Check } from 'lucide-react';
-import { formatDate, cn } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AssistantPatients = () => {

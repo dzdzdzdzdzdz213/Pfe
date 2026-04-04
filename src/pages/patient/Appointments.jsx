@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { appointmentService } from '@/services/appointments';
 import { toast } from 'sonner';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { Calendar, Clock, Check, ChevronRight, ChevronLeft, Loader2, FileText, X, Upload } from 'lucide-react';
+import { Calendar, Clock, Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { FileUpload } from '@/components/common/FileUpload';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore } from 'date-fns';
 import { fr, arSA } from 'date-fns/locale';

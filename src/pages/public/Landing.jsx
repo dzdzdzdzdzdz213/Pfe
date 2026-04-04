@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ShieldCheck, Clock, ArrowRight, ActivitySquare, HeartPulse, Scan, Bone, Waves, Microscope, Syringe, ClipboardCheck } from 'lucide-react';
+import { Activity, ShieldCheck, ArrowRight, ActivitySquare, HeartPulse, Scan, Bone, Waves, Microscope, Syringe, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -44,8 +44,8 @@ export const Landing = () => {
           <div className="flex-1 text-center lg:text-start lg:rtl:text-right mt-10 lg:mt-0">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/80 border border-blue-100/80 shadow-sm text-primary text-xs font-bold mb-8 backdrop-blur-sm">
               <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
               </span>
               {t('cabinet_ouvert')}
             </div>
@@ -80,10 +80,10 @@ export const Landing = () => {
           {/* Aesthetic Visual Hero */}
           <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none relative mt-16 lg:mt-0 animate-in fade-in zoom-in duration-1000 delay-150">
             <div className="aspect-[4/3] rounded-[2.5rem] bg-gradient-to-br from-slate-800 via-slate-900 to-slate-950 p-1 shadow-2xl relative overflow-hidden group">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-emerald-500 to-purple-500 opacity-20 group-hover:opacity-30 transition-opacity duration-700"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-emerald-500 to-purple-500 opacity-20 group-hover:opacity-30 transition-opacity duration-700" />
               <div className="relative h-full w-full rounded-[2.3rem] border border-white/10 bg-slate-900/80 backdrop-blur-xl flex flex-col justify-between p-8 overflow-hidden">
                 {/* Decorative glowing orb */}
-                <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/30 blur-[50px] rounded-full"></div>
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/30 blur-[50px] rounded-full" />
                 
                 <div className="flex justify-between items-start relative z-10">
                   <ActivitySquare className="h-12 w-12 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
@@ -94,12 +94,12 @@ export const Landing = () => {
                 
                 <div className="space-y-5 relative z-10 mt-12">
                   <div className="h-3 w-1/3 bg-slate-700/50 rounded-full overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-600 to-transparent -translate-x-full animate-[shimmer_2s_infinite]"></div>
+                    <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-600 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
                   </div>
-                  <div className="h-3 w-3/4 bg-slate-700/50 rounded-full"></div>
+                  <div className="h-3 w-3/4 bg-slate-700/50 rounded-full" />
                   <div className="flex gap-3 pt-4">
-                     <div className="h-16 w-full bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md"></div>
-                     <div className="h-16 w-full bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md"></div>
+                    <div className="h-16 w-full bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md" />
+                    <div className="h-16 w-full bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md" />
                   </div>
                 </div>
               </div>
@@ -173,9 +173,9 @@ export const Landing = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="py-24 relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-slate-900"></div>
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-transparent to-emerald-900/40 opacity-80 mix-blend-overlay"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-primary/30 to-transparent"></div>
+        <div className="absolute inset-0 bg-slate-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-transparent to-emerald-900/40 opacity-80 mix-blend-overlay" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-primary/30 to-transparent" />
         
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg">

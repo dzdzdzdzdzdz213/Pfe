@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus, Filter, Calendar } from 'lucide-react';
+import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus, Filter } from 'lucide-react';
 import { formatDate, cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 

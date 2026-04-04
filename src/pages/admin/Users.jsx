@@ -5,7 +5,7 @@ import { DataTable } from '@/components/common/DataTable';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { toast } from 'sonner';
 import { formatDate, generatePassword, cn } from '@/lib/utils';
-import { UserPlus, X, Edit, Trash2, Eye, Copy, Loader2, Check, Shield, Stethoscope, HeadphonesIcon } from 'lucide-react';
+import { UserPlus, X, Edit, Trash2, Copy, Loader2, Check, Shield, Stethoscope, HeadphonesIcon } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const ROLE_CONFIG = (t) => ({

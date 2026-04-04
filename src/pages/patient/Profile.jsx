@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { User, Mail, Phone, MapPin, Calendar, Shield, Save, Loader2, Lock, Heart, AlertCircle, Check } from 'lucide-react';
+import { User, Mail, Shield, Save, Loader2, Lock, Heart } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const PatientProfile = () => {

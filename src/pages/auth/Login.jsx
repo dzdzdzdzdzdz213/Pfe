@@ -37,7 +37,7 @@ export const Login = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data) => {
+  const onSubmit = useCallback(async (data) => {
     setIsSubmitting(true);
     try {
       const result = await login(data.email, data.password);
@@ -64,12 +64,12 @@ export const Login = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [login, t, navigate, location]);
 
   const handleDemoMode = useCallback((role) => {
     const data = { email: `${role}@demo.com`, password: 'demo' };
     onSubmit(data);
-  }, []);
+  }, [onSubmit]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -137,9 +137,9 @@ export const Login = () => {
           </FadeInItem>
 
           <FadeInItem className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-100"></div>
+            <div className="flex-1 h-px bg-slate-100" />
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('or')}</span>
-            <div className="flex-1 h-px bg-slate-100"></div>
+            <div className="flex-1 h-px bg-slate-100" />
           </FadeInItem>
 
           <FadeInItem className="space-y-1.5 mt-4">
@@ -236,7 +236,7 @@ export const Login = () => {
         </form>
         
         <FadeInItem className="relative py-2">
-          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100"></span></div>
+          <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100" /></div>
           <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-slate-400 bg-white px-2">{t('or')}</div>
         </FadeInItem>
         

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Settings, Plus, Edit, Trash2, Check, X, Loader2, Clock, Building, Stethoscope, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Check, X, Clock, Building, Stethoscope, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const DAYS = [

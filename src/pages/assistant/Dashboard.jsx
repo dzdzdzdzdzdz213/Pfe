@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTime, formatDate, getStatusColor, getStatusLabel, cn } from '@/lib/utils';
-import { Calendar, UserPlus, ClipboardList, Clock, Users, FileText, ChevronRight, Plus } from 'lucide-react';
+import { Calendar, UserPlus, ClipboardList, Clock, Users, ChevronRight, Plus } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AssistantDashboard = () => {
-  const { user } = useAuth();
+  useAuth();
   const { t } = useLanguage();
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
@@ -21,7 +21,7 @@ export const AssistantDashboard = () => {
     refetchInterval: 30000,
   });
 
-  const { data: allPatients = [], isLoading: loadingPatients } = useQuery({
+  const { data: allPatients = [] } = useQuery({
     queryKey: ['patients'],
     queryFn: () => patientService.fetchPatients(),
   });
