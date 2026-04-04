@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Waves, HeartPulse, Microscope, Syringe, ShieldCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Waves, HeartPulse, Microscope, Syringe, ClipboardCheck, Loader2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -30,12 +30,12 @@ export const Booking = () => {
   const servicesList = [
     { id: 1, icon: Scan },
     { id: 2, icon: Bone },
-    { id: 3, icon: Activity },
-    { id: 4, icon: Waves },
+    { id: 3, icon: Waves },
+    { id: 4, icon: Activity },
     { id: 5, icon: HeartPulse },
     { id: 6, icon: Microscope },
     { id: 7, icon: Syringe },
-    { id: 8, icon: ShieldCheck },
+    { id: 8, icon: ClipboardCheck },
   ];
 
   const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ShieldCheck, Clock, ArrowRight, ActivitySquare, HeartPulse, Scan, Bone, Waves, Microscope, Syringe } from 'lucide-react';
+import { Activity, ShieldCheck, Clock, ArrowRight, ActivitySquare, HeartPulse, Scan, Bone, Waves, Microscope, Syringe, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -10,12 +10,12 @@ export const Landing = () => {
   const services = [
     { id: 1, icon: Scan, color: 'blue' },
     { id: 2, icon: Bone, color: 'emerald' },
-    { id: 3, icon: Activity, color: 'violet' },
-    { id: 4, icon: Waves, color: 'orange' },
+    { id: 3, icon: Waves, color: 'violet' },
+    { id: 4, icon: Activity, color: 'orange' },
     { id: 5, icon: HeartPulse, color: 'pink' },
     { id: 6, icon: Microscope, color: 'teal' },
     { id: 7, icon: Syringe, color: 'red' },
-    { id: 8, icon: ShieldCheck, color: 'amber' },
+    { id: 8, icon: ClipboardCheck, color: 'amber' },
   ];
 
   const getColorClasses = (color) => {
