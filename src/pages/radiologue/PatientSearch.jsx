@@ -69,15 +69,29 @@ const SendDocModal = ({ patient, exam, onClose }) => {
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim() && docType === 'compte_rendu' && !exam?.compte_rendu) {
+    if (!message.trim()) {
       toast.error(t('error_missing_doc_content'));
       return;
     }
     setSending(true);
-    await new Promise(r => setTimeout(r, 1200)); // simulate network
-    setSending(false);
-    setSent(true);
-    toast.success(t('doc_sent_success').replace('{name}', `${patient.utilisateur.prenom} ${patient.utilisateur.nom}`));
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .insert({
+          utilisateur_id: patient.utilisateur_id,
+          type: docType,
+          contenu: message,
+          lu: false,
+          date_envoi: new Date().toISOString()
+        });
+      if (error) throw error;
+      setSent(true);
+      toast.success(t('doc_sent_success').replace('{name}', `${patient.utilisateur.prenom} ${patient.utilisateur.nom}`));
+    } catch (err) {
+      toast.error(err.message || 'Erreur envoi');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (

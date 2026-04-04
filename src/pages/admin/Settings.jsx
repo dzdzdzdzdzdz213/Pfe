@@ -89,9 +89,26 @@ export const AdminSettings = () => {
   };
 
   // Working hours state
-  const [workingHours, setWorkingHours] = useState(
-    DAYS.map(d => ({ day: d.key, open: '08:00', close: '17:00', isClosed: d.key === 'dimanche' }))
-  );
+  const [workingHours, setWorkingHours] = useState(() => {
+    const saved = localStorage.getItem('clinic_working_hours');
+    return saved ? JSON.parse(saved) : DAYS.map(d => ({ 
+      day: d.key, 
+      open: '08:00', 
+      close: '17:00', 
+      isClosed: d.key === 'dimanche' 
+    }));
+  });
+
+  // Clinic Info state
+  const [clinicInfo, setClinicInfo] = useState(() => {
+    const saved = localStorage.getItem('clinic_info');
+    return saved ? JSON.parse(saved) : {
+      nom: 'CHEMLOUL RADIOLOGIE',
+      telephone: '',
+      email: '',
+      adresse: ''
+    };
+  });
 
   const tabs = [
     { id: 'services', label: 'Services', icon: Stethoscope },
@@ -179,7 +196,10 @@ export const AdminSettings = () => {
               </div>
             ))}
           </div>
-          <button onClick={() => toast.success('Heures enregistrées')} className="mt-4 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
+          <button onClick={() => {
+            localStorage.setItem('clinic_working_hours', JSON.stringify(workingHours));
+            toast.success('Heures enregistrées');
+          }} className="mt-4 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
             <Save className="h-4 w-4" /> Enregistrer
           </button>
         </div>
@@ -192,26 +212,59 @@ export const AdminSettings = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Nom de la clinique</label>
-              <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" defaultValue="CHEMLOUL RADIOLOGIE" />
+              <input 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
+                value={clinicInfo.nom}
+                onChange={e => setClinicInfo(p => ({ ...p, nom: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Téléphone</label>
-              <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" placeholder="+213 XX XX XX XX" />
+              <input 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
+                placeholder="+213 XX XX XX XX" 
+                value={clinicInfo.telephone}
+                onChange={e => setClinicInfo(p => ({ ...p, telephone: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Email</label>
-              <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" placeholder="contact@chemloul-radio.dz" />
+              <input 
+                type="email" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
+                placeholder="contact@chemloul-radio.dz" 
+                value={clinicInfo.email}
+                onChange={e => setClinicInfo(p => ({ ...p, email: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Durée RDV par défaut (min)</label>
-              <input type="number" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" defaultValue={30} min={5} max={120} />
+              <input 
+                type="number" 
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
+                defaultValue={30} 
+                min={5} 
+                max={120} 
+              />
             </div>
           </div>
           <div>
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Adresse</label>
-            <textarea rows={2} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" placeholder="Adresse complète de la clinique" />
+            <textarea 
+              rows={2} 
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" 
+              placeholder="Adresse complète de la clinique" 
+              value={clinicInfo.adresse}
+              onChange={e => setClinicInfo(p => ({ ...p, adresse: e.target.value }))}
+            />
           </div>
-          <button onClick={() => toast.success('Paramètres enregistrés')} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
+          <button 
+            onClick={() => {
+              localStorage.setItem('clinic_info', JSON.stringify(clinicInfo));
+              toast.success('Paramètres enregistrés');
+            }} 
+            className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100"
+          >
             <Save className="h-4 w-4" /> Enregistrer
           </button>
         </div>

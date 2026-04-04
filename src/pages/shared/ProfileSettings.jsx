@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Shield, Bell, Lock, AlertTriangle, Save, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Shield, Bell, Lock, AlertTriangle, Save, CheckCircle2, Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export const ProfileSettings = () => {
@@ -14,6 +15,14 @@ export const ProfileSettings = () => {
     system: true
   });
 
+  useEffect(() => {
+    const saved = localStorage.getItem(`prefs_${user?.id}`);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed.notifications) setNotifications(parsed.notifications);
+    }
+  }, [user?.id]);
+
   const getRoleColor = (r) => {
     switch (r) {
       case 'administrateur': return 'text-purple-600 bg-purple-50 border-purple-200';
@@ -24,14 +33,22 @@ export const ProfileSettings = () => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { notifications }
+      });
+      if (error) throw error;
+      localStorage.setItem(`prefs_${user?.id}`, JSON.stringify({ notifications }));
       toast.success('Vos modifications ont été enregistrées avec succès', {
         icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />
       });
-    }, 1000);
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -126,7 +143,7 @@ export const ProfileSettings = () => {
                 disabled={isSaving}
                 className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center disabled:opacity-70"
               >
-                {isSaving ? 'Enregistrement...' : <><Save className="h-4 w-4 mr-2" /> Enregistrer</>}
+                {isSaving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Enregistrement...</> : <><Save className="h-4 w-4 mr-2" /> Enregistrer</>}
               </button>
             </div>
           </div>

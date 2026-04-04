@@ -52,20 +52,40 @@ export const PatientProfile = () => {
 
   const updateProfileMutation = useMutation({
     mutationFn: async () => {
-      await supabase.from('utilisateur').update({
+      const { error: userError } = await supabase.from('utilisateurs').update({
         nom: personalForm.nom,
         prenom: personalForm.prenom,
         telephone: personalForm.telephone,
       }).eq('id', user?.id);
+      if (userError) throw userError;
       
-      await supabase.from('patient').update({
+      const { error: patientError } = await supabase.from('patients').update({
         adresse: personalForm.adresse,
-        telephoneUrgence: personalForm.telephoneUrgence,
+        telephone_urgence: personalForm.telephoneUrgence,
       }).eq('utilisateur_id', user?.id);
+      if (patientError) throw patientError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-profile'] });
       toast.success(t('profile_update_success'));
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateMedicalMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('patients')
+        .update({
+          allergies: medicalForm.allergies,
+          antecedents_medicaux: medicalForm.antecedentsMedicaux,
+        })
+        .eq('utilisateur_id', user?.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-profile'] });
+      toast.success(t('profile_medical_success'));
     },
     onError: (err) => toast.error(err.message),
   });
@@ -193,8 +213,9 @@ export const PatientProfile = () => {
             <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('records_antecedents')}</label>
             <textarea rows={4} placeholder={t('profile_antecedents_hint')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={medicalForm.antecedentsMedicaux} onChange={e => setMedicalForm(p => ({ ...p, antecedentsMedicaux: e.target.value }))} />
           </div>
-          <button onClick={() => toast.success(t('profile_medical_success'))} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
-            <Save className="h-4 w-4" /> {t('save')}
+          <button onClick={() => updateMedicalMutation.mutate()} disabled={updateMedicalMutation.isPending}
+            className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100">
+            {updateMedicalMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('save')}
           </button>
         </div>
       )}
