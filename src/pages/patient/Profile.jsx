@@ -17,8 +17,8 @@ export const PatientProfile = () => {
     queryKey: ['patient-profile', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('patient')
-        .select('*, utilisateur:utilisateur_id(*), dossier:dossier_medical(*)')
+        .from('patients')
+        .select('*, utilisateur:utilisateur_id(*)')
         .eq('utilisateur_id', user?.id)
         .single();
       if (error) throw error;
@@ -41,7 +41,7 @@ export const PatientProfile = () => {
         adresse: patientData.adresse || '',
         date_naissance: patientData.date_naissance || '',
         sexe: patientData.sexe || 'M',
-        telephoneUrgence: patientData.telephoneUrgence || '',
+        telephoneUrgence: patientData.telephone_urgence || '',
       });
       setMedicalForm({
         allergies: patientData.dossier?.[0]?.allergies || '',
