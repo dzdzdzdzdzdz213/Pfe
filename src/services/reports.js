@@ -52,9 +52,33 @@ export const reportService = {
    * @returns {Promise<object>} The created report row.
    */
   async createReport(reportData) {
+    const { examen_id, ...reportFields } = reportData;
+
+    // First create or find the document_medical for this exam
+    let docId = null;
+    if (examen_id) {
+      const { data: existingDoc } = await supabase
+        .from('documents_medicaux')
+        .select('id')
+        .eq('examen_id', examen_id)
+        .maybeSingle();
+
+      if (existingDoc) {
+        docId = existingDoc.id;
+      } else {
+        const { data: newDoc, error: docError } = await supabase
+          .from('documents_medicaux')
+          .insert({ examen_id, statut: 'valide', date_creation: new Date().toISOString() })
+          .select()
+          .single();
+        if (docError) throw docError;
+        docId = newDoc.id;
+      }
+    }
+
     const { data, error } = await supabase
       .from('comptes_rendus')
-      .insert(reportData)
+      .insert({ ...reportFields, document_medical_id: docId })
       .select()
       .single();
     if (error) throw error;

@@ -217,7 +217,6 @@ export const ReportEditor = () => {
           .from('ordonnances')
           .upsert({
             examen_id: id,
-            patient_id: exam.patient_id,
             radiologue_id: user?.id,
             medicaments: ordonnance.medications,
             notes_generales: ordonnance.notes,
@@ -227,7 +226,7 @@ export const ReportEditor = () => {
         if (ordError) throw ordError;
       }
 
-      if (isValidated) await examService.updateExamStatus(id, 'completed');
+      if (isValidated) await examService.updateExamStatus(id, 'realise');
       return report;
     },
     onSuccess: () => {

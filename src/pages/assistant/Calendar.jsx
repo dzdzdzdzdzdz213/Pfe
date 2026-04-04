@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { fr, arDZ } from 'date-fns/locale';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { AppointmentModal } from '@/components/assistant/AppointmentModal';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -74,6 +74,7 @@ const EventComponent = ({ event }) => (
 
 export const AssistantCalendar = () => {
   const { t, lang } = useLanguage();
+  const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -116,6 +117,7 @@ export const AssistantCalendar = () => {
     setModalOpen(false);
     setSelectedEvent(null);
     setSelectedSlot(null);
+    queryClient.invalidateQueries({ queryKey: ['appointments'] });
   };
 
   const eventStyleGetter = (event) => {
