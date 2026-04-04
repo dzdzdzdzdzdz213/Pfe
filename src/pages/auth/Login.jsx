@@ -9,12 +9,16 @@ import { Eye, EyeOff, Loader2, Lock, Mail, ArrowRight, ShieldCheck, X } from 'lu
 import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition';
 import { supabase } from '@/lib/supabase';
 
-const loginSchema = z.object({
-  email: z.string().email({ message: "Veuillez entrer une adresse email valide." }),
-  password: z.string().min(4, { message: "Le mot de passe doit contenir au moins 4 caractères." }),
-});
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const Login = () => {
+  const { t } = useLanguage();
+
+  const loginSchema = z.object({
+    email: z.string().email({ message: t('error_invalid_email') }),
+    password: z.string().min(4, { message: t('error_password_too_short') }),
+  });
+
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
@@ -39,7 +43,7 @@ export const Login = () => {
       const result = await login(data.email, data.password);
       
       if (result.user) {
-        toast.success("Connexion réussie !");
+        toast.success(t('login_success'));
         
         if (result.user.email === 'admin@demo.com') {
           navigate('/admin/dashboard', { replace: true });
@@ -56,7 +60,7 @@ export const Login = () => {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.message || "Échec de la connexion. Veuillez vérifier vos identifiants.");
+      toast.error(error.message || t('login_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -69,7 +73,7 @@ export const Login = () => {
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
-    if (!resetEmail) return toast.error('Veuillez entrer votre email');
+    if (!resetEmail) return toast.error(t('error_required_fields'));
     setIsResetting(true);
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: window.location.origin + '/reset-password',
@@ -77,7 +81,7 @@ export const Login = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Lien de réinitialisation envoyé ! Vérifiez vos emails.');
+      toast.success(t('forgot_success'));
       setShowResetModal(false);
       setResetEmail('');
     }
@@ -88,9 +92,9 @@ export const Login = () => {
     <>
       <StaggerContainer className="space-y-6">
         <FadeInItem className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Bienvenue</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('login_welcome')}</h1>
           <p className="text-sm text-slate-500 font-medium">
-            Connectez-vous à votre compte pour continuer
+            {t('login_subtitle')}
           </p>
         </FadeInItem>
 
@@ -98,50 +102,50 @@ export const Login = () => {
           
           {/* Demo Access Panel */}
           <FadeInItem className="bg-gradient-to-br from-slate-50 to-blue-50/40 border border-slate-200 rounded-2xl p-4 space-y-3">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center mb-1">Accès Démo Instantané</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] text-center mb-1">{t('login_demo')}</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => handleDemoMode('admin')}
                 className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
               >
-                <ShieldCheck className="h-3.5 w-3.5" /> Administrateur
+                <ShieldCheck className="h-3.5 w-3.5" /> {t('role_admin')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoMode('radiologue')}
                 className="flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
               >
-                🩺 Radiologue
+                🩺 {t('role_radiologue')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoMode('assistant')}
                 className="flex items-center justify-center bg-teal-600 hover:bg-teal-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
               >
-                🎧 Assistant
+                🎧 {t('role_receptionniste')}
               </button>
               <button
                 type="button"
                 onClick={() => handleDemoMode('patient')}
                 className="flex items-center justify-center bg-violet-600 hover:bg-violet-700 text-white py-2.5 rounded-xl text-xs font-bold shadow transition-all hover:-translate-y-0.5"
               >
-                👤 Patient
+                👤 {t('role_patient')}
               </button>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium text-center">Mot de passe démo : <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-600">demo</code></p>
+            <p className="text-[10px] text-slate-400 font-medium text-center">{t('login_demo_password')} : <code className="font-mono bg-slate-100 px-1 py-0.5 rounded text-slate-600">demo</code></p>
           </FadeInItem>
 
           <FadeInItem className="flex items-center gap-3">
             <div className="flex-1 h-px bg-slate-100"></div>
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">ou</span>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">{t('or')}</span>
             <div className="flex-1 h-px bg-slate-100"></div>
           </FadeInItem>
 
           <FadeInItem className="space-y-1.5 mt-4">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center" htmlFor="email">
               <Mail className="h-3 w-3 mr-1.5 text-primary" />
-              Adresse Email
+              {t('login_email')}
             </label>
             <div className="relative group">
               <input
@@ -166,10 +170,10 @@ export const Login = () => {
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center" htmlFor="password">
                 <Lock className="h-3 w-3 mr-1.5 text-primary" />
-                Mot de passe
+                {t('login_password')}
               </label>
               <button type="button" onClick={() => setShowResetModal(true)} className="text-xs font-bold text-primary hover:text-blue-700 transition-colors">
-                Mot de passe oublié ?
+                {t('login_forgot')}
               </button>
             </div>
             <div className="relative group">
@@ -205,7 +209,7 @@ export const Login = () => {
               className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary focus:ring-offset-2" 
             />
             <label htmlFor="remember" className="text-sm font-medium text-slate-600 cursor-pointer select-none hover:text-slate-900 transition-colors">
-              Se souvenir de moi
+              {t('login_remember')}
             </label>
           </FadeInItem>
 
@@ -223,7 +227,7 @@ export const Login = () => {
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  Se Connecter
+                  {t('login_submit')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
@@ -233,7 +237,7 @@ export const Login = () => {
         
         <FadeInItem className="relative py-2">
           <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slate-100"></span></div>
-          <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-slate-400 bg-white px-2">Ou</div>
+          <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest text-slate-400 bg-white px-2">{t('or')}</div>
         </FadeInItem>
         
         <FadeInItem>
@@ -251,7 +255,7 @@ export const Login = () => {
             className="w-full py-3.5 px-4 bg-white border-2 border-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-50 hover:shadow-[0_4px_15px_rgba(0,0,0,0.02)] hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-200 flex items-center justify-center space-x-3"
           >
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="h-5 w-5" alt="Google" />
-            <span>Connexion avec Google</span>
+            <span>{t('login_google')}</span>
           </button>
         </FadeInItem>
       </StaggerContainer>
@@ -261,7 +265,7 @@ export const Login = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="text-base font-extrabold text-slate-800">Mot de passe oublié</h3>
+              <h3 className="text-base font-extrabold text-slate-800">{t('forgot_title')}</h3>
               <button 
                 onClick={() => setShowResetModal(false)}
                 className="text-slate-400 hover:text-slate-600 bg-slate-50 hover:bg-slate-100 p-1.5 rounded-lg transition-colors"
@@ -272,7 +276,7 @@ export const Login = () => {
             <form onSubmit={handleResetPassword} className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Email du compte
+                  {t('forgot_email_label')}
                 </label>
                 <input
                   type="email"
@@ -288,7 +292,7 @@ export const Login = () => {
                 disabled={isResetting}
                 className="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70 text-sm"
               >
-                {isResetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Envoyer le lien"}
+                {isResetting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : t('forgot_send')}
               </button>
             </form>
           </div>

@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { User, Mail, Phone, MapPin, Calendar, Shield, Save, Loader2, Lock, Heart, AlertCircle, Check } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const PatientProfile = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('personal');
 
@@ -63,29 +65,29 @@ export const PatientProfile = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-profile'] });
-      toast.success('Profil mis à jour avec succès');
+      toast.success(t('profile_update_success'));
     },
     onError: (err) => toast.error(err.message),
   });
 
   const changePasswordMutation = useMutation({
     mutationFn: async () => {
-      if (passwordForm.new !== passwordForm.confirm) throw new Error('Les mots de passe ne correspondent pas');
-      if (passwordForm.new.length < 6) throw new Error('Le mot de passe doit comporter au moins 6 caractères');
+      if (passwordForm.new !== passwordForm.confirm) throw new Error(t('error_passwords_mismatch'));
+      if (passwordForm.new.length < 6) throw new Error(t('error_password_too_short'));
       const { error } = await supabase.auth.updateUser({ password: passwordForm.new });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success('Mot de passe modifié avec succès');
+      toast.success(t('profile_password_success'));
       setPasswordForm({ current: '', new: '', confirm: '' });
     },
     onError: (err) => toast.error(err.message),
   });
 
   const tabs = [
-    { id: 'personal', label: 'Informations', icon: User },
-    { id: 'security', label: 'Sécurité', icon: Shield },
-    { id: 'medical', label: 'Historique Médical', icon: Heart },
+    { id: 'personal', label: t('profile_tab_info'), icon: User },
+    { id: 'security', label: t('profile_tab_security'), icon: Shield },
+    { id: 'medical', label: t('profile_tab_medical'), icon: Heart },
   ];
 
   if (isLoading) {
@@ -95,8 +97,8 @@ export const PatientProfile = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Mon Profil</h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Gérez vos informations personnelles</p>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('profile_title')}</h1>
+        <p className="text-sm text-slate-500 font-medium mt-1">{t('profile_subtitle')}</p>
       </div>
 
       {/* Profile Header */}
@@ -126,34 +128,34 @@ export const PatientProfile = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Prénom</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('first_name')}</label>
               <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={personalForm.prenom} onChange={e => setPersonalForm(p => ({ ...p, prenom: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Nom</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('last_name')}</label>
               <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={personalForm.nom} onChange={e => setPersonalForm(p => ({ ...p, nom: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Téléphone</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone')}</label>
               <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={personalForm.telephone} onChange={e => setPersonalForm(p => ({ ...p, telephone: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Tél. d'Urgence</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_emergency')}</label>
               <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={personalForm.telephoneUrgence} onChange={e => setPersonalForm(p => ({ ...p, telephoneUrgence: e.target.value }))} />
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Adresse</label>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('address')}</label>
             <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={personalForm.adresse} onChange={e => setPersonalForm(p => ({ ...p, adresse: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Email</label>
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('login_email')}</label>
             <input className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-500" value={personalForm.email} disabled />
-            <p className="text-[11px] text-slate-400 mt-1 font-medium">L'email ne peut pas être modifié</p>
+            <p className="text-[11px] text-slate-400 mt-1 font-medium">{t('profile_email_locked')}</p>
           </div>
           <button onClick={() => updateProfileMutation.mutate()} disabled={updateProfileMutation.isPending}
             className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100">
-            {updateProfileMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
+            {updateProfileMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('save')}
           </button>
         </div>
       )}
@@ -161,19 +163,19 @@ export const PatientProfile = () => {
       {/* Security */}
       {activeTab === 'security' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-base font-extrabold text-slate-800">Changer le Mot de Passe</h3>
+          <h3 className="text-base font-extrabold text-slate-800">{t('profile_change_password')}</h3>
           <div className="max-w-sm space-y-3">
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Nouveau mot de passe</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('profile_new_password')}</label>
               <input type="password" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={passwordForm.new} onChange={e => setPasswordForm(p => ({ ...p, new: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Confirmer le mot de passe</label>
-              <input type="password" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={passwordForm.confirm} onChange={e => setPasswordForm(p => ({ ...p, confirm: e.target.value }))} />
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('profile_confirm_password')}</label>
+              <input type="password" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={passwordForm.confirm} onChange={e => setPasswordForm(p => ({ ...p, confirm: e.target.value }))} />
             </div>
             <button onClick={() => changePasswordMutation.mutate()} disabled={changePasswordMutation.isPending}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100">
-              {changePasswordMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />} Modifier
+              {changePasswordMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />} {t('profile_modify_password')}
             </button>
           </div>
         </div>
@@ -182,17 +184,17 @@ export const PatientProfile = () => {
       {/* Medical */}
       {activeTab === 'medical' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-base font-extrabold text-slate-800">Historique Médical</h3>
+          <h3 className="text-base font-extrabold text-slate-800">{t('records_medical_summary')}</h3>
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Allergies</label>
-            <textarea rows={3} placeholder="Listez vos allergies connues..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={medicalForm.allergies} onChange={e => setMedicalForm(p => ({ ...p, allergies: e.target.value }))} />
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('records_allergies')}</label>
+            <textarea rows={3} placeholder={t('profile_allergies_hint')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={medicalForm.allergies} onChange={e => setMedicalForm(p => ({ ...p, allergies: e.target.value }))} />
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Antécédents Médicaux</label>
-            <textarea rows={4} placeholder="Décrivez vos antécédents médicaux..." className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={medicalForm.antecedentsMedicaux} onChange={e => setMedicalForm(p => ({ ...p, antecedentsMedicaux: e.target.value }))} />
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('records_antecedents')}</label>
+            <textarea rows={4} placeholder={t('profile_antecedents_hint')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={medicalForm.antecedentsMedicaux} onChange={e => setMedicalForm(p => ({ ...p, antecedentsMedicaux: e.target.value }))} />
           </div>
-          <button onClick={() => toast.success('Données médicales enregistrées')} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
-            <Save className="h-4 w-4" /> Enregistrer
+          <button onClick={() => toast.success(t('profile_medical_success'))} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
+            <Save className="h-4 w-4" /> {t('save')}
           </button>
         </div>
       )}

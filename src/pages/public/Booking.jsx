@@ -96,10 +96,10 @@ export const Booking = () => {
             ))}
           </div>
           <h2 className="text-2xl font-black text-slate-800 text-center tracking-tight">
-            {step === 1 && "Choisissez votre Examen"}
-            {step === 2 && "Date et Heure"}
-            {step === 3 && "Vos Coordonnées"}
-            {step === 4 && "Demande Confirmée !"}
+            {step === 1 && t('booking_choose_service')}
+            {step === 2 && t('booking_choose_date')}
+            {step === 3 && t('booking_details')}
+            {step === 4 && t('booking_confirm_success')}
           </h2>
         </div>
 
@@ -148,7 +148,7 @@ export const Booking = () => {
                     disabled={!formData.service}
                     className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    Suivant <ArrowRight className="w-4 h-4 ml-2" />
+                    {t('next')} <ArrowRight className="w-4 h-4 ml-2" />
                   </button>
                 </div>
               </motion.div>
@@ -167,7 +167,7 @@ export const Booking = () => {
               >
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2 flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-primary" /> Date Souhaitée
+                    <Calendar className="w-4 h-4 text-primary" /> {t('booking_date')}
                   </label>
                   <input
                     type="date"
@@ -180,7 +180,7 @@ export const Booking = () => {
                 
                 {formData.date && (
                   <div className="animate-in fade-in slide-in-from-bottom-2">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3">Horaire</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3">{t('booking_time')}</label>
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {timeSlots.map((time) => (
                         <button
@@ -202,14 +202,14 @@ export const Booking = () => {
                 
                 <div className="pt-6 flex justify-between">
                   <button onClick={handlePrev} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors flex items-center">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('back')}
                   </button>
                   <button
                     onClick={handleNext}
                     disabled={!formData.date || !formData.time}
                     className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    Suivant <ArrowRight className="w-4 h-4 ml-2" />
+                    {t('next')} <ArrowRight className="w-4 h-4 ml-2" />
                   </button>
                 </div>
               </motion.div>
@@ -229,7 +229,7 @@ export const Booking = () => {
               >
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Nom</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('last_name')}</label>
                     <input
                       type="text"
                       required
@@ -239,7 +239,7 @@ export const Booking = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Prénom</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('first_name')}</label>
                     <input
                       type="text"
                       required
@@ -252,7 +252,7 @@ export const Booking = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Téléphone</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('phone')}</label>
                     <input
                       type="tel"
                       required
@@ -265,7 +265,7 @@ export const Booking = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Âge</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('age')}</label>
                     <input
                       type="number"
                       required
@@ -278,22 +278,22 @@ export const Booking = () => {
                 </div>
 
                 <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Remarques (Ex: Pour un enfant...)</label>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('booking_motif_label')}</label>
                   <textarea
                     rows={2}
                     value={formData.notes}
                     onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder="Précisez s'il s'agit d'un enfant, de précautions particulières, etc."
+                    placeholder={t('booking_motif_placeholder')}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700 resize-none"
                   />
                 </div>
 
                 <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Ordonnance / Lettre d'orientation (Optionnel)</label>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('booking_prescription')}</label>
                   <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
                     <div className="flex flex-col items-center justify-center pt-2 pb-3">
-                      <p className="text-sm text-slate-500 font-medium"><span className="font-bold text-primary">Cliquez pour importer</span> ou glissez le document</p>
-                      <p className="text-xs text-slate-400 mt-1">{formData.document ? formData.document.name : '(Tout type de fichier accepté)'}</p>
+                      <p className="text-sm text-slate-500 font-medium"><span className="font-bold text-primary">{t('upload_click')}</span> {t('upload_drag')}</p>
+                      <p className="text-xs text-slate-400 mt-1">{formData.document ? formData.document.name : t('upload_any_type')}</p>
                     </div>
                     <input 
                       type="file" 
@@ -305,7 +305,7 @@ export const Booking = () => {
 
                 <div className="pt-6 flex justify-between">
                   <button type="button" onClick={handlePrev} disabled={isSubmitting} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors flex items-center">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Retour
+                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('back')}
                   </button>
                   <button
                     type="submit"
@@ -313,7 +313,7 @@ export const Booking = () => {
                     className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center group"
                   >
                     {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />}
-                    Confirmer RDV
+                    {t('booking_confirm_btn')}
                   </button>
                 </div>
               </motion.form>
@@ -332,12 +332,16 @@ export const Booking = () => {
                 <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
                   <CheckCircle2 className="w-12 h-12 text-emerald-500" />
                 </div>
-                <h3 className="text-3xl font-black text-slate-800 mb-2">Demande Envoyée !</h3>
+                <h3 className="text-3xl font-black text-slate-800 mb-2">{t('booking_sent')}</h3>
                 <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
-                  Votre demande pour <span className="font-bold text-slate-700">{formData.serviceName}</span> le <span className="font-bold text-slate-700">{formData.date}</span> à <span className="font-bold text-slate-700">{formData.time}</span> a été enregistrée. Notre réceptionniste vous appellera au <span className="font-bold text-slate-700">{formData.telephone}</span> pour la confirmation.
+                  {t('booking_success_desc')
+                    .replace('{service}', formData.serviceName)
+                    .replace('{date}', formData.date)
+                    .replace('{time}', formData.time)
+                    .replace('{phone}', formData.telephone)}
                 </p>
                 <a href="/" className="inline-flex items-center px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg">
-                  Retour à l'accueil
+                  {t('back_to_home')}
                 </a>
               </motion.div>
             )}

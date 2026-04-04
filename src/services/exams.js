@@ -1,6 +1,23 @@
 import { supabase } from '../lib/supabase';
 
+/**
+ * @fileoverview Exam service — CRUD operations for the `examens` table.
+ *
+ * Due to the indirect patient→exam link (via `rendez_vous`), all fetch
+ * operations JOIN through `rendez_vous!examen_id` to surface `patient` data.
+ */
+
 export const examService = {
+  /**
+   * Fetch examens with optional filters.
+   * Patient data is flattened from `rendez_vous[0].patient` to `exam.patient`
+   * for component convenience.
+   *
+   * @param {{ statut?: string, patientId?: string }} [options={}]
+   *   - `statut`: Filter by exam status (e.g. `'planifie'`, `'en_cours'`).
+   *   - `patientId`: Filter to exams linked to this patient UUID (via rendez_vous).
+   * @returns {Promise<Array<object>>} Exam list with `patient`, `radiologue`, `service` nested.
+   */
   async fetchExams(options = {}) {
     let query = supabase
       .from('examens')
@@ -29,6 +46,13 @@ export const examService = {
     }));
   },
 
+  /**
+   * Fetch a single exam by ID with full nested data:
+   * patient demographics, radiologue profile, service, and linked images.
+   *
+   * @param {string} id - UUID of the `examens` row.
+   * @returns {Promise<object>} Full exam object with `patient` flattened from rendez_vous.
+   */
   async fetchExamById(id) {
     const { data, error } = await supabase
       .from('examens')
@@ -43,13 +67,19 @@ export const examService = {
       .single();
     if (error) throw error;
 
-    // Flatten for convenience
     return {
       ...data,
       patient: data.rendez_vous?.[0]?.patient || null
     };
   },
 
+  /**
+   * Update the status of an exam.
+   *
+   * @param {string} id - UUID of the exam.
+   * @param {'planifie'|'en_cours'|'completed'|'annule'} statut - New status value.
+   * @returns {Promise<object>} Updated exam row.
+   */
   async updateExamStatus(id, statut) {
     const { data, error } = await supabase
       .from('examens')
@@ -61,6 +91,11 @@ export const examService = {
     return data;
   },
 
+  /**
+   * Convenience method — fetch all exams with status `'planifie'`.
+   *
+   * @returns {Promise<Array<object>>} Array of pending exam objects.
+   */
   async fetchPendingExams() {
     return this.fetchExams({ statut: 'planifie' });
   }

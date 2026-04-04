@@ -1,9 +1,12 @@
 import { Outlet, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AuthLayout = () => {
   const { user, role, loading } = useAuth();
   const location = useLocation();
+
+  const { t } = useLanguage();
 
   if (loading) {
     return (
@@ -28,10 +31,10 @@ export const AuthLayout = () => {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-100 via-white to-slate-50">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex justify-center mb-6">
-          <img src="/logo.png" alt="Chemloul Radiologie" className="h-24 w-auto object-contain mix-blend-multiply" />
+          <img src="/logo.png" alt={t('clinic_name')} className="h-24 w-auto object-contain mix-blend-multiply" />
         </div>
         <p className="mt-2 text-center text-sm text-gray-500 font-medium">
-          Système de Gestion de Clinique de Radiologie
+          {t('clinic_subtitle')}
         </p>
       </div>
 
@@ -41,8 +44,8 @@ export const AuthLayout = () => {
         </div>
       </div>
       
-      <div className="mt-8 text-center text-xs text-gray-400 font-medium">
-        &copy; {new Date().getFullYear()} CHEMLOUL RADIOLOGIE. Tous droits réservés.
+      <div className="mt-8 text-center text-xs text-gray-400 font-medium uppercase tracking-widest">
+        &copy; {new Date().getFullYear()} {t('clinic_name')}. {t('all_rights_reserved')}
       </div>
     </div>
   );

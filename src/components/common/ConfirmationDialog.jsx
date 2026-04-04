@@ -1,17 +1,23 @@
-import React from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const ConfirmationDialog = ({ 
   isOpen, 
   onClose, 
   onConfirm, 
-  title = 'Confirmer',
-  description = 'Êtes-vous sûr de vouloir effectuer cette action ?',
-  confirmText = 'Confirmer',
-  cancelText = 'Annuler',
+  title,
+  description,
+  confirmText,
+  cancelText,
   variant = 'default' // 'default' | 'destructive'
 }) => {
+  const { t } = useLanguage();
   if (!isOpen) return null;
+
+  const displayTitle = title || t('confirm');
+  const displayDesc = description || t('confirm_default_desc');
+  const displayConfirm = confirmText || t('confirm');
+  const displayCancel = cancelText || t('cancel');
 
   return (
     <>
@@ -27,9 +33,9 @@ export const ConfirmationDialog = ({
               }`}>
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 tracking-tight">{title}</h3>
-                <p className="text-sm text-slate-500 mt-1 font-medium leading-relaxed">{description}</p>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900 tracking-tight">{displayTitle}</h3>
+                <p className="text-sm text-slate-500 mt-1 font-medium leading-relaxed">{displayDesc}</p>
               </div>
               <button
                 onClick={onClose}
@@ -44,7 +50,7 @@ export const ConfirmationDialog = ({
               onClick={onClose}
               className="flex-1 py-2.5 px-4 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-colors text-sm"
             >
-              {cancelText}
+              {displayCancel}
             </button>
             <button
               onClick={() => { onConfirm(); onClose(); }}
@@ -54,7 +60,7 @@ export const ConfirmationDialog = ({
                   : 'bg-primary hover:bg-blue-700 shadow-blue-100'
               }`}
             >
-              {confirmText}
+              {displayConfirm}
             </button>
           </div>
         </div>

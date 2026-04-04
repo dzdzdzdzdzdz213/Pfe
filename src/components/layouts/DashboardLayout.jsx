@@ -22,7 +22,8 @@ import {
   Stethoscope,
   FolderOpen,
   Search,
-  Languages
+  Languages,
+  BarChart2
 } from 'lucide-react';
 
 export const DashboardLayout = () => {
@@ -30,7 +31,7 @@ export const DashboardLayout = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { user, role, logout } = useAuth();
-  const { lang, toggleLang } = useLanguage();
+  const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -66,7 +67,7 @@ export const DashboardLayout = () => {
       
       // Demo logic fallback
       if (user.id.startsWith('demo-')) {
-         return { nom: 'Démo', prenom: role === 'patient' ? 'Patient' : 'Utilisateur' };
+         return { nom: t('login_demo'), prenom: role === 'patient' ? t('role_patient') : t('role_visiteur') };
       }
 
       const { data, error } = await supabase
@@ -82,15 +83,15 @@ export const DashboardLayout = () => {
 
   const displayName = userData?.prenom 
     ? `${userData.prenom} ${userData.nom}` 
-    : (user?.email?.split('@')[0] || 'Utilisateur');
+    : (user?.email?.split('@')[0] || t('role_visiteur'));
 
   const translateRole = (r) => {
     switch (r) {
-      case 'administrateur': return 'Administrateur';
-      case 'radiologue': return 'Radiologue';
-      case 'receptionniste': return 'Réceptionniste';
-      case 'patient': return 'Patient';
-      default: return r || 'Visiteur';
+      case 'administrateur': return t('role_admin');
+      case 'radiologue': return t('role_radiologue');
+      case 'receptionniste': return t('role_receptionniste');
+      case 'patient': return t('role_patient');
+      default: return r || t('role_visiteur');
     }
   };
 
@@ -121,41 +122,42 @@ export const DashboardLayout = () => {
 
   const getNavigation = (role) => {
     const common = [
-      { name: 'Tableau de Bord', href: `/${getRoleBasePath(role)}/dashboard`, icon: LayoutDashboard },
+      { name: t('dashboard'), href: `/${getRoleBasePath(role)}/dashboard`, icon: LayoutDashboard },
     ];
 
     if (role === 'administrateur') {
       return [
         ...common,
-        { name: 'Utilisateurs', href: '/admin/users', icon: Users },
-        { name: 'Audit Logs', href: '/admin/audit-logs', icon: ClipboardList },
-        { name: 'Paramètres', href: '/admin/settings', icon: Settings },
+        { name: t('users'), href: '/admin/users', icon: Users },
+        { name: t('statistics'), href: '/admin/stats', icon: BarChart2 },
+        { name: t('audit_logs'), href: '/admin/audit-logs', icon: ClipboardList },
+        { name: t('settings'), href: '/admin/settings', icon: Settings },
       ];
     }
 
     if (role === 'receptionniste') {
       return [
         ...common,
-        { name: 'Calendrier', href: '/assistant/calendar', icon: Calendar },
-        { name: 'Patients', href: '/assistant/patients', icon: Users },
+        { name: t('calendar'), href: '/assistant/calendar', icon: Calendar },
+        { name: t('patients'), href: '/assistant/patients', icon: Users },
       ];
     }
 
     if (role === 'radiologue') {
       return [
         ...common,
-        { name: 'Examens', href: '/radiologue/examens', icon: Stethoscope },
-        { name: 'Recherche Patient', href: '/radiologue/patients', icon: Search },
-        { name: 'Historique Patient', href: '/radiologue/history', icon: FolderOpen },
+        { name: t('exams'), href: '/radiologue/examens', icon: Stethoscope },
+        { name: t('patient_search'), href: '/radiologue/patients', icon: Search },
+        { name: t('patient_history'), href: '/radiologue/history', icon: FolderOpen },
       ];
     }
 
     if (role === 'patient') {
       return [
         ...common,
-        { name: 'Mes Rendez-vous', href: '/patient/appointments', icon: Calendar },
-        { name: 'Dossier Médical', href: '/patient/records', icon: FolderOpen },
-        { name: 'Profil', href: '/patient/profile', icon: User },
+        { name: t('appointments'), href: '/patient/appointments', icon: Calendar },
+        { name: t('medical_records'), href: '/patient/records', icon: FolderOpen },
+        { name: t('profile'), href: '/patient/profile', icon: User },
       ];
     }
 
@@ -165,7 +167,7 @@ export const DashboardLayout = () => {
   const navigation = getNavigation(role);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+    <div className="min-h-screen bg-slate-50 flex overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -183,7 +185,7 @@ export const DashboardLayout = () => {
           {/* Sidebar Header */}
           <div className="h-20 flex items-center px-4 border-b border-slate-100 bg-white sticky top-0 z-10 justify-between">
             <Link to="/" className="flex-shrink-0 -ml-2">
-              <img src="/logo.png" alt="Chemloul Radiologie" className="h-16 w-auto object-contain transition-transform hover:scale-105 mix-blend-multiply" />
+              <img src="/logo.png" alt={t('clinic_name')} className="h-16 w-auto object-contain transition-transform hover:scale-105 mix-blend-multiply" />
             </Link>
             <button className="lg:hidden p-2 rounded-lg text-slate-400 hover:bg-slate-50 transition-colors" onClick={() => setSidebarOpen(false)}>
               <X className="h-5 w-5" />
@@ -229,7 +231,7 @@ export const DashboardLayout = () => {
               className="flex w-full items-center px-4 py-2.5 text-sm font-bold text-danger hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 group"
             >
               <LogOut className="mr-3.5 h-5 w-5 transition-transform group-hover:-translate-x-1" />
-              Se Déconnecter
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -248,10 +250,10 @@ export const DashboardLayout = () => {
             </button>
             <div className="hidden sm:block">
               <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                {navigation.find(n => location.pathname.startsWith(n.href))?.name || 'Tableau de Bord'}
+                {navigation.find(n => location.pathname.startsWith(n.href))?.name || t('dashboard')}
               </h2>
               <div className="flex items-center text-[11px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                <span>Clinique Chemloul</span>
+                <span>{t('clinic_name')}</span>
                 <ChevronRight className="h-3 w-3 mx-1 opacity-50" />
                 <span className="text-primary/70">{translateRole(role)}</span>
               </div>
@@ -292,14 +294,14 @@ export const DashboardLayout = () => {
                     className="absolute right-0 mt-3 w-80 bg-white rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 overflow-hidden z-50 origin-top-right"
                   >
                     <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                      <h3 className="font-bold text-slate-800">Notifications</h3>
+                      <h3 className="font-bold text-slate-800">{t('notifications_title')}</h3>
                       {unreadCount > 0 && (
-                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">{unreadCount} non lues</span>
+                        <span className="text-[10px] font-bold bg-primary text-white px-2 py-0.5 rounded-full">{t('notifications_unread').replace('{count}', unreadCount)}</span>
                       )}
                     </div>
                     <div className="max-h-80 overflow-y-auto">
                       {notifications.length === 0 ? (
-                        <div className="p-6 text-center text-slate-400 text-sm font-medium">Aucune notification</div>
+                        <div className="p-6 text-center text-slate-400 text-sm font-medium">{t('notifications_none')}</div>
                       ) : (
                         notifications.map((notif) => (
                           <div 
@@ -323,7 +325,7 @@ export const DashboardLayout = () => {
                       disabled={unreadCount === 0}
                       className="w-full p-3 text-sm font-bold text-primary hover:bg-blue-50 transition-colors text-center disabled:opacity-50 disabled:hover:bg-transparent"
                     >
-                      Tout marquer comme lu
+                      {t('notifications_mark_read')}
                     </button>
                   </motion.div>
                 )}
@@ -358,13 +360,13 @@ export const DashboardLayout = () => {
                         onClick={() => { navigate(`/${getRoleBasePath(role)}/profile`); setShowUserMenu(false); }}
                         className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
                       >
-                        <User className="h-4 w-4 mr-3" /> Mon Profil
+                        <User className="h-4 w-4 mr-3" /> {t('profile')}
                       </button>
                       <button 
                         onClick={() => { navigate(`/${getRoleBasePath(role)}/settings`); setShowUserMenu(false); }}
                         className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
                       >
-                        <Settings className="h-4 w-4 mr-3" /> Paramètres
+                        <Settings className="h-4 w-4 mr-3" /> {t('settings')}
                       </button>
                     </div>
                     <div className="p-2 border-t border-slate-100">
@@ -372,7 +374,7 @@ export const DashboardLayout = () => {
                         onClick={handleLogout}
                         className="w-full flex items-center px-3 py-2 text-sm font-bold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-colors"
                       >
-                        <LogOut className="h-4 w-4 mr-3" /> Se Déconnecter
+                        <LogOut className="h-4 w-4 mr-3" /> {t('logout')}
                       </button>
                     </div>
                   </motion.div>

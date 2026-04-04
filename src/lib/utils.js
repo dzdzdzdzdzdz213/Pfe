@@ -52,12 +52,30 @@ export function getStatusColor(status) {
   }
 }
 
-export function getStatusLabel(status) {
+export function getStatusLabel(status, t) {
+  if (t) {
+    switch (status) {
+      case 'confirmed': return t('status_confirme');
+      case 'pending': return t('status_planifie');
+      case 'cancelled': return t('status_annule');
+      case 'completed': return t('status_termine');
+      case 'planifie': return t('status_planifie');
+      case 'confirme': return t('status_confirme');
+      case 'termine': return t('status_termine');
+      case 'annule': return t('status_annule');
+      default: return t(`status_${status}`) || status;
+    }
+  }
+
   switch (status) {
     case 'confirmed': return 'Confirmé';
     case 'pending': return 'En attente';
     case 'cancelled': return 'Annulé';
     case 'completed': return 'Terminé';
+    case 'planifie': return 'Planifié';
+    case 'confirme': return 'Confirmé';
+    case 'termine': return 'Terminé';
+    case 'annule': return 'Annulé';
     default: return status;
   }
 }

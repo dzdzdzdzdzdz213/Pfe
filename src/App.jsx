@@ -10,37 +10,47 @@ import { ScrollToTop } from './components/common/ScrollToTop';
 import { AuthLayout } from './components/layouts/AuthLayout';
 import { DashboardLayout } from './components/layouts/DashboardLayout';
 import { PublicLayout } from './components/layouts/PublicLayout';
-import { Landing } from './pages/public/Landing';
-import { Booking } from './pages/public/Booking';
-import { Login } from './pages/auth/Login';
-import { LanguageProvider } from './contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
-// Admin
-const AdminDashboard = React.lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard })));
-const AdminUsers = React.lazy(() => import('./pages/admin/Users').then(m => ({ default: m.AdminUsers })));
-const AdminAuditLogs = React.lazy(() => import('./pages/admin/AuditLogs').then(m => ({ default: m.AdminAuditLogs })));
-const AdminSettings = React.lazy(() => import('./pages/admin/Settings').then(m => ({ default: m.AdminSettings })));
+const withErrorBoundary = (Component) => (props) => (
+  <ErrorBoundary>
+    <Component {...props} />
+  </ErrorBoundary>
+);
 
-// Assistant
-const AssistantDashboard = React.lazy(() => import('./pages/assistant/Dashboard').then(m => ({ default: m.AssistantDashboard })));
-const AssistantCalendar = React.lazy(() => import('./pages/assistant/Calendar').then(m => ({ default: m.AssistantCalendar })));
-const AssistantPatients = React.lazy(() => import('./pages/assistant/Patients').then(m => ({ default: m.AssistantPatients })));
+// Public Pages
+const LandingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/Landing').then(m => ({ default: m.Landing }))));
+const BookingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/Booking').then(m => ({ default: m.Booking }))));
+const LoginSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/Login').then(m => ({ default: m.Login }))));
 
-// Radiologue
-const RadiologueDashboard = React.lazy(() => import('./pages/radiologue/Dashboard').then(m => ({ default: m.RadiologueDashboard })));
-const RadiologueExams = React.lazy(() => import('./pages/radiologue/Exams').then(m => ({ default: m.RadiologueExams })));
-const ReportEditor = React.lazy(() => import('./pages/radiologue/ReportEditor').then(m => ({ default: m.ReportEditor })));
-const PatientHistory = React.lazy(() => import('./pages/radiologue/PatientHistory').then(m => ({ default: m.PatientHistory })));
-const RadiologuePatientSearch = React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.RadiologuePatientSearch })));
+// Admin Pages
+const AdminDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard }))));
+const AdminUsersSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Users').then(m => ({ default: m.AdminUsers }))));
+const AdminStatsSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Stats').then(m => ({ default: m.AdminStats }))));
+const AdminAuditLogsSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/AuditLogs').then(m => ({ default: m.AdminAuditLogs }))));
+const AdminSettingsSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Settings').then(m => ({ default: m.AdminSettings || (() => <div>Settings coming soon</div>) }))));
 
-// Patient
-const PatientDashboard = React.lazy(() => import('./pages/patient/Dashboard').then(m => ({ default: m.PatientDashboard })));
-const PatientAppointments = React.lazy(() => import('./pages/patient/Appointments').then(m => ({ default: m.PatientAppointments })));
-const PatientRecords = React.lazy(() => import('./pages/patient/Records').then(m => ({ default: m.PatientRecords })));
-const PatientProfile = React.lazy(() => import('./pages/patient/Profile').then(m => ({ default: m.PatientProfile })));
+// Assistant Pages
+const AssistantDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/assistant/Dashboard').then(m => ({ default: m.AssistantDashboard }))));
+const AssistantCalendarSafe = withErrorBoundary(React.lazy(() => import('./pages/assistant/Calendar').then(m => ({ default: m.AssistantCalendar }))));
+const AssistantPatientsSafe = withErrorBoundary(React.lazy(() => import('./pages/assistant/Patients').then(m => ({ default: m.AssistantPatients }))));
 
-// Shared
-const ProfileSettings = React.lazy(() => import('./pages/shared/ProfileSettings').then(m => ({ default: m.ProfileSettings })));
+// Radiologue Pages
+const RadiologueDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/Dashboard').then(m => ({ default: m.RadiologueDashboard }))));
+const RadiologueExamsSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/Exams').then(m => ({ default: m.RadiologueExams }))));
+const ReportEditorSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/ReportEditor').then(m => ({ default: m.ReportEditor }))));
+const PatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.PatientSearch }))));
+const PatientHistorySafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientHistory').then(m => ({ default: m.PatientHistory }))));
+const RadiologuePatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.PatientSearch }))));
+
+// Patient Pages
+const PatientDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Dashboard').then(m => ({ default: m.PatientDashboard }))));
+const PatientAppointmentsSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Appointments').then(m => ({ default: m.PatientAppointments }))));
+const PatientRecordsSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Records').then(m => ({ default: m.PatientRecords }))));
+const PatientProfileSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Profile').then(m => ({ default: m.PatientProfile }))));
+
+// Common Profile/Settings
+const ProfileSettingsSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Profile').then(m => ({ default: m.PatientProfile }))));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,49 +76,54 @@ const RouteSkeletonLoader = () => (
   </div>
 );
 
-const Unauthorized = () => (
-  <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
-    <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-sm">
-      <div className="h-16 w-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
+const Unauthorized = () => {
+  const { t } = useLanguage();
+  return (
+    <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-sm">
+        <div className="h-16 w-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-red-100">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('error_unauthorized')}</h1>
+        <p className="text-slate-500 mt-2 font-medium">{t('error_unauthorized_msg')}</p>
+        <button onClick={() => window.history.back()} className="mt-6 w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100">
+          {t('error_go_back')}
+        </button>
       </div>
-      <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Accès Non Autorisé</h1>
-      <p className="text-slate-500 mt-2 font-medium">Vous n'avez pas les permissions nécessaires pour accéder à cette page.</p>
-      <button onClick={() => window.history.back()} className="mt-6 w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100">
-        Retourner
-      </button>
     </div>
-  </div>
-);
+  );
+};
 
 const AppRoutes = () => {
   const location = useLocation();
+  const { t } = useLanguage();
 
   return (
     <Suspense fallback={<RouteSkeletonLoader />}>
       <Routes location={location}>
         {/* Public Routes */}
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<Landing />} />
-          <Route path="/book" element={<Booking />} />
+          <Route path="/" element={<LandingSafe />} />
+          <Route path="/book" element={<BookingSafe />} />
         </Route>
 
         {/* Auth Routes */}
         <Route element={<AuthLayout />}>
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<LoginSafe />} />
         </Route>
 
         {/* Admin Routes */}
         <Route path="/admin" element={
           <ProtectedRoute requiredRole="administrateur"><DashboardLayout /></ProtectedRoute>
         }>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="audit-logs" element={<AdminAuditLogs />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="profile" element={<ProfileSettings />} />
+          <Route path="dashboard" element={<AdminDashboardSafe />} />
+          <Route path="users" element={<AdminUsersSafe />} />
+          <Route path="audit-logs" element={<AdminAuditLogsSafe />} />
+          <Route path="stats" element={<AdminStatsSafe />} />
+          <Route path="settings" element={<AdminSettingsSafe />} />
+          <Route path="profile" element={<ProfileSettingsSafe />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -116,11 +131,11 @@ const AppRoutes = () => {
         <Route path="/assistant" element={
           <ProtectedRoute requiredRole="receptionniste"><DashboardLayout /></ProtectedRoute>
         }>
-          <Route path="dashboard" element={<AssistantDashboard />} />
-          <Route path="calendar" element={<AssistantCalendar />} />
-          <Route path="patients" element={<AssistantPatients />} />
-          <Route path="profile" element={<ProfileSettings />} />
-          <Route path="settings" element={<ProfileSettings />} />
+          <Route path="dashboard" element={<AssistantDashboardSafe />} />
+          <Route path="calendar" element={<AssistantCalendarSafe />} />
+          <Route path="patients" element={<AssistantPatientsSafe />} />
+          <Route path="profile" element={<ProfileSettingsSafe />} />
+          <Route path="settings" element={<ProfileSettingsSafe />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -128,13 +143,13 @@ const AppRoutes = () => {
         <Route path="/radiologue" element={
           <ProtectedRoute requiredRole="radiologue"><DashboardLayout /></ProtectedRoute>
         }>
-          <Route path="dashboard" element={<RadiologueDashboard />} />
-          <Route path="examens" element={<RadiologueExams />} />
-          <Route path="report/:id" element={<ReportEditor />} />
-          <Route path="history" element={<PatientHistory />} />
-          <Route path="patients" element={<RadiologuePatientSearch />} />
-          <Route path="profile" element={<ProfileSettings />} />
-          <Route path="settings" element={<ProfileSettings />} />
+          <Route path="dashboard" element={<RadiologueDashboardSafe />} />
+          <Route path="examens" element={<RadiologueExamsSafe />} />
+          <Route path="report/:id" element={<ReportEditorSafe />} />
+          <Route path="history" element={<PatientHistorySafe />} />
+          <Route path="patients" element={<RadiologuePatientSearchSafe />} />
+          <Route path="profile" element={<ProfileSettingsSafe />} />
+          <Route path="settings" element={<ProfileSettingsSafe />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
@@ -142,25 +157,27 @@ const AppRoutes = () => {
         <Route path="/patient" element={
           <ProtectedRoute requiredRole="patient"><DashboardLayout /></ProtectedRoute>
         }>
-          <Route path="dashboard" element={<PatientDashboard />} />
-          <Route path="appointments" element={<PatientAppointments />} />
-          <Route path="records" element={<PatientRecords />} />
-          <Route path="profile" element={<PatientProfile />} />
-          <Route path="settings" element={<ProfileSettings />} />
+          <Route path="dashboard" element={<PatientDashboardSafe />} />
+          <Route path="appointments" element={<PatientAppointmentsSafe />} />
+          <Route path="records" element={<PatientRecordsSafe />} />
+          <Route path="profile" element={<PatientProfileSafe />} />
+          <Route path="settings" element={<ProfileSettingsSafe />} />
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
+
 
         {/* Redirects */}
         <Route path="/unauthorized" element={<Unauthorized />} />
         <Route path="*" element={
           <div className="h-screen flex items-center justify-center font-bold text-2xl text-slate-400 uppercase tracking-widest bg-slate-50">
-            404 | Page Introuvable
+            404 | {t('no_results')}
           </div>
         } />
       </Routes>
     </Suspense>
   );
 };
+
 
 const App = () => {
   return (

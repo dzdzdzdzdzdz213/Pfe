@@ -6,9 +6,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatTime, formatDate, getStatusColor, getStatusLabel, cn } from '@/lib/utils';
 import { Calendar, UserPlus, ClipboardList, Clock, Users, FileText, ChevronRight, Plus } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AssistantDashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
@@ -24,29 +26,31 @@ export const AssistantDashboard = () => {
     queryFn: () => patientService.fetchPatients(),
   });
 
-  const confirmedToday = todayAppointments.filter(a => a.statut === 'confirmed').length;
+  const confirmedToday = todayAppointments.filter(a => a.statut === 'confirme' || a.statut === 'confirmed').length;
   const pendingToday = todayAppointments.filter(a => a.statut === 'planifie' || a.statut === 'pending').length;
+  const cancelledToday = todayAppointments.filter(a => a.statut === 'annule' || a.statut === 'cancelled').length;
 
   return (
     <div className="space-y-8">
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="RDV Aujourd'hui" value={todayAppointments.length} icon={Calendar} color="blue" />
-        <StatCard title="Confirmés" value={confirmedToday} icon={ClipboardList} color="emerald" />
-        <StatCard title="En attente" value={pendingToday} icon={Clock} color="amber" />
-        <StatCard title="Total Patients" value={allPatients.length} icon={Users} color="violet" />
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title={t('assistant_rdv_today')} value={loadingAppts ? '…' : todayAppointments.length} icon={Calendar} color="blue" />
+        <StatCard title={t('assistant_confirmed')} value={loadingAppts ? '…' : confirmedToday} icon={ClipboardList} color="emerald" />
+        <StatCard title={t('assistant_pending')} value={loadingAppts ? '…' : pendingToday} icon={Clock} color="amber" />
+        <StatCard title={t('assistant_cancelled')} value={loadingAppts ? '…' : cancelledToday} icon={Users} color="red" />
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Schedule */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Programme du Jour</h3>
+              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('assistant_schedule')}</h3>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">{formatDate(today)}</p>
             </div>
             <a href="/assistant/calendar" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
-              Voir le calendrier <ChevronRight className="h-3 w-3" />
+              {t('view_calendar')} <ChevronRight className="h-3 w-3" />
             </a>
           </div>
           <div className="divide-y divide-slate-50">
@@ -81,7 +85,7 @@ export const AssistantDashboard = () => {
             ) : (
               <div className="py-16 text-center text-slate-400">
                 <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="font-bold text-sm">Aucun rendez-vous aujourd'hui</p>
+                <p className="font-bold text-sm">{t('assistant_no_rdv')}</p>
               </div>
             )}
           </div>
@@ -90,15 +94,15 @@ export const AssistantDashboard = () => {
         {/* Quick Actions */}
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight mb-4">Actions Rapides</h3>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight mb-4">{t('assistant_quick_actions')}</h3>
             <div className="space-y-3">
               <a href="/assistant/calendar" className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10 hover:bg-primary/10 transition-all group">
                 <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-blue-200">
                   <Plus className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">Nouveau RDV</p>
-                  <p className="text-[11px] text-slate-500 font-medium">Planifier un rendez-vous</p>
+                  <p className="text-sm font-bold text-slate-800">{t('assistant_new_rdv')}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">{t('assistant_new_rdv_hint')}</p>
                 </div>
               </a>
               <a href="/assistant/patients" className="flex items-center gap-3 p-4 bg-teal-50/50 rounded-xl border border-teal-100/50 hover:bg-teal-50 transition-all group">
@@ -106,8 +110,8 @@ export const AssistantDashboard = () => {
                   <UserPlus className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-slate-800">Nouveau Patient</p>
-                  <p className="text-[11px] text-slate-500 font-medium">Enregistrer un patient</p>
+                  <p className="text-sm font-bold text-slate-800">{t('assistant_new_patient')}</p>
+                  <p className="text-[11px] text-slate-500 font-medium">{t('assistant_new_patient_hint')}</p>
                 </div>
               </a>
             </div>
@@ -116,7 +120,7 @@ export const AssistantDashboard = () => {
           {/* Recent Patients */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-50">
-              <h3 className="text-sm font-extrabold text-slate-800 tracking-tight">Patients Récents</h3>
+              <h3 className="text-sm font-extrabold text-slate-800 tracking-tight">{t('assistant_recent_patients')}</h3>
             </div>
             <div className="divide-y divide-slate-50">
               {allPatients.slice(0, 5).map((patient) => (

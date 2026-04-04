@@ -1,7 +1,36 @@
 import { supabase } from '../lib/supabase';
 import { isDemoMode, getMockData, saveMockData } from '../lib/demo';
 
+/**
+ * @fileoverview Appointment service — CRUD operations for the `rendez_vous` table.
+ *
+ * Supports both real Supabase queries and a local demo-mode fallback that
+ * stores data in `localStorage` via the demo helper utilities.
+ *
+ * Schema columns used:
+ *   - `date_heure_debut` / `date_heure_fin` — ISO timestamp range of the slot
+ *   - `statut` — `'planifie' | 'confirme' | 'en_cours' | 'realise' | 'annule'`
+ *   - `patient_id` → `patients.id`
+ *   - `receptionniste_id` → `receptionnistes.id`
+ *   - `examen_id` → `examens.id` (set after exam creation)
+ */
+
 export const appointmentService = {
+  /**
+   * Fetch appointments with optional date-range, patient, and status filters.
+   * Results are ordered by `date_heure_debut` ascending.
+   *
+   * @param {{
+   *   startDate?: string,
+   *   endDate?: string,
+   *   patientId?: string,
+   *   statut?: string
+   * }} [options={}]
+   *   - `startDate` / `endDate`: ISO datetime strings for bounding the query.
+   *   - `patientId`: Filter to a specific patient UUID.
+   *   - `statut`: Filter by appointment status string.
+   * @returns {Promise<Array<object>>} Appointments with nested patient, assistant, service.
+   */
   async fetchAppointments(options = {}) {
     if (isDemoMode()) {
       let list = getMockData('appointments', []);
@@ -33,6 +62,22 @@ export const appointmentService = {
     return data;
   },
 
+  /**
+   * Create a new appointment (rendez-vous) row.
+   * In demo mode, the row is persisted to localStorage.
+   *
+   * @param {{
+   *   patient_id: string,
+   *   date_heure_debut: string,
+   *   date_heure_fin: string,
+   *   motif?: string,
+   *   statut?: string,
+   *   receptionniste_id?: string,
+   *   examen_id?: string,
+   *   service_id?: string
+   * }} appointmentData - Columns to insert into `rendez_vous`.
+   * @returns {Promise<object>} The created appointment row.
+   */
   async createAppointment(appointmentData) {
     if (isDemoMode()) {
       const list = getMockData('appointments', []);
@@ -56,6 +101,19 @@ export const appointmentService = {
     return data;
   },
 
+  /**
+   * Update any fields of an existing appointment by ID.
+   *
+   * @param {string} id - UUID of the `rendez_vous` row.
+   * @param {Partial<{
+   *   statut: string,
+   *   motif: string,
+   *   date_heure_debut: string,
+   *   date_heure_fin: string,
+   *   examen_id: string
+   * }>} updates - Partial update payload.
+   * @returns {Promise<object>} The updated appointment row.
+   */
   async updateAppointment(id, updates) {
     if (isDemoMode()) {
       const list = getMockData('appointments', []).map(a =>
@@ -76,6 +134,13 @@ export const appointmentService = {
     return data;
   },
 
+  /**
+   * Cancel an appointment by setting `statut = 'annule'` and updating `motif`.
+   *
+   * @param {string} id - UUID of the `rendez_vous` row.
+   * @param {string} [reason='Annulé'] - Cancellation reason stored in `motif`.
+   * @returns {Promise<object>} Updated appointment row.
+   */
   async cancelAppointment(id, reason) {
     if (isDemoMode()) {
       const list = getMockData('appointments', []).map(a =>
@@ -96,6 +161,15 @@ export const appointmentService = {
     return data;
   },
 
+  /**
+   * Check if a time slot is available (no conflicting non-cancelled appointments).
+   * Uses a half-open interval overlap check: `start < endTime AND end > startTime`.
+   *
+   * @param {string} startTime - ISO datetime for the desired slot start.
+   * @param {string} endTime - ISO datetime for the desired slot end.
+   * @param {string|null} [excludeId=null] - Appointment UUID to exclude (for edits).
+   * @returns {Promise<boolean>} `true` if the slot is free, `false` if conflicting.
+   */
   async checkAvailability(startTime, endTime, excludeId = null) {
     if (isDemoMode()) return true;
 

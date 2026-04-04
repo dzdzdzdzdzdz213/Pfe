@@ -5,8 +5,10 @@ import { reportService } from '@/services/reports';
 import { formatDate, formatDateTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Stethoscope, FileText, Clock, Users, ChevronRight, Activity } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const RadiologueDashboard = () => {
+  const { t } = useLanguage();
   const { data: pendingExams = [] } = useQuery({
     queryKey: ['exams', 'pending'],
     queryFn: () => examService.fetchPendingExams(),
@@ -31,19 +33,19 @@ export const RadiologueDashboard = () => {
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Examens en attente" value={pendingExams.length} icon={Clock} color="amber" />
-        <StatCard title="Examens du jour" value={todayExams.length} icon={Stethoscope} color="blue" />
-        <StatCard title="Rapports validés" value={recentReports.length} icon={FileText} color="emerald" />
-        <StatCard title="Total examens" value={allExams.length} icon={Activity} color="violet" />
+        <StatCard title={t('exams_pending')} value={pendingExams.length} icon={Clock} color="amber" />
+        <StatCard title={t('exams_today')} value={todayExams.length} icon={Stethoscope} color="blue" />
+        <StatCard title={t('reports_validated')} value={recentReports.length} icon={FileText} color="emerald" />
+        <StatCard title={t('exams_total')} value={allExams.length} icon={Activity} color="violet" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pending Exams */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Examens en Attente</h3>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('exam_queue_title')}</h3>
             <a href="/radiologue/examens" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
-              Voir tout <ChevronRight className="h-3 w-3" />
+              {t('view_all')} <ChevronRight className="h-3 w-3" />
             </a>
           </div>
           <div className="divide-y divide-slate-50">
@@ -59,11 +61,11 @@ export const RadiologueDashboard = () => {
                   <p className="text-xs text-slate-500 font-medium">{exam.services?.nom} • {formatDate(exam.date_realisation || exam.dateRealisation)}</p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor('planifie'))}>
-                  En attente
+                  {t('status_planifie')}
                 </span>
               </div>
             )) : (
-              <div className="py-12 text-center text-slate-400 font-semibold text-sm">Aucun examen en attente</div>
+              <div className="py-12 text-center text-slate-400 font-semibold text-sm">{t('no_exams_pending')}</div>
             )}
           </div>
         </div>
@@ -71,7 +73,7 @@ export const RadiologueDashboard = () => {
         {/* Recent Reports */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Rapports Récents</h3>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('reports_recent')}</h3>
           </div>
           <div className="divide-y divide-slate-50">
             {recentReports.length > 0 ? recentReports.map((report) => (
@@ -81,18 +83,18 @@ export const RadiologueDashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 truncate">
-                    Rapport #{report.id?.slice(0, 8)}
+                    {t('report_id_label').replace('{id}', report.id?.slice(0, 8))}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">
                     {report.radiologues?.utilisateurs?.prenom} {report.radiologues?.utilisateurs?.nom}
                   </p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', report.est_valide ? getStatusColor('confirmed') : getStatusColor('pending'))}>
-                  {report.est_valide ? 'Validé' : 'Brouillon'}
+                  {report.est_valide ? t('report_validated_badge') : t('report_draft')}
                 </span>
               </div>
             )) : (
-              <div className="py-12 text-center text-slate-400 font-semibold text-sm">Aucun rapport récent</div>
+              <div className="py-12 text-center text-slate-400 font-semibold text-sm">{t('no_reports_recent')}</div>
             )}
           </div>
         </div>

@@ -5,8 +5,10 @@ import { auditService } from '@/services/audit';
 import { formatDate, formatDateTime, timeAgo } from '@/lib/utils';
 import { Users, Calendar, Activity, FileText, ClipboardList, TrendingUp, Database, Shield, ChevronRight } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AdminDashboard = () => {
+  const { t, lang } = useLanguage();
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const startOf7DaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString();
@@ -40,7 +42,7 @@ export const AdminDashboard = () => {
         
         if (i === 0) todayCount = count; // Today's count
 
-        chartDays.push({ day: new Intl.DateTimeFormat('fr', { weekday: 'short' }).format(d), count });
+        chartDays.push({ day: new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'fr', { weekday: 'short' }).format(d), count });
       }
 
       return {
@@ -68,10 +70,10 @@ export const AdminDashboard = () => {
     <div className="space-y-8">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Utilisateurs" value={usersCount} icon={Users} color="blue" loading={loadingMetrics} />
-        <StatCard title="RDV Aujourd'hui" value={todayAppointments} icon={Calendar} color="emerald" loading={loadingMetrics} />
-        <StatCard title="Examens en attente" value={pendingExams} icon={Activity} color="amber" loading={loadingMetrics} />
-        <StatCard title="Rapports Validés" value={weekReports} icon={FileText} color="violet" loading={loadingMetrics} />
+        <StatCard title={t('total_users')} value={usersCount} icon={Users} color="blue" loading={loadingMetrics} />
+        <StatCard title={t('appointments_today')} value={todayAppointments} icon={Calendar} color="emerald" loading={loadingMetrics} />
+        <StatCard title={t('exams_pending')} value={pendingExams} icon={Activity} color="amber" loading={loadingMetrics} />
+        <StatCard title={t('reports_validated')} value={weekReports} icon={FileText} color="violet" loading={loadingMetrics} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -79,8 +81,8 @@ export const AdminDashboard = () => {
         <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Rendez-vous (7 jours)</h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">Activité récente</p>
+              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('appointments_7_days')}</h3>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('recent_activity')}</p>
             </div>
             <TrendingUp className="h-5 w-5 text-slate-300" />
           </div>
@@ -111,7 +113,7 @@ export const AdminDashboard = () => {
         {/* System Status */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">État Système</h3>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('system_status')}</h3>
             <Shield className="h-5 w-5 text-slate-300" />
           </div>
           <div className="space-y-4">
@@ -120,21 +122,21 @@ export const AdminDashboard = () => {
                 <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-sm font-semibold text-slate-700">Supabase</span>
               </div>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">Connecté</span>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">{t('connected')}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="h-3 w-3 rounded-full bg-emerald-500" />
-                <span className="text-sm font-semibold text-slate-700">Base de données</span>
+                <span className="text-sm font-semibold text-slate-700">{t('database')}</span>
               </div>
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">Opérationnel</span>
+              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">{t('operational')}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Database className="h-4 w-4 text-slate-400" />
-                <span className="text-sm font-semibold text-slate-700">Stockage</span>
+                <span className="text-sm font-semibold text-slate-700">{t('storage')}</span>
               </div>
-              <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">Actif</span>
+              <span className="text-xs font-bold text-slate-500 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">{t('active')}</span>
             </div>
           </div>
         </div>
@@ -144,11 +146,11 @@ export const AdminDashboard = () => {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Activité Récente</h3>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">Journal d'audit</p>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('recent_activity')}</h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('audit_log')}</p>
           </div>
           <a href="/admin/audit-logs" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
-            Voir tout <ChevronRight className="h-3 w-3" />
+            {t('view_all')} <ChevronRight className="h-3 w-3" />
           </a>
         </div>
         <div className="divide-y divide-slate-50">
@@ -169,11 +171,11 @@ export const AdminDashboard = () => {
                   <p className="text-sm font-bold text-slate-800 truncate">{log.action}</p>
                   <p className="text-xs text-slate-500 font-medium truncate">{log.utilisateur?.prenom} {log.utilisateur?.nom} • {log.details || ''}</p>
                 </div>
-                <span className="text-[11px] text-slate-400 font-semibold whitespace-nowrap">{timeAgo(log.date_action)}</span>
+                <span className="text-[11px] text-slate-400 font-semibold whitespace-nowrap">{timeAgo(log.date_action, lang)}</span>
               </div>
             ))
           ) : (
-            <div className="py-12 text-center text-slate-400 font-semibold text-sm">Aucune activité récente</div>
+            <div className="py-12 text-center text-slate-400 font-semibold text-sm">{t('no_activity')}</div>
           )}
         </div>
       </div>

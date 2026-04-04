@@ -5,8 +5,10 @@ import { examService } from '@/services/exams';
 import { DataTable } from '@/components/common/DataTable';
 import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Stethoscope, FileText, Play, Eye, Filter } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const RadiologueExams = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [statusFilter, setStatusFilter] = useState('all');
 
@@ -19,7 +21,7 @@ export const RadiologueExams = () => {
 
   const columns = [
     {
-      key: 'patient', label: 'Patient',
+      key: 'patient', label: t('patient_label'),
       render: (row) => (
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
@@ -32,35 +34,35 @@ export const RadiologueExams = () => {
       ),
     },
     {
-      key: 'service', label: 'Service',
+      key: 'service', label: t('service_label'),
       render: (row) => <span className="text-sm font-medium">{row.service?.nom || '-'}</span>,
     },
     {
-      key: 'date', label: 'Date',
+      key: 'date', label: t('date_label'),
       render: (row) => <span className="text-sm font-medium">{formatDate(row.dateRealisation)}</span>,
     },
     {
-      key: 'observations', label: 'Observations',
+      key: 'observations', label: t('report_observations'),
       render: (row) => <span className="text-sm font-medium text-slate-500 truncate max-w-[200px] block">{row.observationsCliniques || '-'}</span>,
     },
     {
-      key: 'statut', label: 'Statut',
+      key: 'statut', label: t('status'),
       render: (row) => (
         <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor(row.statut))}>
-          {getStatusLabel(row.statut)}
+          {getStatusLabel(row.statut, t)}
         </span>
       ),
     },
     {
-      key: 'actions', label: 'Actions', sortable: false,
+      key: 'actions', label: t('actions'), sortable: false,
       render: (row) => (
         <div className="flex items-center gap-1">
           {row.statut === 'pending' && (
             <button onClick={(e) => { e.stopPropagation(); navigate(`/radiologue/report/${row.id}`); }} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5">
-              <Play className="h-3.5 w-3.5" /> Rédiger
+              <Play className="h-3.5 w-3.5" /> {t('draft_report')}
             </button>
           )}
-          <button onClick={(e) => { e.stopPropagation(); navigate(`/radiologue/report/${row.id}`); }} className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors">
+          <button onClick={(e) => { e.stopPropagation(); navigate(`/radiologue/report/${row.id}`); }} className="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors" title={t('view')}>
             <Eye className="h-4 w-4" />
           </button>
         </div>
@@ -72,20 +74,20 @@ export const RadiologueExams = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">File d'Examens</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">{filteredExams.length} examens</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('exam_queue_title')}</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">{t('exam_count').replace('{count}', filteredExams.length)}</p>
         </div>
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {[{ key: 'all', label: 'Tous' }, { key: 'pending', label: 'En attente' }, { key: 'completed', label: 'Terminés' }].map(f => (
+        {[{ key: 'all', label: t('all') }, { key: 'pending', label: t('status_planifie') }, { key: 'completed', label: t('status_termine') }].map(f => (
           <button key={f.key} onClick={() => setStatusFilter(f.key)} className={cn('px-4 py-2 rounded-xl text-sm font-bold transition-all', statusFilter === f.key ? 'bg-primary text-white shadow-lg shadow-blue-100' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
             {f.label}
           </button>
         ))}
       </div>
 
-      <DataTable columns={columns} data={filteredExams} loading={isLoading} searchPlaceholder="Rechercher un examen..." />
+      <DataTable columns={columns} data={filteredExams} loading={isLoading} searchPlaceholder={t('search_exam_placeholder')} />
     </div>
   );
 };

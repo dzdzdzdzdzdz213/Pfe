@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase';
 import { appointmentService } from '@/services/appointments';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Calendar, FileText, Bell, User, ChevronRight, Plus, Clock } from 'lucide-react';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const PatientDashboard = () => {
   const { user } = useAuth();
+  const { t } = useLanguage();
 
   const { data: patientRecord } = useQuery({
     queryKey: ['patient-record', user?.id],
@@ -61,10 +63,10 @@ export const PatientDashboard = () => {
         <div className="absolute -right-10 -top-10 h-40 w-40 bg-white/10 rounded-full blur-3xl" />
         <div className="absolute -right-20 -bottom-20 h-60 w-60 bg-white/5 rounded-full blur-3xl" />
         <div className="relative z-10">
-          <p className="text-blue-200 font-bold text-sm tracking-wide">Bienvenue 👋</p>
+          <p className="text-blue-200 font-bold text-sm tracking-wide">{t('welcome_back')} 👋</p>
           <h1 className="text-3xl font-extrabold mt-1 tracking-tight">{prenom}</h1>
           <p className="text-blue-200 mt-2 text-sm font-medium max-w-md">
-            Consultez vos rendez-vous, résultats d'examens et gérez votre dossier médical en toute simplicité.
+            {t('patient_dashboard_desc')}
           </p>
         </div>
       </div>
@@ -76,8 +78,8 @@ export const PatientDashboard = () => {
             <Plus className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800">Prendre RDV</p>
-            <p className="text-xs text-slate-500 font-medium">Réserver en ligne</p>
+            <p className="text-sm font-bold text-slate-800">{t('prendre_rdv')}</p>
+            <p className="text-xs text-slate-500 font-medium">{t('reserve_online')}</p>
           </div>
         </a>
         <a href="/patient/records" className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
@@ -85,8 +87,8 @@ export const PatientDashboard = () => {
             <FileText className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800">Mes Résultats</p>
-            <p className="text-xs text-slate-500 font-medium">Consulter les rapports</p>
+            <p className="text-sm font-bold text-slate-800">{t('my_results')}</p>
+            <p className="text-xs text-slate-500 font-medium">{t('consult_reports')}</p>
           </div>
         </a>
         <a href="/patient/profile" className="flex items-center gap-4 p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
@@ -94,8 +96,8 @@ export const PatientDashboard = () => {
             <User className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800">Mon Profil</p>
-            <p className="text-xs text-slate-500 font-medium">Gérer mes informations</p>
+            <p className="text-sm font-bold text-slate-800">{t('my_profile')}</p>
+            <p className="text-xs text-slate-500 font-medium">{t('manage_info')}</p>
           </div>
         </a>
       </div>
@@ -104,8 +106,8 @@ export const PatientDashboard = () => {
         {/* Upcoming */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">Prochains Rendez-vous</h3>
-            <a href="/patient/appointments" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">Voir tout <ChevronRight className="h-3 w-3" /></a>
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('upcoming_appointments')}</h3>
+            <a href="/patient/appointments" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">{t('view_all')} <ChevronRight className="h-3 w-3" /></a>
           </div>
           <div className="divide-y divide-slate-50">
             {upcomingAppointments.length > 0 ? upcomingAppointments.slice(0, 3).map(appt => (
@@ -124,8 +126,8 @@ export const PatientDashboard = () => {
             )) : (
               <div className="py-12 text-center text-slate-400">
                 <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-bold">Aucun rendez-vous à venir</p>
-                <a href="/patient/appointments" className="text-xs font-bold text-primary hover:underline mt-1 inline-block">Prendre un rendez-vous →</a>
+                <p className="text-sm font-bold">{t('no_upcoming_appointments')}</p>
+                <a href="/patient/appointments" className="text-xs font-bold text-primary hover:underline mt-1 inline-block">{t('book_appointment_now')} →</a>
               </div>
             )}
           </div>
@@ -150,7 +152,7 @@ export const PatientDashboard = () => {
             )) : (
               <div className="py-12 text-center text-slate-400">
                 <Bell className="h-10 w-10 mx-auto mb-3 opacity-30" />
-                <p className="text-sm font-bold">Aucune notification</p>
+                <p className="text-sm font-bold">{t('notifications_none')}</p>
               </div>
             )}
           </div>

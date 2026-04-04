@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format, parse, startOfWeek, getDay, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, arDZ } from 'date-fns/locale';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { supabase } from '@/lib/supabase';
@@ -11,52 +11,62 @@ import { toast } from 'sonner';
 import { Plus, ChevronLeft, ChevronRight, Calendar as CalIcon } from 'lucide-react';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
-const locales = { 'fr': fr };
+import { useLanguage } from '@/contexts/LanguageContext';
+
+
+const locales = { 'fr': fr, 'ar': arDZ };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
-const messages = {
-  today: "Aujourd'hui",
-  previous: 'Précédent',
-  next: 'Suivant',
-  month: 'Mois',
-  week: 'Semaine',
-  day: 'Jour',
-  agenda: 'Agenda',
-  date: 'Date',
-  time: 'Heure',
-  event: 'Événement',
-  noEventsInRange: 'Aucun événement pour cette période',
-};
+const getMessages = (t) => ({
+  today: t('today'),
+  previous: t('previous'),
+  next: t('next'),
+  month: t('month'),
+  week: t('week'),
+  day: t('day'),
+  agenda: t('agenda'),
+  date: t('date'),
+  time: t('time'),
+  event: t('event'),
+  noEventsInRange: t('no_events_in_range'),
+});
 
-const CustomToolbar = ({ label, onNavigate, onView, view }) => (
-  <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-    <div className="flex items-center gap-3">
-      <button onClick={() => onNavigate('PREV')} className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
-        <ChevronLeft className="h-5 w-5 text-slate-600" />
-      </button>
-      <button onClick={() => onNavigate('TODAY')} className="px-4 py-2.5 text-sm font-bold text-primary bg-primary/5 border border-primary/20 rounded-xl hover:bg-primary/10 transition-colors">
-        Aujourd'hui
-      </button>
-      <button onClick={() => onNavigate('NEXT')} className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
-        <ChevronRight className="h-5 w-5 text-slate-600" />
-      </button>
-      <h2 className="text-xl font-extrabold text-slate-900 ml-2 capitalize tracking-tight">{label}</h2>
-    </div>
-    <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
-      {['month', 'week', 'day'].map((v) => (
-        <button
-          key={v}
-          onClick={() => onView(v)}
-          className={`px-4 py-2.5 text-sm font-bold transition-colors ${
-            view === v ? 'bg-primary text-white shadow-inner' : 'text-slate-500 hover:bg-slate-50'
-          }`}
-        >
-          {v === 'month' ? 'Mois' : v === 'week' ? 'Semaine' : 'Jour'}
+const CustomToolbar = ({ label, onNavigate, onView, view, t }) => {
+  const labelMonth = t('month');
+  const labelWeek = t('week');
+  const labelDay = t('day');
+  const labelToday = t('today');
+
+  return (
+    <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+      <div className="flex items-center gap-3">
+        <button onClick={() => onNavigate('PREV')} className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+          <ChevronLeft className="h-5 w-5 text-slate-600" />
         </button>
-      ))}
+        <button onClick={() => onNavigate('TODAY')} className="px-4 py-2.5 text-sm font-bold text-primary bg-primary/5 border border-primary/20 rounded-xl hover:bg-primary/10 transition-colors">
+          {labelToday}
+        </button>
+        <button onClick={() => onNavigate('NEXT')} className="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+          <ChevronRight className="h-5 w-5 text-slate-600" />
+        </button>
+        <h2 className="text-xl font-extrabold text-slate-900 ml-2 capitalize tracking-tight">{label}</h2>
+      </div>
+      <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
+        {['month', 'week', 'day'].map((v) => (
+          <button
+            key={v}
+            onClick={() => onView(v)}
+            className={`px-4 py-2.5 text-sm font-bold transition-colors ${
+              view === v ? 'bg-primary text-white shadow-inner' : 'text-slate-500 hover:bg-slate-50'
+            }`}
+          >
+            {v === 'month' ? labelMonth : v === 'week' ? labelWeek : labelDay}
+          </button>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const EventComponent = ({ event }) => (
   <div className="px-1.5 py-0.5 text-[11px] font-bold leading-tight truncate" title={event.title}>
@@ -65,6 +75,7 @@ const EventComponent = ({ event }) => (
 );
 
 export const AssistantCalendar = () => {
+  const { t, lang } = useLanguage();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -140,15 +151,15 @@ export const AssistantCalendar = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Calendrier des Rendez-vous</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">Gérez les rendez-vous de la clinique</p>
+          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('assistant_calendar_title')}</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">{t('assistant_calendar_subtitle')}</p>
         </div>
         <button
           onClick={() => { setSelectedEvent(null); setSelectedSlot(null); setModalOpen(true); }}
           className="px-5 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2 group"
         >
           <Plus className="h-5 w-5 group-hover:rotate-90 transition-transform" />
-          Nouveau RDV
+          {t('assistant_new_rdv')}
         </button>
       </div>
 
@@ -169,11 +180,11 @@ export const AssistantCalendar = () => {
             onSelectSlot={handleSelectSlot}
             eventPropGetter={eventStyleGetter}
             components={{
-              toolbar: CustomToolbar,
+              toolbar: (props) => <CustomToolbar {...props} t={t} />,
               event: EventComponent,
             }}
-            messages={messages}
-            culture="fr"
+            messages={getMessages(t)}
+            culture={lang}
             date={currentDate}
             onNavigate={(date) => setCurrentDate(date)}
             views={['month', 'week', 'day']}

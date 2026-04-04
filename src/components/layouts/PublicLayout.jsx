@@ -20,7 +20,7 @@ export const PublicLayout = () => {
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center group -ml-2">
-              <img src="/logo.png" alt="Chemloul Radiologie" className="h-20 w-auto object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
+              <img src="/logo.png" alt={t('clinic_name')} className="h-20 w-auto object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -75,7 +75,7 @@ export const PublicLayout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center mb-6">
-              <img src="/logo.png" alt="Chemloul Radiologie" className="h-20 w-auto object-contain bg-white/95 rounded-2xl shadow-lg border border-white/10" />
+              <img src="/logo.png" alt={t('clinic_name')} className="h-20 w-auto object-contain bg-white/95 rounded-2xl shadow-lg border border-white/10" />
             </div>
             <p className="text-sm font-medium text-slate-400 max-w-sm leading-relaxed">
               {t('description_footer')}
@@ -107,7 +107,7 @@ export const PublicLayout = () => {
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
-                  <span className="block text-white font-bold text-base mb-1">Voir sur la carte</span>
+                  <span className="block text-white font-bold text-base mb-1">{t('voir_carte')}</span>
                   <span className="text-rose-400 text-xs font-bold tracking-wide uppercase">Google Maps</span>
                 </div>
               </li>
@@ -117,7 +117,7 @@ export const PublicLayout = () => {
         
         {/* Copyright Bar */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-slate-800 text-center md:text-left text-sm font-medium flex flex-col md:flex-row justify-between items-center text-slate-500 relative z-10">
-          <p>&copy; {new Date().getFullYear()} Chemloul Radiologie. {t('tous_droits_reserves')}</p>
+          <p>&copy; {new Date().getFullYear()} {t('clinic_name')}. {t('all_rights_reserved')}</p>
           <div className="flex gap-6 mt-6 md:mt-0">
             <a href="#" className="hover:text-white transition-colors">{t('mentions_legales')}</a>
             <a href="#" className="hover:text-white transition-colors">{t('politique_confidentialite')}</a>

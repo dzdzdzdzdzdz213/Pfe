@@ -2,17 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
+import { consentementService } from '@/services/consentements';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { X, Search, UserPlus, Clock, Calendar, FileText, Loader2, ChevronRight, Check } from 'lucide-react';
+import { X, Search, UserPlus, Clock, Calendar, FileText, Loader2, ChevronRight, Check, ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr, arDZ } from 'date-fns/locale';
 import { cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { FileUpload } from '@/components/common/FileUpload';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AppointmentModal = ({ isOpen, onClose, appointment = null, selectedSlot = null }) => {
   const { user } = useAuth();
+  const { t, lang } = useLanguage();
   const queryClient = useQueryClient();
   const isEditing = !!appointment;
   const [step, setStep] = useState(1);
@@ -26,8 +29,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     dateHeureDebut: appointment?.dateHeureDebut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
     dateHeureFin: appointment?.dateHeureFin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
     motif: appointment?.motif || '',
-    statut: appointment?.statut || 'pending',
+    statut: appointment?.statut || 'planifie',
   });
+
+  // Consent form state
+  const [isInvasive, setIsInvasive] = useState(false);
+  const [typeActeInvasif, setTypeActeInvasif] = useState('');
 
   const [newPatientForm, setNewPatientForm] = useState({
     nom: '', prenom: '', email: '', telephone: '', sexe: 'M', date_naissance: '', adresse: ''
@@ -43,7 +50,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   const { data: services = [] } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('service').select('*');
+      const { data, error } = await supabase.from('services').select('*');
       if (error) throw error;
       return data;
     }
@@ -62,10 +69,10 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     mutationFn: (data) => appointmentService.createAppointment(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      toast.success('Rendez-vous créé avec succès !');
+      toast.success(t('modal_created'));
       onClose();
     },
-    onError: (err) => toast.error(err.message || 'Erreur lors de la création'),
+    onError: (err) => toast.error(err.message || t('error_generic')),
   });
 
   // Update appointment mutation
@@ -73,33 +80,84 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     mutationFn: ({ id, data }) => appointmentService.updateAppointment(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      toast.success('Rendez-vous mis à jour !');
+      toast.success(t('modal_updated'));
       onClose();
     },
-    onError: (err) => toast.error(err.message || 'Erreur lors de la mise à jour'),
+    onError: (err) => toast.error(err.message || t('error_generic')),
   });
 
   // Cancel mutation
   const cancelMutation = useMutation({
-    mutationFn: (id) => appointmentService.cancelAppointment(id, 'Annulé par l\'assistant'),
+    mutationFn: (id) => appointmentService.cancelAppointment(id, t('cancelled_by_assistant')),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
-      toast.success('Rendez-vous annulé');
+      toast.success(t('appointments_cancel_success'));
       onClose();
     },
     onError: (err) => toast.error(err.message),
   });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.patient_id || !formData.dateHeureDebut) {
-      toast.error('Veuillez remplir tous les champs obligatoires');
+      toast.error(t('error_required_fields'));
+      return;
+    }
+    if (isInvasive && !typeActeInvasif.trim()) {
+      toast.error(t('error_invasive_type'));
       return;
     }
 
     if (isEditing) {
       updateMutation.mutate({ id: appointment.id, data: formData });
-    } else {
-      createMutation.mutate({ ...formData, assistant_id: user?.id });
+      return;
+    }
+
+    try {
+      // 1. Create examen first so we can link the consentement
+      let examenId = null;
+      if (formData.service_id) {
+        const { data: examen, error: exEr } = await supabase
+          .from('examens')
+          .insert({
+            service_id: formData.service_id,
+            statut: 'planifie',
+            date_realisation: formData.dateHeureDebut,
+          })
+          .select('id')
+          .single();
+        if (exEr) throw exEr;
+        examenId = examen.id;
+      }
+
+      // 2. Create rendez_vous
+      const rdvData = {
+        patient_id: formData.patient_id,
+        receptionniste_id: user?.id,
+        date_heure_debut: formData.dateHeureDebut,
+        date_heure_fin: formData.dateHeureFin,
+        motif: formData.motif,
+        statut: formData.statut,
+        ...(examenId && { examen_id: examenId }),
+      };
+      const rdv = await appointmentService.createAppointment(rdvData);
+
+      // 3. Create consentement if invasive
+      if (isInvasive && examenId) {
+        await consentementService.createConsentement({
+          examen_id: examenId,
+          patient_id: formData.patient_id,
+          type_acte_invasif: typeActeInvasif,
+          signature_requise: true,
+        });
+        toast.success(t('modal_consent_created'));
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['exams'] });
+      toast.success(t('modal_created'));
+      onClose();
+    } catch (err) {
+      toast.error(err.message || t('error_generic'));
     }
   };
 
@@ -113,9 +171,9 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       setFormData(prev => ({ ...prev, patient_id: result.patient.id }));
       setShowNewPatient(false);
-      toast.success('Patient enregistré !');
+      toast.success(t('patient_save_success'));
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de l\'enregistrement');
+      toast.error(err.message || t('error_generic'));
     }
   };
 
@@ -132,9 +190,9 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
           <div>
             <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
-              {isEditing ? 'Modifier le Rendez-vous' : 'Nouveau Rendez-vous'}
+              {isEditing ? t('modal_edit_rdv') : t('modal_new_rdv')}
             </h2>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">Étape {step} sur {totalSteps}</p>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"><X className="h-5 w-5" /></button>
         </div>
@@ -154,7 +212,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step === 1 && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <UserPlus className="h-4 w-4 text-primary" /> Sélectionner un Patient
+                <UserPlus className="h-4 w-4 text-primary" /> {t('modal_select_patient')}
               </h3>
 
               {!showNewPatient ? (
@@ -163,7 +221,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Chercher par nom ou téléphone..."
+                      placeholder={t('modal_search_patient')}
                       className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary text-sm font-medium transition-all"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
@@ -193,25 +251,25 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                     onClick={() => setShowNewPatient(true)}
                     className="w-full py-3 border-2 border-dashed border-slate-200 rounded-xl text-sm font-bold text-slate-500 hover:border-primary hover:text-primary transition-all"
                   >
-                    + Ajouter un nouveau patient
+                    + {t('modal_add_patient')}
                   </button>
                 </>
               ) : (
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <input placeholder="Prénom" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.prenom} onChange={e => setNewPatientForm(p => ({ ...p, prenom: e.target.value }))} />
-                    <input placeholder="Nom" className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.nom} onChange={e => setNewPatientForm(p => ({ ...p, nom: e.target.value }))} />
+                    <input placeholder={t('first_name')} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.prenom} onChange={e => setNewPatientForm(p => ({ ...p, prenom: e.target.value }))} />
+                    <input placeholder={t('last_name')} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.nom} onChange={e => setNewPatientForm(p => ({ ...p, nom: e.target.value }))} />
                   </div>
-                  <input placeholder="Téléphone" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.telephone} onChange={e => setNewPatientForm(p => ({ ...p, telephone: e.target.value }))} />
-                  <input placeholder="Email (optionnel)" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.email} onChange={e => setNewPatientForm(p => ({ ...p, email: e.target.value }))} />
+                  <input placeholder={t('phone')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.telephone} onChange={e => setNewPatientForm(p => ({ ...p, telephone: e.target.value }))} />
+                  <input placeholder={t('login_email_optional')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.email} onChange={e => setNewPatientForm(p => ({ ...p, email: e.target.value }))} />
                   <input type="date" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.date_naissance} onChange={e => setNewPatientForm(p => ({ ...p, date_naissance: e.target.value }))} />
                   <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.sexe} onChange={e => setNewPatientForm(p => ({ ...p, sexe: e.target.value }))}>
-                    <option value="M">Masculin</option>
-                    <option value="F">Féminin</option>
+                    <option value="M">{t('gender_m')}</option>
+                    <option value="F">{t('gender_f')}</option>
                   </select>
                   <div className="flex gap-3">
-                    <button onClick={() => setShowNewPatient(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">Retour</button>
-                    <button onClick={handleCreatePatient} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors">Enregistrer</button>
+                    <button onClick={() => setShowNewPatient(false)} className="flex-1 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-colors">{t('back')}</button>
+                    <button onClick={handleCreatePatient} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors">{t('save')}</button>
                   </div>
                 </div>
               )}
@@ -222,7 +280,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step === 2 && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" /> Type de Service
+                <FileText className="h-4 w-4 text-primary" /> {t('modal_service_type')}
               </h3>
               <div className="space-y-2">
                 {services.map(service => (
@@ -255,11 +313,11 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step === 3 && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" /> Date et Heure
+                <Calendar className="h-4 w-4 text-primary" /> {t('modal_date_time')}
               </h3>
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Date et heure de début</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('modal_date_start')}</label>
                   <input
                     type="datetime-local"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
@@ -272,7 +330,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Date et heure de fin</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('modal_date_end')}</label>
                   <input
                     type="datetime-local"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
@@ -288,13 +346,13 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step === 4 && (
             <div className="space-y-4">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" /> Détails
+                <FileText className="h-4 w-4 text-primary" /> {t('modal_details')}
               </h3>
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Motif de la visite</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_motif_label')}</label>
                 <textarea
                   rows={3}
-                  placeholder="Décrivez brièvement le motif..."
+                  placeholder={t('booking_motif_placeholder')}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none"
                   value={formData.motif}
                   onChange={(e) => setFormData(prev => ({ ...prev, motif: e.target.value }))}
@@ -302,30 +360,63 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               </div>
               {isEditing && (
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Statut</label>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('modal_status')}</label>
                   <select
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
                     value={formData.statut}
                     onChange={(e) => setFormData(prev => ({ ...prev, statut: e.target.value }))}
                   >
-                    <option value="pending">En attente</option>
-                    <option value="confirmed">Confirmé</option>
-                    <option value="completed">Terminé</option>
-                    <option value="cancelled">Annulé</option>
+                    <option value="planifie">{t('status_planifie')}</option>
+                    <option value="confirme">{t('status_confirme')}</option>
+                    <option value="termine">{t('status_termine')}</option>
+                    <option value="annule">{t('status_annule')}</option>
                   </select>
                 </div>
               )}
+
+              {/* Consent Form Toggle */}
+              {!isEditing && (
+                <div className={cn('rounded-xl border-2 p-4 transition-all', isInvasive ? 'border-amber-400 bg-amber-50/50' : 'border-slate-200 bg-slate-50/50')}>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <div className={cn('h-5 w-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0', isInvasive ? 'bg-amber-500 border-amber-500' : 'border-slate-300 bg-white')}
+                      onClick={() => setIsInvasive(v => !v)}>
+                      {isInvasive && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <ShieldAlert className={cn('h-4 w-4', isInvasive ? 'text-amber-600' : 'text-slate-400')} />
+                        <span className={cn('text-sm font-bold', isInvasive ? 'text-amber-800' : 'text-slate-600')}>{t('modal_invasive')}</span>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5">{t('modal_invasive_hint')}</p>
+                    </div>
+                  </label>
+                  {isInvasive && (
+                    <div className="mt-4">
+                      <label className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-1.5 block">{t('modal_invasive_type')} *</label>
+                      <input
+                        type="text"
+                        placeholder={t('modal_invasive_placeholder')}
+                        className="w-full px-4 py-3 bg-white border-2 border-amber-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-amber-200 focus:border-amber-400"
+                        value={typeActeInvasif}
+                        onChange={(e) => setTypeActeInvasif(e.target.value)}
+                      />
+                      <p className="text-xs text-amber-600 font-medium mt-1.5">⚠️ {t('modal_invasive_warning')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Ordonnance (optionnel)</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_prescription')}</label>
                 <FileUpload bucket="documents" folder="prescriptions" onUploadComplete={(files) => console.log('Uploaded:', files)} />
               </div>
 
               {/* Summary */}
               <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
-                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Récapitulatif</p>
-                <p className="text-sm font-bold text-slate-800">Patient: {selectedPatient?.utilisateur?.prenom} {selectedPatient?.utilisateur?.nom}</p>
-                <p className="text-sm text-slate-600 font-medium">Service: {selectedService?.nom}</p>
-                <p className="text-sm text-slate-600 font-medium">Date: {formData.dateHeureDebut ? format(new Date(formData.dateHeureDebut), 'PPP HH:mm', { locale: fr }) : '-'}</p>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('modal_summary')}</p>
+                <p className="text-sm font-bold text-slate-800">{t('summary_patient')}: {selectedPatient?.utilisateur?.prenom} {selectedPatient?.utilisateur?.nom}</p>
+                <p className="text-sm text-slate-600 font-medium">{t('summary_service')}: {selectedService?.nom}</p>
+                <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.dateHeureDebut ? format(new Date(formData.dateHeureDebut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
               </div>
             </div>
           )}
@@ -336,7 +427,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           <div className="flex gap-3">
             {step > 1 && (
               <button onClick={() => setStep(s => s - 1)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-white transition-colors">
-                Précédent
+                {t('back')}
               </button>
             )}
             {isEditing && (
@@ -344,7 +435,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 onClick={() => cancelMutation.mutate(appointment.id)}
                 className="px-5 py-2.5 bg-red-50 text-red-600 border border-red-200 rounded-xl text-sm font-bold hover:bg-red-100 transition-colors"
               >
-                Annuler RDV
+                {t('modal_cancel_rdv')}
               </button>
             )}
           </div>
@@ -355,7 +446,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               disabled={(step === 1 && !formData.patient_id)}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
             >
-              Suivant <ChevronRight className="h-4 w-4" />
+              {t('next')} <ChevronRight className="h-4 w-4" />
             </button>
           ) : (
             <button
@@ -364,7 +455,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {isEditing ? 'Mettre à jour' : 'Créer le RDV'}
+              {isEditing ? t('modal_update_btn') : t('modal_create_btn')}
             </button>
           )}
         </div>
