@@ -17,7 +17,7 @@ import {
   Printer, Image as ImageIcon
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { arDZ, fr as frLocale } from 'date-fns/locale';
+import { arDZ } from 'date-fns/locale';
 
 // ---------------------------------------------------------------------------
 // TipTap Toolbar
@@ -142,7 +142,7 @@ PrintableReport.displayName = 'PrintableReport';
 // Main Page
 // ---------------------------------------------------------------------------
 export const ReportEditor = () => {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -218,11 +218,13 @@ export const ReportEditor = () => {
 
   const images = exam?.images_radiologiques || exam?.images || [];
 
-  if (loadingExam) return (
-    <div className="h-96 flex items-center justify-center">
-      <div className="h-10 w-10 border-b-2 border-primary rounded-full animate-spin" />
-    </div>
-  );
+  if (loadingExam) {
+    return (
+      <div className="h-96 flex items-center justify-center">
+        <div className="h-10 w-10 border-b-2 border-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -335,7 +337,7 @@ export const ReportEditor = () => {
             {images.length > 0 ? (
               <img
                 src={images[0]?.signedUrl || images[0]?.url_stockage || ''}
-                alt="Radiological Image"
+                alt="Radiology"
                 className="max-w-full max-h-[500px] object-contain transition-transform duration-300 cursor-zoom-in"
                 style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
                 onClick={() => setImageViewerOpen(true)}
