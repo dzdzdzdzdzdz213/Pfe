@@ -57,6 +57,16 @@ export const AdminUsers = () => {
     },
     onError: (err) => toast.error(err.message),
   });
+  
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => userService.updateUser(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast.success(t('user_updated_success'));
+      setShowDialog(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const openCreate = () => {
     setEditUser(null);
@@ -79,13 +89,10 @@ export const AdminUsers = () => {
       return;
     }
     if (editUser) {
-      userService.updateUser(editUser.id, {
-        nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone
-      }).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['users'] });
-        toast.success(t('user_updated_success'));
-        setShowDialog(false);
-      }).catch(err => toast.error(err.message));
+      updateMutation.mutate({ 
+        id: editUser.id, 
+        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone } 
+      });
     } else {
       createMutation.mutate(formData);
     }
@@ -218,8 +225,12 @@ export const AdminUsers = () => {
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end sticky bottom-0 bg-white">
               <button onClick={() => setShowDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
-              <button onClick={handleSubmit} disabled={createMutation.isPending} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100">
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              <button 
+                onClick={handleSubmit} 
+                disabled={createMutation.isPending || updateMutation.isPending} 
+                className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100"
+              >
+                {createMutation.isPending || updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 {editUser ? t('update') : t('create')}
               </button>
             </div>

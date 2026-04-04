@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { PageTransition } from '@/components/common/PageTransition';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -32,6 +32,7 @@ export const DashboardLayout = () => {
   const { user, role, logout } = useAuth();
   const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const location = useLocation();
 
   useEffect(() => {
@@ -97,15 +98,17 @@ export const DashboardLayout = () => {
   const unreadCount = notifications.filter(n => !n.lu).length;
 
   const markAllAsRead = async () => {
-    try {
-      const unreadIds = notifications.filter(n => !n.lu).map(n => n.id);
-      if (unreadIds.length === 0) return;
-      
-      await supabase.from('notifications').update({ lu: true }).in('id', unreadIds);
-      refetchNotifs();
-    } catch (e) {
-      console.error(e);
+    const unread = notifications.filter(n => !n.lu && n.id);
+    // Optimistic update in cache
+    queryClient.setQueryData(['notifications', user?.id], prev => (prev || []).map(n => ({ ...n, lu: true })));
+    
+    // Persist to DB for real notifications (non-demo)
+    for (const n of unread) {
+      if (typeof n.id === 'string' && !n.id.startsWith('demo')) {
+        await supabase.from('notifications').update({ lu: true }).eq('id', n.id);
+      }
     }
+    refetchNotifs();
   };
 
   const handleLogout = async () => {

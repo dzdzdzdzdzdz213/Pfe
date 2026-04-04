@@ -68,7 +68,7 @@ export const reportService = {
       } else {
         const { data: newDoc, error: docError } = await supabase
           .from('documents_medicaux')
-          .insert({ examen_id, statut: 'valide', date_creation: new Date().toISOString() })
+          .insert({ examen_id, statut: 'valide', date_creation: new Date().toISOString().split('T')[0] })
           .select()
           .single();
         if (docError) throw docError;

@@ -150,7 +150,7 @@ export const ReportEditor = () => {
   const [rotation, setRotation] = useState(0);
   const [isValidated, setIsValidated] = useState(false);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [ordonnance, setOrdonnance] = useState({ medications: '', notes: '' });
+  const [ordonnance, setOrdonnance] = useState({ description: '', nom_medecin_prescripteur: '' });
 
   const { data: exam, isLoading: loadingExam } = useQuery({
     queryKey: ['exam', id],
@@ -193,7 +193,7 @@ export const ReportEditor = () => {
         .eq('examen_id', id)
         .maybeSingle();
       if (data) {
-        setOrdonnance({ medications: data.medicaments || '', notes: data.notes_generales || '' });
+        setOrdonnance({ description: data.description || '', nom_medecin_prescripteur: data.nom_medecin_prescripteur || '' });
       }
     };
     fetchOrdonnance();
@@ -212,14 +212,14 @@ export const ReportEditor = () => {
       });
       
       // Save Ordonnance if content exists
-      if (ordonnance.medications.trim()) {
+      if (ordonnance.description.trim()) {
         const { error: ordError } = await supabase
           .from('ordonnances')
           .upsert({
             examen_id: id,
             radiologue_id: user?.id,
-            medicaments: ordonnance.medications,
-            notes_generales: ordonnance.notes,
+            description: ordonnance.description,
+            nom_medecin_prescripteur: ordonnance.nom_medecin_prescripteur,
             date_creation: new Date().toISOString()
           }, { onConflict: 'examen_id' });
         
@@ -351,19 +351,19 @@ export const ReportEditor = () => {
             </div>
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('medications_label')}</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('description') || 'Description'}</label>
                 <textarea 
-                  value={ordonnance.medications}
-                  onChange={(e) => setOrdonnance(prev => ({ ...prev, medications: e.target.value }))}
+                  value={ordonnance.description}
+                  onChange={(e) => setOrdonnance(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Ex: Paracétamol 500mg, 1 tab x 3/jour..."
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all min-h-[100px] resize-none"
                 />
               </div>
               <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('notes_label')}</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">{t('nom_medecin_prescripteur') || 'Médecin'}</label>
                 <textarea 
-                  value={ordonnance.notes}
-                  onChange={(e) => setOrdonnance(prev => ({ ...prev, notes: e.target.value }))}
+                  value={ordonnance.nom_medecin_prescripteur}
+                  onChange={(e) => setOrdonnance(prev => ({ ...prev, nom_medecin_prescripteur: e.target.value }))}
                   placeholder={t('ordonnance_notes_placeholder')}
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-4 focus:ring-primary/5 focus:border-primary outline-none transition-all min-h-[60px] resize-none"
                 />

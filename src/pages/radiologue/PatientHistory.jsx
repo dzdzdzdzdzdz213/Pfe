@@ -148,20 +148,6 @@ export const PatientHistory = () => {
     enabled: searchTerm.length >= 2,
   });
 
-  // Full patient dossier query
-  const { data: dossier } = useQuery({
-    queryKey: ['full-dossier', selectedPatient?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('dossiers_medicaux')
-        .select('groupe_sanguin, allergies, antecedents_medicaux')
-        .eq('patient_id', selectedPatient.id)
-        .maybeSingle();
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
-    },
-    enabled: !!selectedPatient?.id,
-  });
 
   // All examens via rendez_vous
   const { data: examens = [], isLoading: loadingExams } = useQuery({
@@ -189,17 +175,19 @@ export const PatientHistory = () => {
 
   // Ordonnances
   const { data: ordonnances = [] } = useQuery({
-    queryKey: ['patient-ordonnances', selectedPatient?.id],
+    queryKey: ['patient-ordonnances', selectedPatient?.id, examens?.length],
     queryFn: async () => {
+      if (!examens?.length) return [];
+      const examIds = examens.map(e => e.id);
       const { data, error } = await supabase
         .from('ordonnances')
         .select('*')
-        .eq('patient_id', selectedPatient.id)
+        .in('examen_id', examIds)
         .order('date_creation', { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    enabled: !!selectedPatient?.id,
+    enabled: !!examens?.length,
   });
 
   const allReports = examens.flatMap(e => (e.comptes_rendus || []).map(cr => ({ ...cr, examService: e.services?.nom, examDate: e.date_realisation })));
@@ -285,35 +273,33 @@ export const PatientHistory = () => {
             </div>
 
             {/* Medical Data */}
-            {dossier && (
-              <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
-                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('medical_data')}</h3>
-                {dossier.groupe_sanguin && (
-                  <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
-                    <Droplets className="h-5 w-5 text-red-500 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-red-600 uppercase tracking-wider">{t('blood_group')}</p>
-                      <p className="text-lg font-black text-red-700">{dossier.groupe_sanguin}</p>
-                    </div>
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-4">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('medical_data')}</h3>
+              {selectedPatient.groupe_sanguin && (
+                <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-100 rounded-xl">
+                  <Droplets className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-red-600 uppercase tracking-wider">{t('blood_group')}</p>
+                    <p className="text-lg font-black text-red-700">{selectedPatient.groupe_sanguin}</p>
                   </div>
-                )}
-                {dossier.allergies && (
-                  <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl">
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
-                      <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">{t('allergies')}</p>
-                    </div>
-                    <p className="text-sm text-amber-700 font-medium">{dossier.allergies}</p>
+                </div>
+              )}
+              {selectedPatient.allergies && (
+                <div className="p-3 bg-amber-50/50 border border-amber-100 rounded-xl">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
+                    <p className="text-xs font-bold text-amber-600 uppercase tracking-wider">{t('allergies')}</p>
                   </div>
-                )}
-                {dossier.antecedents_medicaux && (
-                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('history_medical')}</p>
-                    <p className="text-sm text-slate-700 font-medium leading-relaxed">{dossier.antecedents_medicaux}</p>
-                  </div>
-                )}
-              </div>
-            )}
+                  <p className="text-sm text-amber-700 font-medium">{selectedPatient.allergies}</p>
+                </div>
+              )}
+              {selectedPatient.antecedents_medicaux && (
+                <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{t('history_medical')}</p>
+                  <p className="text-sm text-slate-700 font-medium leading-relaxed">{selectedPatient.antecedents_medicaux}</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right: Tabs with data */}
@@ -441,14 +427,14 @@ export const PatientHistory = () => {
                       </div>
                       <p className="text-xs text-slate-500 font-medium">{formatDate(ord.date_creation)}</p>
                     </div>
-                    {ord.medicaments && (
+                    {ord.description && (
                       <div className="p-3 bg-violet-50/50 border border-violet-100 rounded-xl">
                         <p className="text-xs font-bold text-violet-600 uppercase tracking-wider mb-1">{t('medications_label')}</p>
-                        <p className="text-sm text-slate-700 font-medium whitespace-pre-line">{ord.medicaments}</p>
+                        <p className="text-sm text-slate-700 font-medium whitespace-pre-line">{ord.description}</p>
                       </div>
                     )}
-                    {ord.notes_generales && (
-                      <p className="text-xs text-slate-500 font-medium mt-2">{ord.notes_generales}</p>
+                    {ord.nom_medecin_prescripteur && (
+                      <p className="text-xs text-slate-500 font-medium mt-2">{t('prescriber_label') || 'Médecin'}: {ord.nom_medecin_prescripteur}</p>
                     )}
                   </div>
                 ))}

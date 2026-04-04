@@ -77,7 +77,7 @@ export const examService = {
    * Update the status of an exam.
    *
    * @param {string} id - UUID of the exam.
-   * @param {'planifie'|'en_cours'|'completed'|'annule'} statut - New status value.
+   * @param {'planifie'|'en_cours'|'realise'|'annule'} statut - New status value.
    * @returns {Promise<object>} Updated exam row.
    */
   async updateExamStatus(id, statut) {

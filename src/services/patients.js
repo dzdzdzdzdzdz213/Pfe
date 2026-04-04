@@ -45,7 +45,7 @@ export const patientService = {
       .select(`
         *,
         utilisateur:utilisateur_id(*),
-        dossier:dossier_medical(*),
+        dossier:dossiers_medicaux(*),
         appointments:rendez_vous(*)
       `)
       .eq('id', id)
