@@ -60,6 +60,7 @@ export const Booking = () => {
           date_heure_fin: endDate.toISOString(),
           motif: `${formData.notes || 'Demande en ligne'} — ${formData.nom} ${formData.prenom} — Tél: ${formData.telephone}`,
           statut: 'planifie',
+          service_id: formData.service || null,
         });
 
       if (error) throw error;

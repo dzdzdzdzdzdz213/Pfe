@@ -141,5 +141,30 @@ export const patientService = {
 
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Delete a patient and their primary user account.
+   *
+   * @param {string} patientId - UUID of the `patients` row.
+   * @param {string} userId - UUID of the `utilisateurs` row.
+   * @returns {Promise<boolean>} True on success.
+   */
+  async deletePatient(patientId, userId) {
+    // Delete patient row first
+    const { error: patientError } = await supabase
+      .from('patients')
+      .delete()
+      .eq('id', patientId);
+    if (patientError) throw patientError;
+
+    // Delete user row
+    const { error: userError } = await supabase
+      .from('utilisateurs')
+      .delete()
+      .eq('id', userId);
+    if (userError) throw userError;
+
+    return true;
   }
 };

@@ -42,6 +42,32 @@ export const AssistantPatients = () => {
     },
     onError: (err) => toast.error(err.message),
   });
+  
+  const editMutation = useMutation({
+    mutationFn: () => patientService.updatePatient(
+      selectedPatient.id,
+      { adresse: formData.adresse, groupe_sanguin: formData.groupeSanguin, date_naissance: formData.date_naissance },
+      selectedPatient.utilisateur_id,
+      { nom: formData.nom, prenom: formData.prenom, telephone: formData.telephone }
+    ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success(t('patient_updated_success'));
+      setShowAddDialog(false);
+      resetForm();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (patient) => patientService.deletePatient(patient.id, patient.utilisateur_id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+      toast.success(t('patient_delete_success') || 'Patient supprimé');
+      setShowDeleteConfirm(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const columns = [
     {
@@ -186,8 +212,12 @@ export const AssistantPatients = () => {
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end sticky bottom-0 bg-white">
               <button onClick={() => setShowAddDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
-              <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100">
-                {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              <button 
+                onClick={() => selectedPatient ? editMutation.mutate() : createMutation.mutate()} 
+                disabled={createMutation.isPending || editMutation.isPending} 
+                className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100"
+              >
+                {(createMutation.isPending || editMutation.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                 {selectedPatient ? t('update') : t('save')}
               </button>
             </div>
@@ -233,7 +263,7 @@ export const AssistantPatients = () => {
       <ConfirmationDialog
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => { toast.info(t('patient_delete_protection')); }}
+        onConfirm={() => selectedPatient && deleteMutation.mutate(selectedPatient)}
         title={t('patient_delete_title')}
         description={t('patient_delete_desc')}
         variant="destructive"

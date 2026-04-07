@@ -47,23 +47,20 @@ export const AdminStats = () => {
   const { data: monthlyData = [], isLoading: loadingMonthly } = useQuery({
     queryKey: ['stats-monthly', period],
     queryFn: async () => {
-      const months = [];
-      for (let i = period - 1; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59).toISOString();
-        const { count } = await supabase
-          .from('rendez_vous')
-          .select('*', { count: 'exact', head: true })
-          .gte('date_heure_debut', start)
-          .lte('date_heure_debut', end);
-        months.push({
-          mois: d.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'fr-FR', { month: 'short', year: '2-digit' }),
-          rdv: count || 0,
-        });
-      }
-      return months;
+      const start = new Date();
+      start.setMonth(start.getMonth() - (period - 1));
+      start.setDate(1);
+      const { data } = await supabase
+        .from('rendez_vous')
+        .select('date_heure_debut')
+        .gte('date_heure_debut', start.toISOString());
+      const counts = {};
+      (data || []).forEach(r => {
+        const d = new Date(r.date_heure_debut);
+        const key = d.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'fr-FR', { month: 'short', year: '2-digit' });
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      return Object.entries(counts).map(([mois, rdv]) => ({ mois, rdv }));
     },
   });
 

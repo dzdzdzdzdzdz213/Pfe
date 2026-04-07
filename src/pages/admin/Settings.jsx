@@ -23,7 +23,7 @@ export const AdminSettings = () => {
   const { data: services = [], isLoading: loadingServices } = useQuery({
     queryKey: ['services'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('service').select('*').order('nom');
+      const { data, error } = await supabase.from('services').select('*').order('nom');
       if (error) throw error;
       return data;
     },
@@ -35,7 +35,7 @@ export const AdminSettings = () => {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data) => {
-      const { data: result, error } = await supabase.from('service').insert(data).select().single();
+      const { data: result, error } = await supabase.from('services').insert(data).select().single();
       if (error) throw error;
       return result;
     },
@@ -49,7 +49,7 @@ export const AdminSettings = () => {
 
   const updateServiceMutation = useMutation({
     mutationFn: async ({ id, data }) => {
-      const { data: result, error } = await supabase.from('service').update(data).eq('id', id).select().single();
+      const { data: result, error } = await supabase.from('services').update(data).eq('id', id).select().single();
       if (error) throw error;
       return result;
     },
@@ -63,7 +63,7 @@ export const AdminSettings = () => {
 
   const deleteServiceMutation = useMutation({
     mutationFn: async (id) => {
-      const { error } = await supabase.from('service').delete().eq('id', id);
+      const { error } = await supabase.from('services').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {

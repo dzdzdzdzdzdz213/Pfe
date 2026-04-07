@@ -26,8 +26,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || '',
     service_id: appointment?.service_id || '',
-    dateHeureDebut: appointment?.dateHeureDebut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
-    dateHeureFin: appointment?.dateHeureFin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
+    dateHeureDebut: appointment?.date_heure_debut || appointment?.dateHeureDebut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
+    dateHeureFin: appointment?.date_heure_fin || appointment?.dateHeureFin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
     motif: appointment?.motif || '',
     statut: appointment?.statut || 'planifie',
   });
@@ -130,9 +130,16 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       }
 
       // 2. Create rendez_vous
+      const { data: recepData } = await supabase
+        .from('receptionnistes')
+        .select('id')
+        .eq('utilisateur_id', user?.id)
+        .single();
+      const receptionniste_id = recepData?.id || null;
+
       const rdvData = {
         patient_id: formData.patient_id,
-        receptionniste_id: user?.id,
+        receptionniste_id,
         date_heure_debut: formData.dateHeureDebut,
         date_heure_fin: formData.dateHeureFin,
         motif: formData.motif,
