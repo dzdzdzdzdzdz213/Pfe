@@ -1,4 +1,4 @@
-# 🩻 Chemloul Radiologie — Gestion Clinique Intégrée
+# 🩻 Chemloul Radiologie — Gestion cabinet Intégrée
 
 Plateforme moderne de gestion radiologique pour le **Cabinet Chemloul Radiologie**. Conçue pour offrir une expérience premium aux patients, radiologues, et assistants, avec un support complet du Français et de l'Arabe (RTL).
 
