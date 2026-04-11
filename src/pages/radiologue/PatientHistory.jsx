@@ -94,7 +94,7 @@ const ExamCard = ({ exam, onViewImages }) => {
                       ? <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
                       : <Clock className="h-4 w-4 text-amber-500 flex-shrink-0" />}
                     <span className={cn('text-xs font-bold flex-1', cr.est_valide ? 'text-emerald-700' : 'text-amber-700')}>
-                      {cr.est_valide ? t('status_realise') : t('status_planifie')} — {formatDate(cr.date_creation)}
+                      {cr.est_valide ? t('status_realise') : t('status_planifie')} — {formatDate(cr.examDate)}
                     </span>
                   </div>
                 ))}
@@ -110,7 +110,7 @@ const ExamCard = ({ exam, onViewImages }) => {
                 {exam.documents_medicaux.map(doc => (
                   <div key={doc.id} className="flex items-center gap-2 p-2 bg-white border border-slate-100 rounded-lg">
                     <FileText className="h-3.5 w-3.5 text-slate-400 flex-shrink-0" />
-                    <span className="text-xs font-medium text-slate-700 truncate">{doc.type_document || t('document_label')}</span>
+                    <span className="text-xs font-medium text-slate-700 truncate">{doc.statut || t('document_label')}</span>
                     <span className="text-[10px] text-slate-400 font-medium ml-auto">{formatDate(doc.date_creation)}</span>
                   </div>
                 ))}
@@ -160,9 +160,9 @@ export const PatientHistory = () => {
           examens:examen_id(
             id, date_realisation, statut, observations_cliniques,
             services:service_id(nom),
-            comptes_rendus(id, description_detaillee, est_valide, date_creation),
+            comptes_rendus(id, description_detaillee, est_valide),
             images_radiologiques(id, url_stockage, type_image, description),
-            documents_medicaux(id, type_document, url_document, date_creation)
+            documents_medicaux(id, chemin_fichier, statut, date_creation, examen_id)
           )
         `)
         .eq('patient_id', selectedPatient.id)
@@ -396,11 +396,11 @@ export const PatientHistory = () => {
                       <FileText className="h-5 w-5 text-slate-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800">{doc.type_document || t('document_label')}</p>
+                      <p className="text-sm font-bold text-slate-800">{doc.statut || t('document_label')}</p>
                       <p className="text-xs text-slate-500 font-medium">{doc.examService} — {formatDate(doc.date_creation)}</p>
                     </div>
-                    {doc.url_document && (
-                      <a href={doc.url_document} target="_blank" rel="noopener noreferrer"
+                    {doc.chemin_fichier && (
+                      <a href={doc.chemin_fichier} target="_blank" rel="noopener noreferrer"
                         className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-1.5">
                         <Eye className="h-3.5 w-3.5" /> {t('view')}
                       </a>

@@ -19,27 +19,24 @@ import { supabase } from '../lib/supabase';
 
 export const consentementService = {
   /**
-   * Create a new consent form linked to an exam and patient.
+   * Create a new consent form linked to an exam.
    *
    * @param {{
    *   examen_id: string,
-   *   patient_id: string,
    *   type_acte_invasif: string,
-   *   signature_requise?: boolean
+   *   signature_requise?: boolean,
+   *   document_medical_id?: string
    * }} params
-   *   - `signature_requise` defaults to `true`.
-   * @returns {Promise<object>} The created consent record with `est_signe: false`.
+   * @returns {Promise<object>} The created consent record.
    */
-  async createConsentement({ examen_id, patient_id, type_acte_invasif, signature_requise = true }) {
+  async createConsentement({ examen_id, type_acte_invasif, signature_requise = true, document_medical_id = null }) {
     const { data, error } = await supabase
       .from('consentements')
       .insert({
         examen_id,
-        patient_id,
         type_acte_invasif,
         signature_requise,
-        est_signe: false,
-        date_creation: new Date().toISOString()
+        document_medical_id
       })
       .select()
       .single();
@@ -66,20 +63,16 @@ export const consentementService = {
 
   /**
    * Mark a consent form as signed by a radiologue.
-   * Sets `est_signe = true`, records `date_signature`, and stores the confirming
-   * radiologue's ID.
+   * Since there's no est_signe column, we mark signature_requise = false.
    *
    * @param {string} consentement_id - UUID of the `consentements` row.
-   * @param {string} radiologue_id - UUID of the radiologue (from `radiologues.id`).
-   * @returns {Promise<object>} Updated consent record with `est_signe: true`.
+   * @returns {Promise<object>} Updated consent record.
    */
-  async markAsSigned(consentement_id, radiologue_id) {
+  async markAsSigned(consentement_id) {
     const { data, error } = await supabase
       .from('consentements')
       .update({
-        est_signe: true,
-        date_signature: new Date().toISOString(),
-        radiologue_confirmateur_id: radiologue_id
+        signature_requise: false
       })
       .eq('id', consentement_id)
       .select()
@@ -89,23 +82,18 @@ export const consentementService = {
   },
 
   /**
-   * Fetch all unsigned, required consent forms.
-   * Used by the radiologue dashboard to show pending action items.
-   * Results are ordered oldest-first (FIFO).
+   * Fetch all pending (required) consent forms.
    *
-   * @returns {Promise<Array<object>>} Pending consents with nested exam and patient data.
+   * @returns {Promise<Array<object>>} Pending consents with nested exam data.
    */
   async fetchPendingConsentements() {
     const { data, error } = await supabase
       .from('consentements')
       .select(`
         *,
-        examens:examen_id(id, statut, date_realisation, services:service_id(nom)),
-        patients:patient_id(id, utilisateur:utilisateur_id(prenom, nom))
+        examens:examen_id(id, statut, date_realisation, services:service_id(nom))
       `)
-      .eq('est_signe', false)
-      .eq('signature_requise', true)
-      .order('date_creation', { ascending: true });
+      .eq('signature_requise', true);
     if (error) throw error;
     return data || [];
   },

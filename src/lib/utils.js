@@ -44,10 +44,11 @@ export function generatePassword(length = 12) {
 
 export function getStatusColor(status) {
   switch (status) {
-    case 'confirmed': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    case 'pending': return 'bg-amber-50 text-amber-700 border-amber-200';
-    case 'cancelled': return 'bg-red-50 text-red-600 border-red-200';
-    case 'completed': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'planifie': return 'bg-amber-50 text-amber-700 border-amber-200';
+    case 'confirme': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+    case 'en_cours': return 'bg-blue-50 text-blue-700 border-blue-200';
+    case 'realise': return 'bg-violet-50 text-violet-700 border-violet-200';
+    case 'annule': return 'bg-red-50 text-red-600 border-red-200';
     default: return 'bg-slate-50 text-slate-600 border-slate-200';
   }
 }
@@ -55,26 +56,20 @@ export function getStatusColor(status) {
 export function getStatusLabel(status, t) {
   if (t) {
     switch (status) {
-      case 'confirmed': return t('status_confirme');
-      case 'pending': return t('status_planifie');
-      case 'cancelled': return t('status_annule');
-      case 'completed': return t('status_termine');
       case 'planifie': return t('status_planifie');
       case 'confirme': return t('status_confirme');
-      case 'termine': return t('status_termine');
+      case 'en_cours': return t('status_en_cours');
+      case 'realise': return t('status_realise');
       case 'annule': return t('status_annule');
       default: return t(`status_${status}`) || status;
     }
   }
 
   switch (status) {
-    case 'confirmed': return 'Confirmé';
-    case 'pending': return 'En attente';
-    case 'cancelled': return 'Annulé';
-    case 'completed': return 'Terminé';
     case 'planifie': return 'Planifié';
     case 'confirme': return 'Confirmé';
-    case 'termine': return 'Terminé';
+    case 'en_cours': return 'En cours';
+    case 'realise': return 'Réalisé';
     case 'annule': return 'Annulé';
     default: return status;
   }

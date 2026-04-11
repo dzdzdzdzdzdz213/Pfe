@@ -61,7 +61,7 @@ export const RadiologueExams = () => {
       key: 'actions', label: t('actions'), sortable: false,
       render: (row) => (
         <div className="flex items-center gap-1">
-          {row.statut === 'pending' && (
+          {row.statut === 'planifie' && (
             <button onClick={(e) => { e.stopPropagation(); navigate(`/radiologue/report/${row.id}`); }} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors flex items-center gap-1.5">
               <Play className="h-3.5 w-3.5" /> {t('draft_report')}
             </button>
@@ -84,7 +84,7 @@ export const RadiologueExams = () => {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {[{ key: 'all', label: t('all') }, { key: 'pending', label: t('status_planifie') }, { key: 'completed', label: t('status_termine') }].map(f => (
+        {[{ key: 'all', label: t('all') }, { key: 'planifie', label: t('status_planifie') }, { key: 'realise', label: t('status_realise') }].map(f => (
           <button key={f.key} onClick={() => setStatusFilter(f.key)} className={cn('px-4 py-2 rounded-xl text-sm font-bold transition-all', statusFilter === f.key ? 'bg-primary text-white shadow-lg shadow-blue-100' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
             {f.label}
           </button>
