@@ -73,19 +73,64 @@ export const AuthProvider = ({ children }) => {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No row found, auto-provision user as patient
+          // No row found in profiles. Check if they exist in legacy utilisateurs table by email!
+          const { data: legacyUser } = await supabase
+            .from('utilisateurs')
+            .select('*')
+            .eq('email', authUser.email)
+            .single();
+
+          // Extract names from Google metadata to satisfy NOT NULL constraints
+          const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
+          const nameParts = fullName.split(' ');
+          const parsedPrenom = nameParts[0];
+          const parsedNom = nameParts.slice(1).join(' ') || parsedPrenom;
+
+          // Merge data intelligently
+          const finalRole = legacyUser?.role || 'patient';
+          const finalNom = legacyUser?.nom || parsedNom;
+          const finalPrenom = legacyUser?.prenom || parsedPrenom;
+          const finalTelephone = legacyUser?.telephone || null;
+
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({
               id: authUser.id,
-              role: 'patient'
+              role: finalRole,
+              nom: finalNom,
+              prenom: finalPrenom,
+              telephone: finalTelephone
             });
+            
+          // If they are brand new (no legacy user), we also MUST insert them into utilisateurs to save the dashboards!
+          if (!insertError && !legacyUser) {
+             const { data: newUtilisateur } = await supabase
+               .from('utilisateurs')
+               .insert({
+                 nom: finalNom,
+                 prenom: finalPrenom,
+                 email: authUser.email,
+                 role: 'patient' // Always patient for brand new
+               })
+               .select()
+               .single();
+               
+             // Safely seed the patients table
+             if (newUtilisateur) {
+                 await supabase.from('patients').insert({
+                     utilisateur_id: newUtilisateur.id
+                 });
+             }
+          }
 
           if (insertError) {
             console.error('Error creating user profile:', insertError.message);
             setRole(null);
           } else {
-            setRole('patient');
+            let roleToSet = finalRole.toLowerCase().trim();
+            if (roleToSet === 'administrateur') roleToSet = 'admin';
+            if (roleToSet === 'receptionniste') roleToSet = 'assistant';
+            setRole(roleToSet);
           }
         } else {
           console.error('Error fetching role:', error.message);
