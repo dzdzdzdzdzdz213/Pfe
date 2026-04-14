@@ -62,11 +62,14 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserRole = async (authUser) => {
     try {
+      console.log("Fetching role for user:", authUser.id);
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', authUser.id)
         .single();
+      
+      console.log("DB Fetch Result -> Data:", data, "Error:", error);
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -89,7 +92,13 @@ export const AuthProvider = ({ children }) => {
           setRole(null);
         }
       } else {
-        const fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
+        let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
+        
+        // Normalize legacy database roles to strict application routing equivalents
+        if (fetchedRole === 'administrateur') fetchedRole = 'admin';
+        if (fetchedRole === 'receptionniste') fetchedRole = 'assistant';
+        
+        console.log("Setting Normalized Role To:", fetchedRole);
         setRole(fetchedRole);
       }
     } catch (err) {
