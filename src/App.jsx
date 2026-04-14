@@ -9,6 +9,7 @@ import { ScrollToTop } from './components/common/ScrollToTop';
 import { AuthLayout } from './components/layouts/AuthLayout';
 import { PublicLayout } from './components/layouts/PublicLayout';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { useAuth } from './hooks/useAuth';
 
 const DashboardLayout = React.lazy(() =>
   import('./components/layouts/DashboardLayout').then(m => ({ default: m.DashboardLayout }))
