@@ -5,7 +5,7 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, role, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || (user && !role)) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
