@@ -24,7 +24,6 @@ import {
   Languages,
   BarChart2
 } from 'lucide-react';
-import { PhoneNumberPrompt } from '@/components/common/PhoneNumberPrompt';
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -163,7 +162,6 @@ export const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden" dir={lang === 'ar' ? 'rtl' : 'ltr'}>
-      <PhoneNumberPrompt />
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
