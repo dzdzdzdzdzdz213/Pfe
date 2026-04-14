@@ -2,12 +2,12 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, role, loading } = useAuth();
+  const { user, role, loading, roleLoading } = useAuth();
   const location = useLocation();
 
-  console.log("ROLE:", role);
+  console.log("ROLE:", role, "roleLoading:", roleLoading);
 
-  if (loading || (user && !role)) {
+  if (loading || roleLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">

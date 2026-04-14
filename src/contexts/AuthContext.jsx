@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
 
   useEffect(() => {
@@ -61,6 +62,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchUserRole = async (authUser) => {
+    setRoleLoading(true);
     try {
       console.log("Fetching role for user:", authUser.id);
       const { data, error } = await supabase
@@ -149,6 +151,8 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);
       setRole(null);
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -191,6 +195,7 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     logout,
     loading,
+    roleLoading,
     authInitialized
   };
 
