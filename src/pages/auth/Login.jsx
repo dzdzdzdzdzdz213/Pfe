@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -25,9 +25,20 @@ export const Login = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   
-  const { login, loginWithGoogle } = useAuth();
+  const { user, role, login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    if (user && role) {
+      const from = location.state?.from?.pathname;
+      if (from && from !== '/' && from !== '/login') {
+        navigate(from, { replace: true });
+      } else {
+        navigate(`/${role}/dashboard`, { replace: true });
+      }
+    }
+  }, [user, role, navigate, location]);
 
   const {
     register,
@@ -40,21 +51,15 @@ export const Login = () => {
   const onSubmit = useCallback(async (data) => {
     setIsSubmitting(true);
     try {
-      const result = await login(data.email, data.password);
-      
-      if (result.user) {
-        toast.success(t('login_success'));
-        
-        const from = location.state?.from?.pathname || "/";
-        navigate(from, { replace: true });
-      }
+      await login(data.email, data.password);
+      toast.success(t('login_success'));
+      // Note: Navigation is handled by the useEffect once role resolves
     } catch (error) {
       console.error(error);
       toast.error(error.message || t('login_failed'));
-    } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Only stop loading if error, otherwise keep loading while role fetches and redirects
     }
-  }, [login, t, navigate, location]);
+  }, [login, t]);
 
 
   const handleResetPassword = async (e) => {

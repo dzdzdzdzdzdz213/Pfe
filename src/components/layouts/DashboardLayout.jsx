@@ -63,8 +63,8 @@ export const DashboardLayout = () => {
       
 
       const { data, error } = await supabase
-        .from('utilisateurs')
-        .select('nom, prenom')
+        .from('profiles')
+        .select('*')
         .eq('id', user.id)
         .single();
       if (error) return null;
@@ -79,9 +79,9 @@ export const DashboardLayout = () => {
 
   const translateRole = (r) => {
     switch (r) {
-      case 'administrateur': return t('role_admin');
+      case 'admin': return t('role_admin');
       case 'radiologue': return t('role_radiologue');
-      case 'receptionniste': return t('role_receptionniste');
+      case 'assistant': return t('role_receptionniste');
       case 'patient': return t('role_patient');
       default: return r || t('role_visiteur');
     }
@@ -107,8 +107,6 @@ export const DashboardLayout = () => {
   };
 
   const getRoleBasePath = (role) => {
-    if (role === 'administrateur') return 'admin';
-    if (role === 'receptionniste') return 'assistant';
     return role;
   };
 
@@ -117,7 +115,7 @@ export const DashboardLayout = () => {
       { name: t('dashboard'), href: `/${getRoleBasePath(role)}/dashboard`, icon: LayoutDashboard },
     ];
 
-    if (role === 'administrateur') {
+    if (role === 'admin') {
       return [
         ...common,
         { name: t('users'), href: '/admin/users', icon: Users },
@@ -127,7 +125,7 @@ export const DashboardLayout = () => {
       ];
     }
 
-    if (role === 'receptionniste') {
+    if (role === 'assistant') {
       return [
         ...common,
         { name: t('calendar'), href: '/assistant/calendar', icon: Calendar },

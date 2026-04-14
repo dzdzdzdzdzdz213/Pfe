@@ -117,7 +117,7 @@ const AppRoutes = () => {
 
         {/* Admin Routes */}
         <Route path="/admin" element={
-          <ProtectedRoute requiredRole="administrateur"><DashboardLayout /></ProtectedRoute>
+          <ProtectedRoute requiredRole="admin"><DashboardLayout /></ProtectedRoute>
         }>
           <Route path="dashboard" element={<AdminDashboardSafe />} />
           <Route path="users" element={<AdminUsersSafe />} />
@@ -130,7 +130,7 @@ const AppRoutes = () => {
 
         {/* Assistant Routes */}
         <Route path="/assistant" element={
-          <ProtectedRoute requiredRole="receptionniste"><DashboardLayout /></ProtectedRoute>
+          <ProtectedRoute requiredRole="assistant"><DashboardLayout /></ProtectedRoute>
         }>
           <Route path="dashboard" element={<AssistantDashboardSafe />} />
           <Route path="calendar" element={<AssistantCalendarSafe />} />

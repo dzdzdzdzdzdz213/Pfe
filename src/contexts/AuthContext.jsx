@@ -63,71 +63,38 @@ export const AuthProvider = ({ children }) => {
   const fetchUserRole = async (authUser) => {
     try {
       const { data, error } = await supabase
-        .from('utilisateurs')
+        .from('profiles')
         .select('role')
         .eq('id', authUser.id)
         .single();
 
       if (error) {
         if (error.code === 'PGRST116') {
-          // No row found, this is a new user (likely via Google OAuth)
-          const [prenom, ...nomParts] = (authUser.user_metadata?.full_name || '').split(' ');
-          const nom = nomParts.length > 0 ? nomParts.join(' ') : (authUser.user_metadata?.name || '');
-          const finalNom = nom || authUser.email?.split('@')[0] || 'Patient';
-          const finalPrenom = prenom || 'Nouveau';
-
+          // No row found, auto-provision user as patient
           const { error: insertError } = await supabase
-            .from('utilisateurs')
+            .from('profiles')
             .insert({
               id: authUser.id,
-              email: authUser.email,
-              nom: finalNom,
-              prenom: finalPrenom,
-              role: 'patient',
-              telephone: '0000000000'
+              role: 'patient'
             });
 
           if (insertError) {
             console.error('Error creating user profile:', insertError.message);
-            // If they signed in with google, forcefully let them in as patient anyway
-            if (authUser.app_metadata?.provider === 'google') {
-              setRole('patient');
-            } else {
-              setRole(null);
-            }
+            setRole(null);
           } else {
-            // Try to create the patient record quietly
-            try {
-              await supabase.from('patients').insert({ utilisateur_id: authUser.id, date_naissance: new Date().toISOString() });
-            } catch (err) {
-              console.error('Could not create patient record', err);
-            }
             setRole('patient');
           }
         } else {
           console.error('Error fetching role:', error.message);
-          // Fallback if db is completely failing for a google user
-          if (authUser.app_metadata?.provider === 'google') {
-            setRole('patient');
-          } else {
-            setRole(null);
-          }
+          setRole(null);
         }
       } else {
         const fetchedRole = data?.role ? data.role.toLowerCase() : null;
-        if (!fetchedRole && authUser.app_metadata?.provider === 'google') {
-          setRole('patient');
-        } else {
-          setRole(fetchedRole);
-        }
+        setRole(fetchedRole);
       }
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);
-      if (authUser.app_metadata?.provider === 'google') {
-        setRole('patient');
-      } else {
-        setRole(null);
-      }
+      setRole(null);
     }
   };
 
