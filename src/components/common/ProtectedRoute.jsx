@@ -23,7 +23,24 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && role !== requiredRole) {
+  const isAuthorized = () => {
+    if (!requiredRole) return true;
+    if (role === requiredRole) return true;
+    
+    // Hardcoded bullet-proof fallbacks for legacy mapping
+    const legacyMap = {
+      'admin': ['administrateur'],
+      'assistant': ['receptionniste']
+    };
+    
+    if (legacyMap[requiredRole] && legacyMap[requiredRole].includes(role)) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  if (!isAuthorized()) {
     // Redirect to unauthorized if authenticated but unauthorized role
     return <Navigate to="/unauthorized" replace />;
   }

@@ -79,9 +79,11 @@ export const DashboardLayout = () => {
 
   const translateRole = (r) => {
     switch (r) {
-      case 'admin': return t('role_admin');
+      case 'admin':
+      case 'administrateur': return t('role_admin');
       case 'radiologue': return t('role_radiologue');
-      case 'assistant': return t('role_receptionniste');
+      case 'assistant':
+      case 'receptionniste': return t('role_receptionniste');
       case 'patient': return t('role_patient');
       default: return r || t('role_visiteur');
     }
@@ -106,8 +108,10 @@ export const DashboardLayout = () => {
     navigate('/login');
   };
 
-  const getRoleBasePath = (role) => {
-    return role;
+  const getRoleBasePath = (currentRole) => {
+    if (currentRole === 'administrateur') return 'admin';
+    if (currentRole === 'receptionniste') return 'assistant';
+    return currentRole;
   };
 
   const getNavigation = (role) => {
@@ -115,7 +119,7 @@ export const DashboardLayout = () => {
       { name: t('dashboard'), href: `/${getRoleBasePath(role)}/dashboard`, icon: LayoutDashboard },
     ];
 
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'administrateur') {
       return [
         ...common,
         { name: t('users'), href: '/admin/users', icon: Users },
@@ -125,7 +129,7 @@ export const DashboardLayout = () => {
       ];
     }
 
-    if (role === 'assistant') {
+    if (role === 'assistant' || role === 'receptionniste') {
       return [
         ...common,
         { name: t('calendar'), href: '/assistant/calendar', icon: Calendar },
