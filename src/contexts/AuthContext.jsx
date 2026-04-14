@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
           setRole(null);
         }
       } else {
-        const fetchedRole = data?.role ? data.role.toLowerCase() : null;
+        const fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
         setRole(fetchedRole);
       }
     } catch (err) {
