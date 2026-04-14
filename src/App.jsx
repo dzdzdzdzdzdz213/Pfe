@@ -80,7 +80,18 @@ const RouteSkeletonLoader = () => (
 
 const Unauthorized = () => {
   const { t } = useLanguage();
-  const { role, user } = useAuth();
+  const { role, user, loading, roleLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // AUTO-RECOVERY: If we are here but the role is actually valid, bounce them back!
+    if (!loading && !roleLoading && role && role !== 'patient') {
+      const path = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
+      console.log("Auto-recovering from unauthorized state to:", path);
+      navigate(path, { replace: true });
+    }
+  }, [role, loading, roleLoading, navigate]);
+
   return (
     <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-sm">
