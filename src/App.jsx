@@ -79,6 +79,7 @@ const RouteSkeletonLoader = () => (
 
 const Unauthorized = () => {
   const { t } = useLanguage();
+  const { role, user } = useAuth();
   return (
     <div className="h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-sm">
@@ -89,6 +90,11 @@ const Unauthorized = () => {
         </div>
         <h1 className="text-2xl font-bold text-slate-800 tracking-tight">{t('error_unauthorized')}</h1>
         <p className="text-slate-500 mt-2 font-medium">{t('error_unauthorized_msg')}</p>
+        <div className="mt-4 p-4 bg-slate-100 rounded-xl text-left border border-slate-200">
+          <p className="text-xs font-mono text-slate-600 mb-1 flex justify-between"><span>User ID:</span><span className="font-bold">{user?.id || 'null'}</span></p>
+          <p className="text-xs font-mono text-slate-600 flex justify-between"><span>Detected Role:</span><strong className="text-red-500 font-bold bg-red-100 px-1 rounded">{String(role)}</strong></p>
+          <p className="text-[10px] text-slate-400 mt-2 leading-tight">If "Detected Role" is wrong, the database is sending the wrong string to your account.</p>
+        </div>
         <button onClick={() => window.history.back()} className="mt-6 w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100">
           {t('error_go_back')}
         </button>
