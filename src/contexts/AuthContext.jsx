@@ -106,8 +106,15 @@ export const AuthProvider = ({ children }) => {
 
       const authUser = session?.user || null;
       if (authUser) {
-        // IMPORTANT: We keep 'loading' true while we fetch the role
-        setState(prev => ({ ...prev, loading: true, roleLoading: true, session, user: authUser }));
+        // Only trigger loading if we don't have a user or role yet, or if it's a sign-in event
+        const shouldSetLoading = !state.user || !state.role || event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+        
+        if (shouldSetLoading) {
+          setState(prev => ({ ...prev, loading: true, roleLoading: true, session, user: authUser }));
+        } else {
+          setState(prev => ({ ...prev, session, user: authUser }));
+        }
+
         const role = await fetchUserRole(authUser);
         setState({
           session,

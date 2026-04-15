@@ -61,9 +61,23 @@ export const PatientAppointments = () => {
       start.setHours(parseInt(hours), parseInt(minutes), 0);
       const end = new Date(start.getTime() + 30 * 60000);
 
+      // 1. Create the exam first to hold the service_id
+      const { data: exam, error: examError } = await supabase
+        .from('examens')
+        .insert({
+          service_id: selectedService?.id,
+          statut: 'planifie',
+          date_realisation: start.toISOString(),
+        })
+        .select()
+        .single();
+
+      if (examError) throw examError;
+
+      // 2. Create the appointment linked to the exam
       return appointmentService.createAppointment({
         patient_id: patientRecord?.id,
-        service_id: selectedService?.id,
+        examen_id: exam.id,
         date_heure_debut: start.toISOString(),
         date_heure_fin: end.toISOString(),
         motif,
@@ -141,7 +155,7 @@ export const PatientAppointments = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800">{appt.motif || t('consultation')}</p>
-                    {appt.service?.nom && <p className="text-xs text-slate-500 font-medium mt-0.5">{appt.service.nom}</p>}
+                    {appt.examen?.service?.nom && <p className="text-xs text-slate-500 font-medium mt-0.5">{appt.examen.service.nom}</p>}
                   </div>
                   <button
                     onClick={() => cancelMutation.mutate(appt.id)}

@@ -37,7 +37,10 @@ export const appointmentService = {
         *,
         patient:patient_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom, telephone)),
         assistant:receptionniste_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom)),
-        service:service_id(*)
+        examen:examen_id(
+          id,
+          service:service_id(*)
+        )
       `);
 
     if (options.startDate && options.endDate) {

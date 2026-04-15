@@ -58,9 +58,8 @@ export const Booking = () => {
         .insert({
           date_heure_debut: startDate.toISOString(),
           date_heure_fin: endDate.toISOString(),
-          motif: `${formData.notes || 'Demande en ligne'} — ${formData.nom} ${formData.prenom} — Tél: ${formData.telephone}`,
+          motif: `[${formData.serviceName}] ${formData.notes || 'Demande en ligne'} — ${formData.nom} ${formData.prenom} — Tél: ${formData.telephone}`,
           statut: 'planifie',
-          service_id: formData.service || null,
         });
 
       if (error) throw error;
