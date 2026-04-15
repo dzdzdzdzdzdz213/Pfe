@@ -24,6 +24,7 @@ import {
   Languages,
   BarChart2
 } from 'lucide-react';
+import { CompleteProfileModal } from '@/components/common/CompleteProfileModal';
 
 export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -397,7 +398,16 @@ export const DashboardLayout = () => {
             </AnimatePresence>
           </div>
         </main>
-      </div>
+        {/* Profile Completion Modal */}
+        <AnimatePresence>
+          {userData && userData.profil_complet === false && (
+            <CompleteProfileModal 
+              user={user} 
+              userData={userData} 
+              onComplete={() => queryClient.invalidateQueries(['userProfile', user?.id])} 
+            />
+          )}
+        </AnimatePresence>
 
       <style dangerouslySetInnerHTML={{
         __html: `
@@ -415,6 +425,7 @@ export const DashboardLayout = () => {
           background: #cbd5e1;
         }
       `}} />
+      </div>
     </div>
   );
 };

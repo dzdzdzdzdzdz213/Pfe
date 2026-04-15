@@ -2,18 +2,30 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/lib/supabase';
 import { UploadCloud, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export const FileUpload = ({
   bucket = 'documents',
   folder = '',
-  accept = { 'application/pdf': ['.pdf'], 'image/*': ['.jpg', '.jpeg', '.png'] },
-  maxSize = 10 * 1024 * 1024, // 10MB
+  accept = { 
+    'application/pdf': ['.pdf'], 
+    'image/*': ['.jpg', '.jpeg', '.png'],
+    'application/msword': ['.doc'],
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+    'text/plain': ['.txt']
+  },
+  maxSize = 10 * 1024 * 1024, // 10MB Default
   onUploadComplete,
   multiple = false,
 }) => {
+  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+
+  // Relax limits for authenticated users (Staff/Admin)
+  const finalMaxSize = user ? 50 * 1024 * 1024 : maxSize;
+  const finalAccept = user ? null : accept; // null accept in useDropzone means all files accepted
 
   const onDrop = useCallback(async (acceptedFiles) => {
     setError(null);
@@ -64,8 +76,8 @@ export const FileUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept,
-    maxSize,
+    accept: finalAccept,
+    maxSize: finalMaxSize,
     multiple,
     onDropRejected: (fileRejections) => {
       const msg = fileRejections[0]?.errors[0]?.message || 'Fichier non valide';
@@ -102,7 +114,7 @@ export const FileUpload = ({
               {isDragActive ? 'Déposez les fichiers ici...' : 'Glissez-déposez vos fichiers ici'}
             </p>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              ou <span className="text-primary underline">parcourir</span> — Max {Math.round(maxSize / 1024 / 1024)}MB
+              ou <span className="text-primary underline">parcourir</span> — Max {Math.round(finalMaxSize / 1024 / 1024)}MB
             </p>
           </div>
         </div>

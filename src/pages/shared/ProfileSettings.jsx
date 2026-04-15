@@ -25,6 +25,32 @@ export const ProfileSettings = () => {
     }
   }, [user?.id]);
 
+  const [profileData, setProfileData] = useState({
+    nom: '',
+    prenom: '',
+    age: ''
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('nom, prenom, age')
+        .eq('id', user.id)
+        .single();
+      
+      if (data && !error) {
+        setProfileData({
+          nom: data.nom || '',
+          prenom: data.prenom || '',
+          age: data.age || ''
+        });
+      }
+    };
+    fetchProfile();
+  }, [user?.id]);
+
   const getRoleColor = (r) => {
     switch (r) {
       case 'administrateur': return 'text-purple-600 bg-purple-50 border-purple-200';
@@ -38,10 +64,33 @@ export const ProfileSettings = () => {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Update notifications in auth metadata
+      const { error: authError } = await supabase.auth.updateUser({
         data: { notifications }
       });
-      if (error) throw error;
+      if (authError) throw authError;
+
+      // Update names and age in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          nom: profileData.nom,
+          prenom: profileData.prenom,
+          age: parseInt(profileData.age) || null
+        })
+        .eq('id', user.id);
+      
+      if (profileError) throw profileError;
+
+      // Update name in utilisateurs table
+      await supabase
+        .from('utilisateurs')
+        .update({
+          nom: profileData.nom,
+          prenom: profileData.prenom
+        })
+        .eq('id', user.id);
+
       localStorage.setItem(`prefs_${user?.id}`, JSON.stringify({ notifications }));
       toast.success('Vos modifications ont été enregistrées avec succès', {
         icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />
@@ -95,7 +144,9 @@ export const ProfileSettings = () => {
         </div>
         
         <div className="flex-1 text-center md:text-left relative z-10 pt-2">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight">{user?.email?.split('@')[0].toUpperCase()}</h1>
+          <h1 className="text-3xl font-black text-slate-800 tracking-tight">
+            {profileData.prenom} {profileData.nom}
+          </h1>
           <div className="flex flex-col md:flex-row items-center gap-4 mt-4">
             <div className="flex items-center text-slate-500 font-medium bg-slate-50 px-4 py-2 rounded-xl border border-slate-200">
               <Mail className="h-4 w-4 mr-2" />
@@ -141,12 +192,30 @@ export const ProfileSettings = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Identifiant (Email)</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Prénom</label>
                 <input 
                   type="text" 
-                  disabled 
-                  value={user?.email || ''} 
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-500 font-medium cursor-not-allowed"
+                  value={profileData.prenom} 
+                  onChange={e => setProfileData({...profileData, prenom: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Nom</label>
+                <input 
+                  type="text" 
+                  value={profileData.nom} 
+                  onChange={e => setProfileData({...profileData, nom: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Âge</label>
+                <input 
+                  type="number" 
+                  value={profileData.age} 
+                  onChange={e => setProfileData({...profileData, age: e.target.value})}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                 />
               </div>
               <div>

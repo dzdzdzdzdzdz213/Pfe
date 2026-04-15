@@ -292,7 +292,20 @@ export const RadiologuePatientSearch = () => {
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['radiologue-patients', query, dateFrom, dateTo, serviceFilter, statusFilter],
     queryFn: async () => {
+      // 1. First, search for users that match the query if any
+      let matchingIds = [];
+      if (query.trim()) {
+        const { data: users } = await supabase
+          .from('utilisateurs')
+          .select('id')
+          .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%`);
+        matchingIds = (users || []).map(u => u.id);
+        
+        // If query present but no user found, return empty early
+        if (matchingIds.length === 0) return [];
+      }
 
+      // 2. Build the patient query
       let q = supabase.from('patients').select(`
         id,
         utilisateur:utilisateur_id(prenom, nom, email, telephone),
@@ -305,8 +318,8 @@ export const RadiologuePatientSearch = () => {
         )
       `);
 
-      if (query.trim()) {
-        q = q.or(`prenom.ilike.%${query}%,nom.ilike.%${query}%`, { foreignTable: 'utilisateur' });
+      if (matchingIds.length > 0) {
+        q = q.in('utilisateur_id', matchingIds);
       }
 
       const { data, error } = await q.limit(50);

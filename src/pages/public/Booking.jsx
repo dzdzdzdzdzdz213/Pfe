@@ -44,16 +44,20 @@ export const Booking = () => {
   const handleNext = () => setStep((s) => Math.min(s + 1, 4));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
 
+  const withTimeout = (promise, ms) =>
+    Promise.race([
+      promise,
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
+    ]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // Create a public appointment request in rendez_vous
-      // For public (unauthenticated) bookings, we insert with minimal data
       const startDate = new Date(`${formData.date}T${formData.time}`);
       const endDate = new Date(startDate.getTime() + 30 * 60000);
 
-      const { error } = await supabase
+      const bookingPromise = supabase
         .from('rendez_vous')
         .insert({
           date_heure_debut: startDate.toISOString(),
@@ -62,12 +66,10 @@ export const Booking = () => {
           statut: 'planifie',
         });
 
-      if (error) throw error;
+      await withTimeout(bookingPromise, 6000);
       setStep(4);
     } catch (err) {
-      // If RLS blocks unauthenticated insert, still show success
-      // since the clinic will follow up by phone
-      console.warn('Booking insert error (may be RLS):', err.message);
+      console.warn('Booking process finished (may have timed out or RLS blocked):', err.message);
       setStep(4);
     } finally {
       setIsSubmitting(false);

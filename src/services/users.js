@@ -67,37 +67,35 @@ export const userService = {
   async createUser(userData) {
     const { nom, prenom, email, telephone, role, password, ...rest } = userData;
 
-    // Step 1: Auth signup
-    const { data: authUser, error: authError } = await supabase.auth.signUp({ email, password });
+    // Step 1: Auth signup (This creates the record in auth.users)
+    const { data: authUser, error: authError } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        data: { nom, prenom, role }
+      }
+    });
     if (authError) throw authError;
+    if (!authUser.user) throw new Error("Erreur lors de la création du compte d'authentification");
 
-    // Step 2: utilisateurs row (id matches auth.users.id)
-    const { data: user, error: userError } = await supabase
-      .from('utilisateurs')
-      .insert({ id: authUser.user.id, nom, prenom, email, telephone, role })
-      .select()
-      .single();
-    if (userError) throw userError;
+    // Step 2 & 3: Atomic creation via Security Definer RPC
+    const { error: rpcError } = await supabase.rpc('create_staff_user', {
+      p_id: authUser.user.id,
+      p_nom: nom,
+      p_prenom: prenom,
+      p_email: email,
+      p_telephone: telephone,
+      p_role: role,
+      p_matricule_sante: rest.matricule_sante || null,
+      p_specialite_principale: rest.specialite_principale || null
+    });
 
-    // Step 3: Role-specific table
-    if (role === 'radiologue') {
-      const { error: roleError } = await supabase
-        .from('radiologues')
-        .insert({ utilisateur_id: user.id, matricule_sante: rest.matricule_sante, specialite_principale: rest.specialite_principale });
-      if (roleError) throw roleError;
-    } else if (role === 'receptionniste') {
-      const { error: roleError } = await supabase
-        .from('receptionnistes')
-        .insert({ utilisateur_id: user.id });
-      if (roleError) throw roleError;
-    } else if (role === 'administrateur') {
-      const { error: roleError } = await supabase
-        .from('administrateurs')
-        .insert({ utilisateur_id: user.id });
-      if (roleError) throw roleError;
+    if (rpcError) {
+      console.error('RPC Error:', rpcError);
+      throw new Error(`Erreur lors de la création du profil: ${rpcError.message}`);
     }
 
-    return user;
+    return { id: authUser.user.id, email, nom, prenom, role };
   },
 
   /**

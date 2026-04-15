@@ -38,12 +38,17 @@ export const AuthProvider = ({ children }) => {
               role: finalRole,
               nom: finalNom,
               prenom: finalPrenom,
-              telephone: legacyUser?.telephone || null
+              telephone: legacyUser?.telephone || null,
+              profil_complet: false
           });
           
           if (!insertError && !legacyUser) {
               const { data: newUtil } = await supabase.from('utilisateurs').insert({
-                  nom: finalNom, prenom: finalPrenom, email: authUser.email, role: 'patient'
+                  id: authUser.id,
+                  nom: finalNom, 
+                  prenom: finalPrenom, 
+                  email: authUser.email, 
+                  role: 'patient'
               }).select().single();
               if (newUtil) await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
           }
@@ -106,8 +111,14 @@ export const AuthProvider = ({ children }) => {
 
       const authUser = session?.user || null;
       if (authUser) {
-        // Only trigger loading if we don't have a user or role yet, or if it's a sign-in event
-        const shouldSetLoading = !state.user || !state.role || event === 'SIGNED_IN' || event === 'INITIAL_SESSION';
+        // Guard: If it's just an INITIAL_SESSION and we already have the correct user/role, skip
+        if (state.user?.id === authUser.id && state.role && event === 'INITIAL_SESSION') {
+          setState(prev => ({ ...prev, session }));
+          return;
+        }
+
+        // Only trigger loading if we don't have a user or role yet, or if it's a fresh sign-in
+        const shouldSetLoading = (!state.user || !state.role) && (event === 'SIGNED_IN');
         
         if (shouldSetLoading) {
           setState(prev => ({ ...prev, loading: true, roleLoading: true, session, user: authUser }));

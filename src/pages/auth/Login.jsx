@@ -40,6 +40,16 @@ export const Login = () => {
     }
   }, [user, role, navigate, location]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errCode = params.get('error_code');
+    const errDesc = params.get('error_description');
+    if (errCode) {
+      toast.error(errDesc?.replace(/\+/g, ' ') || 'Erreur de connexion Google. Veuillez réessayer.');
+      window.history.replaceState({}, '', '/login');
+    }
+  }, [location.search]);
+
   const {
     register,
     handleSubmit,

@@ -44,8 +44,8 @@ export const PatientProfile = () => {
         telephoneUrgence: patientData.telephone_urgence || '',
       });
       setMedicalForm({
-        allergies: patientData.dossier?.[0]?.allergies || '',
-        antecedentsMedicaux: patientData.dossier?.[0]?.antecedentsMedicaux || '',
+        allergies: patientData.allergies || '',
+        antecedentsMedicaux: patientData.antecedents_medicaux || '',
       });
     }
   }, [patientData]);

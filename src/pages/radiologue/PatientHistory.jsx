@@ -138,10 +138,22 @@ export const PatientHistory = () => {
     queryKey: ['patients-search', searchTerm],
     queryFn: async () => {
       if (!searchTerm || searchTerm.length < 2) return [];
+      
+      // Step 1: Search for users by name
+      const { data: users } = await supabase
+        .from('utilisateurs')
+        .select('id')
+        .or(`prenom.ilike.%${searchTerm}%,nom.ilike.%${searchTerm}%`);
+      
+      const ids = (users || []).map(u => u.id);
+      if (ids.length === 0) return [];
+
+      // Step 2: Fetch patients using those IDs
       const { data, error } = await supabase
         .from('patients')
         .select('*, utilisateur:utilisateur_id(nom, prenom, email, telephone)')
-        .or(`nom.ilike.%${searchTerm}%,prenom.ilike.%${searchTerm}%`, { foreignTable: 'utilisateur' });
+        .in('utilisateur_id', ids);
+      
       if (error) throw error;
       return data || [];
     },

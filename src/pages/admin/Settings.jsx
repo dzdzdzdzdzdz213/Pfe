@@ -35,7 +35,11 @@ export const AdminSettings = () => {
 
   const createServiceMutation = useMutation({
     mutationFn: async (data) => {
-      const { data: result, error } = await supabase.from('services').insert(data).select().single();
+      const { data: result, error } = await supabase
+        .from('services')
+        .upsert(data, { onConflict: 'nom' })
+        .select()
+        .single();
       if (error) throw error;
       return result;
     },
