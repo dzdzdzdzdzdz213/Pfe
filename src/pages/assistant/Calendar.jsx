@@ -95,8 +95,8 @@ export const AssistantCalendar = () => {
     return appointments.map((appt, _i) => ({
       id: appt.id,
       title: `${appt.patient?.utilisateur?.prenom || ''} ${appt.patient?.utilisateur?.nom || 'Patient'}`,
-      start: new Date(appt.dateHeureDebut),
-      end: new Date(appt.dateHeureFin),
+      start: new Date(appt.date_heure_debut),
+      end: new Date(appt.date_heure_fin),
       resource: appt,
     }));
   }, [appointments]);

@@ -44,7 +44,7 @@ const PrintableReport = ({ exam, report, patientName, t, lang }) => (
     <div className="pr-block">
       <div><div className="pr-label">{t('role_patient')}</div><div className="pr-value">{patientName}</div></div>
       <div><div className="pr-label">{t('booking_service')}</div><div className="pr-value">{exam?.service?.nom || exam?.services?.nom || '—'}</div></div>
-      <div><div className="pr-label">{t('date_realisation')}</div><div className="pr-value">{formatDate(exam?.date_realisation || exam?.dateRealisation)}</div></div>
+      <div><div className="pr-label">{t('date_realisation')}</div><div className="pr-value">{formatDate(exam?.date_realisation)}</div></div>
       <div><div className="pr-label">{t('modal_status')}</div><div className="pr-value">{report?.est_valide ? `✓ ${t('validate')}` : t('status_en_cours')}</div></div>
     </div>
     <div className="pr-title">{t('print_report_title').toUpperCase()}</div>
@@ -63,7 +63,7 @@ const ReportModal = ({ report, exam, _patientName, onClose, t }) => (
       <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
         <div>
           <h2 className="text-base font-extrabold text-slate-900">{t('print_report_title')}</h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">{exam?.service?.nom || exam?.services?.nom} — {formatDate(exam?.date_realisation || exam?.dateRealisation)}</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">{exam?.service?.nom || exam?.services?.nom} — {formatDate(exam?.date_realisation)}</p>
         </div>
         <div className="flex items-center gap-2">
           {report?.est_valide && (

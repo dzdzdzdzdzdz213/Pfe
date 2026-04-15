@@ -235,7 +235,7 @@ const PatientCard = ({ patient }) => {
                   <p className="text-sm font-bold text-slate-800">{exam.service?.nom || exam.services?.nom}</p>
                   <DocBadge type={exam.compte_rendu || exam.comptes_rendus?.length ? 'compte_rendu' : 'resultat'} />
                 </div>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">{formatDate(exam.dateRealisation || exam.date_realisation)}</p>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">{formatDate(exam.date_realisation)}</p>
                 {/* Handle both singular and plural nested compte rendus */}
                 {(exam.compte_rendu || (exam.comptes_rendus && exam.comptes_rendus[0])) && (
                   <p className="text-xs text-slate-600 font-medium mt-2 bg-blue-50/50 border border-blue-100/50 px-3 py-2 rounded-xl leading-relaxed line-clamp-2">

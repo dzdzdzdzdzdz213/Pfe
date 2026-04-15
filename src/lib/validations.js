@@ -20,8 +20,8 @@ export const patientSchema = z.object({
   telephone: z.string().min(8, { message: "Numéro de téléphone non valide" }),
   adresse: z.string().optional(),
   sexe: z.enum(['M', 'F']),
-  groupeSanguin: z.string().optional(),
-  telephoneUrgence: z.string().optional(),
+  groupe_sanguin: z.string().optional(),
+  telephone_urgence: z.string().optional(),
   date_naissance: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Date de naissance non valide",
   }),
@@ -30,10 +30,10 @@ export const patientSchema = z.object({
 export const appointmentSchema = z.object({
   patient_id: z.string().uuid({ message: "Patient non sélectionné" }),
   service_id: z.string().uuid({ message: "Service non sélectionné" }),
-  dateHeureDebut: z.string().refine((val) => !isNaN(Date.parse(val)), {
+  date_heure_debut: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Date et heure de début non valides",
   }),
-  dateHeureFin: z.string().refine((val) => !isNaN(Date.parse(val)), {
+  date_heure_fin: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Date et heure de fin non valides",
   }),
   motif: z.string().optional(),

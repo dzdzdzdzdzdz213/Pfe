@@ -47,7 +47,7 @@ export const PatientDashboard = () => {
     enabled: !!user?.id,
   });
 
-  const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) > new Date() && a.statut !== 'cancelled');
+  const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'cancelled');
   
   const prenom = patientRecord?.utilisateurs?.prenom || patientRecord?.utilisateur?.prenom || 'Patient';
 
@@ -108,8 +108,8 @@ export const PatientDashboard = () => {
             {upcomingAppointments.length > 0 ? upcomingAppointments.slice(0, 3).map(appt => (
               <div key={appt.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 <div className="text-center bg-primary/5 rounded-xl px-3 py-2 border border-primary/10 min-w-[70px]">
-                  <p className="text-sm font-extrabold text-primary">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
-                  <p className="text-[10px] text-slate-400 font-bold">{formatDate(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                  <p className="text-sm font-extrabold text-primary">{formatTime(appt.date_heure_debut)}</p>
+                  <p className="text-[10px] text-slate-400 font-bold">{formatDate(appt.date_heure_debut)}</p>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800">{appt.motif || 'Consultation'}</p>

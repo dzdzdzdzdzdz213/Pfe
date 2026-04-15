@@ -51,8 +51,8 @@ export const PatientAppointments = () => {
     },
   });
 
-  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) > new Date() && a.statut !== 'cancelled');
-  const pastAppts = appointments.filter(a => new Date(a.date_heure_debut || a.dateHeureDebut) <= new Date());
+  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'cancelled');
+  const pastAppts = appointments.filter(a => new Date(a.date_heure_debut) <= new Date());
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -64,8 +64,8 @@ export const PatientAppointments = () => {
       return appointmentService.createAppointment({
         patient_id: patientRecord?.id,
         service_id: selectedService?.id,
-        dateHeureDebut: start.toISOString(),
-        dateHeureFin: end.toISOString(),
+        date_heure_debut: start.toISOString(),
+        date_heure_fin: end.toISOString(),
         motif,
         statut: 'pending',
       });
@@ -136,8 +136,8 @@ export const PatientAppointments = () => {
               <div key={appt.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-all">
                 <div className="p-5 flex items-center gap-4 flex-wrap">
                   <div className="text-center bg-primary/5 rounded-xl px-4 py-3 border border-primary/10 flex-shrink-0">
-                    <p className="text-lg font-extrabold text-primary">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
-                    <p className="text-xs text-slate-500 font-bold">{formatDate(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                    <p className="text-lg font-extrabold text-primary">{formatTime(appt.date_heure_debut)}</p>
+                    <p className="text-xs text-slate-500 font-bold">{formatDate(appt.date_heure_debut)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800">{appt.motif || t('consultation')}</p>
@@ -209,8 +209,8 @@ export const PatientAppointments = () => {
           {pastAppts.length > 0 ? pastAppts.map(appt => (
             <div key={appt.id} className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex items-center gap-4 opacity-80">
               <div className="text-center bg-slate-50 rounded-xl px-4 py-3 border border-slate-100">
-                <p className="text-lg font-extrabold text-slate-600">{formatTime(appt.date_heure_debut || appt.dateHeureDebut)}</p>
-                <p className="text-xs text-slate-400 font-bold">{formatDate(appt.date_heure_debut || appt.dateHeureDebut)}</p>
+                <p className="text-lg font-extrabold text-slate-600">{formatTime(appt.date_heure_debut)}</p>
+                <p className="text-xs text-slate-400 font-bold">{formatDate(appt.date_heure_debut)}</p>
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-bold text-slate-700">{appt.motif || 'Consultation'}</p>

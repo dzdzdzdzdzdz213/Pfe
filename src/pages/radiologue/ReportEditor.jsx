@@ -108,7 +108,7 @@ const PrintableReport = React.forwardRef(({ exam, reportContent, radiologue, isV
         </div>
         <div>
           <div className="print-label">{t('date_label')}</div>
-          <div className="print-value">{formatDate(exam?.date_realisation || exam?.dateRealisation)}</div>
+          <div className="print-value">{formatDate(exam?.date_realisation)}</div>
         </div>
         <div>
           <div className="print-label">{t('role_radiologue')}</div>
@@ -323,7 +323,7 @@ export const ReportEditor = () => {
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-slate-600">
                 <Calendar className="h-3.5 w-3.5 text-slate-400" />
-                <span className="font-medium">{formatDate(exam?.date_realisation || exam?.dateRealisation)}</span>
+                <span className="font-medium">{formatDate(exam?.date_realisation)}</span>
               </div>
               <div className="flex items-center gap-2 text-slate-600">
                 <Stethoscope className="h-3.5 w-3.5 text-slate-400" />
@@ -337,10 +337,10 @@ export const ReportEditor = () => {
               )}
             </div>
           </div>
-          {(exam?.observations_cliniques || exam?.observationsCliniques) && (
+          {exam?.observations_cliniques && (
             <div className="pt-3 border-t border-slate-100">
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1.5">{t('report_observations')}</p>
-              <p className="text-sm text-slate-600 font-medium leading-relaxed">{exam.observations_cliniques || exam.observationsCliniques}</p>
+              <p className="text-sm text-slate-600 font-medium leading-relaxed">{exam.observations_cliniques}</p>
             </div>
           )}
           

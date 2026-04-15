@@ -43,11 +43,11 @@ export const RadiologueExams = () => {
     },
     {
       key: 'date', label: t('date_label'),
-      render: (row) => <span className="text-sm font-medium">{formatDate(row.dateRealisation)}</span>,
+      render: (row) => <span className="text-sm font-medium">{formatDate(row.date_realisation)}</span>,
     },
     {
       key: 'observations', label: t('report_observations'),
-      render: (row) => <span className="text-sm font-medium text-slate-500 truncate max-w-[200px] block">{row.observationsCliniques || '-'}</span>,
+      render: (row) => <span className="text-sm font-medium text-slate-500 truncate max-w-[200px] block">{row.observations_cliniques || '-'}</span>,
     },
     {
       key: 'statut', label: t('status'),

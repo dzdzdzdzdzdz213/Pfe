@@ -26,8 +26,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || '',
     service_id: appointment?.service_id || '',
-    dateHeureDebut: appointment?.date_heure_debut || appointment?.dateHeureDebut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
-    dateHeureFin: appointment?.date_heure_fin || appointment?.dateHeureFin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
+    date_heure_debut: appointment?.date_heure_debut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
+    date_heure_fin: appointment?.date_heure_fin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
     motif: appointment?.motif || '',
     statut: appointment?.statut || 'planifie',
   });
@@ -98,7 +98,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   });
 
   const handleSubmit = async () => {
-    if (!formData.patient_id || !formData.dateHeureDebut) {
+    if (!formData.patient_id || !formData.date_heure_debut) {
       toast.error(t('error_required_fields'));
       return;
     }
@@ -121,7 +121,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           .insert({
             service_id: formData.service_id,
             statut: 'planifie',
-            date_realisation: formData.dateHeureDebut,
+            date_realisation: formData.date_heure_debut,
           })
           .select('id')
           .single();
@@ -140,8 +140,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       const rdvData = {
         patient_id: formData.patient_id,
         receptionniste_id,
-        date_heure_debut: formData.dateHeureDebut,
-        date_heure_fin: formData.dateHeureFin,
+        date_heure_debut: formData.date_heure_debut,
+        date_heure_fin: formData.date_heure_fin,
         motif: formData.motif,
         statut: formData.statut,
         ...(examenId && { examen_id: examenId }),
@@ -328,11 +328,11 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                   <input
                     type="datetime-local"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
-                    value={formData.dateHeureDebut ? format(new Date(formData.dateHeureDebut), "yyyy-MM-dd'T'HH:mm") : ''}
+                    value={formData.date_heure_debut ? format(new Date(formData.date_heure_debut), "yyyy-MM-dd'T'HH:mm") : ''}
                     onChange={(e) => {
                       const start = new Date(e.target.value);
                       const end = new Date(start.getTime() + 30 * 60000);
-                      setFormData(prev => ({ ...prev, dateHeureDebut: start.toISOString(), dateHeureFin: end.toISOString() }));
+                      setFormData(prev => ({ ...prev, date_heure_debut: start.toISOString(), date_heure_fin: end.toISOString() }));
                     }}
                   />
                 </div>
@@ -341,8 +341,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                   <input
                     type="datetime-local"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
-                    value={formData.dateHeureFin ? format(new Date(formData.dateHeureFin), "yyyy-MM-dd'T'HH:mm") : ''}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dateHeureFin: new Date(e.target.value).toISOString() }))}
+                    value={formData.date_heure_fin ? format(new Date(formData.date_heure_fin), "yyyy-MM-dd'T'HH:mm") : ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, date_heure_fin: new Date(e.target.value).toISOString() }))}
                   />
                 </div>
               </div>
@@ -423,7 +423,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('modal_summary')}</p>
                 <p className="text-sm font-bold text-slate-800">{t('summary_patient')}: {selectedPatient?.utilisateur?.prenom} {selectedPatient?.utilisateur?.nom}</p>
                 <p className="text-sm text-slate-600 font-medium">{t('summary_service')}: {selectedService?.nom}</p>
-                <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.dateHeureDebut ? format(new Date(formData.dateHeureDebut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
+                <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.date_heure_debut ? format(new Date(formData.date_heure_debut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
               </div>
             </div>
           )}

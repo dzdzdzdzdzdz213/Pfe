@@ -56,9 +56,9 @@ export const RadiologueDashboard = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 truncate">
-                    {exam.patient?.utilisateurs?.prenom || exam.rendez_vous?.patient?.utilisateurs?.prenom} {exam.patient?.utilisateurs?.nom || exam.rendez_vous?.patient?.utilisateurs?.nom}
+                    {exam.patient?.utilisateur?.prenom} {exam.patient?.utilisateur?.nom}
                   </p>
-                  <p className="text-xs text-slate-500 font-medium">{exam.services?.nom} • {formatDate(exam.date_realisation || exam.dateRealisation)}</p>
+                  <p className="text-xs text-slate-500 font-medium">{exam.services?.nom} • {formatDate(exam.date_realisation)}</p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor('planifie'))}>
                   {t('status_planifie')}
