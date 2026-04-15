@@ -11,7 +11,7 @@ export const AuthLayout = () => {
   if (authInitialized && user && role) {
     const dashboardPath = role === 'administrateur' ? '/admin/dashboard' :
                          role === 'radiologue' ? '/radiologue/dashboard' :
-                         role === 'receptionniste' ? '/assistant/dashboard' :
+                         role === 'receptionniste' ? '/receptionniste/dashboard' :
                          '/patient/dashboard';
     return <Navigate to={dashboardPath} replace />;
   }

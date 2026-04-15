@@ -48,8 +48,7 @@ export const AssistantDashboard = () => {
             <div>
               <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('assistant_schedule')}</h3>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">{formatDate(today)}</p>
-            </div>
-            <a href="/assistant/calendar" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                       <a href="/receptionniste/calendar" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
               {t('view_calendar')} <ChevronRight className="h-3 w-3" />
             </a>
           </div>
@@ -90,13 +89,13 @@ export const AssistantDashboard = () => {
             )}
           </div>
         </div>
-
+ 
         {/* Quick Actions */}
         <div className="space-y-4">
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight mb-4">{t('assistant_quick_actions')}</h3>
             <div className="space-y-3">
-              <a href="/assistant/calendar" className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10 hover:bg-primary/10 transition-all group">
+              <a href="/receptionniste/calendar" className="flex items-center gap-3 p-4 bg-primary/5 rounded-xl border border-primary/10 hover:bg-primary/10 transition-all group">
                 <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-blue-200">
                   <Plus className="h-5 w-5" />
                 </div>
@@ -105,7 +104,7 @@ export const AssistantDashboard = () => {
                   <p className="text-[11px] text-slate-500 font-medium">{t('assistant_new_rdv_hint')}</p>
                 </div>
               </a>
-              <a href="/assistant/patients" className="flex items-center gap-3 p-4 bg-teal-50/50 rounded-xl border border-teal-100/50 hover:bg-teal-50 transition-all group">
+              <a href="/receptionniste/patients" className="flex items-center gap-3 p-4 bg-teal-50/50 rounded-xl border border-teal-100/50 hover:bg-teal-50 transition-all group"> group">
                 <div className="h-10 w-10 rounded-xl bg-teal-500 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg shadow-teal-200">
                   <UserPlus className="h-5 w-5" />
                 </div>

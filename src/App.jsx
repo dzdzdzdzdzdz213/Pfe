@@ -146,9 +146,9 @@ const AppRoutes = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
         </Route>
 
-        {/* Assistant Routes */}
-        <Route path="/assistant" element={
-          <ProtectedRoute requiredRole="assistant"><DashboardLayout /></ProtectedRoute>
+        {/* Receptionniste Routes */}
+        <Route path="/receptionniste" element={
+          <ProtectedRoute requiredRole="receptionniste"><DashboardLayout /></ProtectedRoute>
         }>
           <Route path="dashboard" element={<AssistantDashboardSafe />} />
           <Route path="calendar" element={<AssistantCalendarSafe />} />

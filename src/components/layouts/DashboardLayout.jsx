@@ -109,8 +109,8 @@ export const DashboardLayout = () => {
   };
 
   const getRoleBasePath = (currentRole) => {
-    if (currentRole === 'administrateur') return 'admin';
-    if (currentRole === 'receptionniste') return 'assistant';
+    if (currentRole === 'administrateur' || currentRole === 'admin') return 'admin';
+    if (currentRole === 'receptionniste' || currentRole === 'assistant') return 'receptionniste';
     return currentRole;
   };
 
@@ -132,8 +132,8 @@ export const DashboardLayout = () => {
     if (role === 'assistant' || role === 'receptionniste') {
       return [
         ...common,
-        { name: t('calendar'), href: '/assistant/calendar', icon: Calendar },
-        { name: t('patients'), href: '/assistant/patients', icon: Users },
+        { name: t('calendar'), href: '/receptionniste/calendar', icon: Calendar },
+        { name: t('patients'), href: '/receptionniste/patients', icon: Users },
       ];
     }
 
