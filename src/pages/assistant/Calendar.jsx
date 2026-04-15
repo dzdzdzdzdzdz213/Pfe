@@ -121,13 +121,13 @@ export const AssistantCalendar = () => {
   };
 
   const eventStyleGetter = (event) => {
-    const status = event.resource?.statut || 'pending';
-    const bg = status === 'confirmed' ? '#10b981' : status === 'pending' ? '#f59e0b' : status === 'cancelled' ? '#ef4444' : '#2563eb';
+    const status = event.resource?.statut || 'planifie';
+    const bg = status === 'confirme' ? '#10b981' : (status === 'planifie' ? '#f59e0b' : (status === 'annule' ? '#ef4444' : '#2563eb'));
     return {
       style: {
         backgroundColor: bg,
         borderRadius: '8px',
-        opacity: status === 'cancelled' ? 0.5 : 1,
+        opacity: status === 'annule' ? 0.5 : 1,
         color: 'white',
         border: 'none',
         fontSize: '12px',

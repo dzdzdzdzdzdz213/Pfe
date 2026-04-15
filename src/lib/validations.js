@@ -10,7 +10,7 @@ export const userSchema = z.object({
   prenom: z.string().min(2, { message: "Le prénom est trop court" }),
   email: z.string().email({ message: "Adresse e-mail non valide" }),
   telephone: z.string().optional(),
-  role: z.enum(['administrateur', 'radiologue', 'receptionniste', 'patient']),
+  role: z.enum(['admin', 'radiologue', 'receptionniste', 'patient']),
 });
 
 export const patientSchema = z.object({
@@ -19,7 +19,7 @@ export const patientSchema = z.object({
   email: z.string().email({ message: "Adresse e-mail non valide" }).optional().or(z.literal('')),
   telephone: z.string().min(8, { message: "Numéro de téléphone non valide" }),
   adresse: z.string().optional(),
-  sexe: z.enum(['M', 'F']),
+  sexe: z.enum(['M', 'F', 'Autre']),
   groupe_sanguin: z.string().optional(),
   telephone_urgence: z.string().optional(),
   date_naissance: z.string().refine((val) => !isNaN(Date.parse(val)), {
@@ -37,7 +37,7 @@ export const appointmentSchema = z.object({
     message: "Date et heure de fin non valides",
   }),
   motif: z.string().optional(),
-  statut: z.enum(['pending', 'confirmed', 'cancelled', 'completed']).default('pending'),
+  statut: z.enum(['planifie', 'confirme', 'annule', 'termine']).default('planifie'),
 });
 
 export const reportSchema = z.object({

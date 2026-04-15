@@ -51,7 +51,7 @@ export const PatientAppointments = () => {
     },
   });
 
-  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'cancelled');
+  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'annule');
   const pastAppts = appointments.filter(a => new Date(a.date_heure_debut) <= new Date());
 
   const createMutation = useMutation({
@@ -81,7 +81,7 @@ export const PatientAppointments = () => {
         date_heure_debut: start.toISOString(),
         date_heure_fin: end.toISOString(),
         motif,
-        statut: 'pending',
+        statut: 'planifie',
       });
     },
     onSuccess: () => {
@@ -141,7 +141,7 @@ export const PatientAppointments = () => {
             const steps = [
               { key: 'planifie', label: t('status_planifie') },
               { key: 'confirme', label: t('status_confirme') },
-              { key: 'realise', label: t('status_realise') },
+              { key: 'termine', label: t('status_termine') },
             ];
             const stepIdx = steps.findIndex(s => s.key === status);
             const activeStep = stepIdx >= 0 ? stepIdx : 0;

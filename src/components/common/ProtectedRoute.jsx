@@ -27,10 +27,10 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     if (!requiredRole) return true;
     if (role === requiredRole) return true;
     
-    // Hardcoded bullet-proof fallbacks for legacy mapping
+    // Schema-compliant fallbacks
     const legacyMap = {
       'admin': ['administrateur'],
-      'assistant': ['receptionniste']
+      'receptionniste': ['assistant', 'receptionist']
     };
     
     if (legacyMap[requiredRole] && legacyMap[requiredRole].includes(role)) {

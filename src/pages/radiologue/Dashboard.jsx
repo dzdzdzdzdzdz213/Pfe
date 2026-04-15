@@ -89,7 +89,7 @@ export const RadiologueDashboard = () => {
                     {report.radiologues?.utilisateurs?.prenom} {report.radiologues?.utilisateurs?.nom}
                   </p>
                 </div>
-                <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', report.est_valide ? getStatusColor('confirmed') : getStatusColor('pending'))}>
+                <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', report.est_valide ? getStatusColor('confirme') : getStatusColor('planifie'))}>
                   {report.est_valide ? t('report_validated_badge') : t('report_draft')}
                 </span>
               </div>

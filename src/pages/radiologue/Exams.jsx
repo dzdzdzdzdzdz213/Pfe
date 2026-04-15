@@ -84,7 +84,7 @@ export const RadiologueExams = () => {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {[{ key: 'all', label: t('all') }, { key: 'planifie', label: t('status_planifie') }, { key: 'realise', label: t('status_realise') }].map(f => (
+        {[{ key: 'all', label: t('all') }, { key: 'planifie', label: t('status_planifie') }, { key: 'termine', label: t('status_termine') }].map(f => (
           <button key={f.key} onClick={() => setStatusFilter(f.key)} className={cn('px-4 py-2 rounded-xl text-sm font-bold transition-all', statusFilter === f.key ? 'bg-primary text-white shadow-lg shadow-blue-100' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
             {f.label}
           </button>

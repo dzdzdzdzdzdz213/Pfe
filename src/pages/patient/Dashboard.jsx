@@ -47,7 +47,7 @@ export const PatientDashboard = () => {
     enabled: !!user?.id,
   });
 
-  const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'cancelled');
+  const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'annule');
   
   const prenom = patientRecord?.utilisateurs?.prenom || patientRecord?.utilisateur?.prenom || 'Patient';
 

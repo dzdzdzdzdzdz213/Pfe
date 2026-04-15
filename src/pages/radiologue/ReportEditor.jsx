@@ -217,16 +217,14 @@ export const ReportEditor = () => {
           .from('ordonnances')
           .upsert({
             examen_id: id,
-            radiologue_id: user?.id,
             description: ordonnance.description,
             nom_medecin_prescripteur: ordonnance.nom_medecin_prescripteur,
-            date_creation: new Date().toISOString()
           }, { onConflict: 'examen_id' });
         
         if (ordError) throw ordError;
       }
 
-      if (isValidated) await examService.updateExamStatus(id, 'realise');
+      if (isValidated) await examService.updateExamStatus(id, 'termine');
       return report;
     },
     onSuccess: () => {

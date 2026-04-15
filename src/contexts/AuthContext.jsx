@@ -50,13 +50,13 @@ export const AuthProvider = ({ children }) => {
 
           let roleToSet = finalRole.toLowerCase().trim();
           if (roleToSet === 'administrateur') roleToSet = 'admin';
-          if (roleToSet === 'receptionniste') roleToSet = 'assistant';
+          if (roleToSet === 'assistant') roleToSet = 'receptionniste';
           return roleToSet;
       }
 
       let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
       if (fetchedRole === 'administrateur') fetchedRole = 'admin';
-      if (fetchedRole === 'receptionniste') fetchedRole = 'assistant';
+      if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
       return fetchedRole;
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);

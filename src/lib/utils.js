@@ -47,7 +47,7 @@ export function getStatusColor(status) {
     case 'planifie': return 'bg-amber-50 text-amber-700 border-amber-200';
     case 'confirme': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
     case 'en_cours': return 'bg-blue-50 text-blue-700 border-blue-200';
-    case 'realise': return 'bg-violet-50 text-violet-700 border-violet-200';
+    case 'termine': return 'bg-violet-50 text-violet-700 border-violet-200';
     case 'annule': return 'bg-red-50 text-red-600 border-red-200';
     default: return 'bg-slate-50 text-slate-600 border-slate-200';
   }
@@ -59,7 +59,7 @@ export function getStatusLabel(status, t) {
       case 'planifie': return t('status_planifie');
       case 'confirme': return t('status_confirme');
       case 'en_cours': return t('status_en_cours');
-      case 'realise': return t('status_realise');
+      case 'termine': return t('status_termine');
       case 'annule': return t('status_annule');
       default: return t(`status_${status}`) || status;
     }
@@ -69,7 +69,7 @@ export function getStatusLabel(status, t) {
     case 'planifie': return 'Planifié';
     case 'confirme': return 'Confirmé';
     case 'en_cours': return 'En cours';
-    case 'realise': return 'Réalisé';
+    case 'termine': return 'Terminé';
     case 'annule': return 'Annulé';
     default: return status;
   }

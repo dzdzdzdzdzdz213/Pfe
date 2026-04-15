@@ -26,9 +26,9 @@ export const AssistantDashboard = () => {
     queryFn: () => patientService.fetchPatients(),
   });
 
-  const confirmedToday = todayAppointments.filter(a => a.statut === 'confirme' || a.statut === 'confirmed').length;
-  const pendingToday = todayAppointments.filter(a => a.statut === 'planifie' || a.statut === 'pending').length;
-  const cancelledToday = todayAppointments.filter(a => a.statut === 'annule' || a.statut === 'cancelled').length;
+  const confirmedToday = todayAppointments.filter(a => a.statut === 'confirme').length;
+  const pendingToday = todayAppointments.filter(a => a.statut === 'planifie').length;
+  const cancelledToday = todayAppointments.filter(a => a.statut === 'annule').length;
 
   return (
     <div className="space-y-8">
