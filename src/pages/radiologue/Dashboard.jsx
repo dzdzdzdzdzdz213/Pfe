@@ -59,7 +59,7 @@ export const RadiologueDashboard = () => {
                   <p className="text-sm font-bold text-slate-800 truncate">
                     {exam.patient?.utilisateur?.prenom} {exam.patient?.utilisateur?.nom}
                   </p>
-                  <p className="text-xs text-slate-500 font-medium">{exam.service?.nom || exam.services?.nom} • {formatDate(exam.date_realisation)}</p>
+                  <p className="text-xs text-slate-500 font-medium">{exam.service?.nom} • {formatDate(exam.date_realisation)}</p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor('planifie'))}>
                   {t('status_planifie')}
@@ -87,7 +87,7 @@ export const RadiologueDashboard = () => {
                     {t('report_id_label').replace('{id}', report.id?.slice(0, 8))}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">
-                    {report.radiologues?.utilisateurs?.prenom} {report.radiologues?.utilisateurs?.nom}
+                    {report.radiologue?.utilisateur?.prenom} {report.radiologue?.utilisateur?.nom}
                   </p>
                 </div>
                 <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', report.est_valide ? getStatusColor('confirme') : getStatusColor('planifie'))}>

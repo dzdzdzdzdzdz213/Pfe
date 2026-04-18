@@ -74,7 +74,7 @@ export const AssistantDashboard = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800 truncate">
-                      {appt.patients?.utilisateurs?.prenom || appt.patient?.utilisateur?.prenom} {appt.patients?.utilisateurs?.nom || appt.patient?.utilisateur?.nom}
+                      {appt.patient?.utilisateur?.prenom} {appt.patient?.utilisateur?.nom}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">{appt.motif || 'Consultation'}</p>
                   </div>
