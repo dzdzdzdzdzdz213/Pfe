@@ -69,7 +69,13 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  const stateRef = React.useRef(state);
   useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    let isMounted = true;
     const initialize = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -79,17 +85,21 @@ export const AuthProvider = ({ children }) => {
           role = await fetchUserRole(authUser);
         }
 
-        setState({
-          session,
-          user: authUser,
-          role,
-          loading: false,
-          roleLoading: false,
-          authInitialized: true
-        });
+        if (isMounted) {
+          setState({
+            session,
+            user: authUser,
+            role,
+            loading: false,
+            roleLoading: false,
+            authInitialized: true
+          });
+        }
       } catch (err) {
         console.error("Initialization error:", err);
-        setState(prev => ({ ...prev, loading: false, roleLoading: false, authInitialized: true }));
+        if (isMounted) {
+          setState(prev => ({ ...prev, loading: false, roleLoading: false, authInitialized: true }));
+        }
       }
     };
 
@@ -97,6 +107,8 @@ export const AuthProvider = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log("Auth event:", event);
+      if (!isMounted) return;
+
       if (event === 'SIGNED_OUT') {
         setState({
           user: null,
@@ -111,34 +123,40 @@ export const AuthProvider = ({ children }) => {
 
       const authUser = session?.user || null;
       if (authUser) {
-        // Guard: If it's just an INITIAL_SESSION and we already have the correct user/role, skip
-        if (state.user?.id === authUser.id && state.role && event === 'INITIAL_SESSION') {
-          setState(prev => ({ ...prev, session }));
+        const currentState = stateRef.current;
+        
+        // Guard: If we already have the correct user/role, skip refetching 
+        // to prevent UI flashes during TOKEN_REFRESHED or INITIAL_SESSION
+        if (currentState.user?.id === authUser.id && currentState.role) {
+          setState(prev => ({ ...prev, session, user: authUser }));
           return;
         }
 
-        // Only trigger loading if we don't have a user or role yet, or if it's a fresh sign-in
-        const shouldSetLoading = (!state.user || !state.role) && (event === 'SIGNED_IN');
-        
-        if (shouldSetLoading) {
+        // Fresh login: set loading
+        if (!currentState.user || !currentState.role) {
           setState(prev => ({ ...prev, loading: true, roleLoading: true, session, user: authUser }));
         } else {
           setState(prev => ({ ...prev, session, user: authUser }));
         }
 
         const role = await fetchUserRole(authUser);
-        setState({
-          session,
-          user: authUser,
-          role,
-          loading: false,
-          roleLoading: false,
-          authInitialized: true
-        });
+        if (isMounted) {
+          setState({
+            session,
+            user: authUser,
+            role,
+            loading: false,
+            roleLoading: false,
+            authInitialized: true
+          });
+        }
       }
     });
 
-    return () => subscription?.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription?.unsubscribe();
+    };
   }, [fetchUserRole]);
 
 

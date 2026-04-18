@@ -6,6 +6,7 @@ import { formatDate, cn, getStatusColor } from '@/lib/utils';
 import { Stethoscope, FileText, Clock, ChevronRight, Activity } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 export const RadiologueDashboard = () => {
   const { t } = useLanguage();
@@ -44,9 +45,9 @@ export const RadiologueDashboard = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('exam_queue_title')}</h3>
-            <a href="/radiologue/examens" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+            <Link to="/radiologue/examens" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
               {t('view_all')} <ChevronRight className="h-3 w-3" />
-            </a>
+            </Link>
           </div>
           <div className="divide-y divide-slate-50">
             {pendingExams.length > 0 ? pendingExams.slice(0, 5).map((exam) => (

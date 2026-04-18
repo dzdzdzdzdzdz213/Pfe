@@ -10,6 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { formatDate, cn } from '@/lib/utils';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
+import { FileUpload } from '@/components/common/FileUpload';
 import {
   Save, CheckCircle, FileText, User, Calendar, Stethoscope,
   ZoomIn, ZoomOut, RotateCw, Loader2, ArrowLeft,
@@ -247,6 +248,24 @@ export const ReportEditor = () => {
 
   const images = exam?.images_radiologiques || exam?.images || [];
 
+  const handleFileUploadComplete = async (uploadedFiles) => {
+    try {
+      const inserts = uploadedFiles.map(file => ({
+        examen_id: id,
+        url_stockage: file.path, 
+        nom_fichier: file.name
+      }));
+      
+      const { error } = await supabase.from('images_radiologiques').insert(inserts);
+      if (error) throw error;
+      
+      toast.success('Fichiers enregistrés avec succès au dossier médical du patient !');
+      queryClient.invalidateQueries({ queryKey: ['exam', id] });
+    } catch (err) {
+      toast.error('Erreur lors de la sauvegarde des images : ' + err.message);
+    }
+  };
+
   if (loadingExam) {
     return (
       <div className="h-96 flex items-center justify-center">
@@ -417,6 +436,15 @@ export const ReportEditor = () => {
               ))}
             </div>
           )}
+          <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Ajouter des images supplémentaires</h4>
+            <FileUpload 
+              bucket="exam-images"
+              folder={id}
+              onUploadComplete={handleFileUploadComplete}
+              multiple={true}
+            />
+          </div>
         </div>
 
         {/* Right Panel: TipTap Editor */}

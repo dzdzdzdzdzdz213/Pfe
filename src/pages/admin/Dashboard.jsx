@@ -6,6 +6,7 @@ import { timeAgo } from '@/lib/utils';
 import { Users, Calendar, Activity, FileText, ClipboardList, TrendingUp, Database, Shield, ChevronRight } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {
   const { t, lang } = useLanguage();
@@ -148,9 +149,9 @@ export const AdminDashboard = () => {
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('recent_activity')}</h3>
             <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('audit_log')}</p>
           </div>
-          <a href="/admin/audit-logs" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+          <Link to="/admin/audit-logs" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
             {t('view_all')} <ChevronRight className="h-3 w-3" />
-          </a>
+          </Link>
         </div>
         <div className="divide-y divide-slate-50">
           {loadingLogs ? (
