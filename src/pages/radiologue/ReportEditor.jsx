@@ -159,15 +159,20 @@ export const ReportEditor = () => {
     enabled: !!id,
   });
 
-  // Fetch radiologue profile for the print header
-  const { data: radioProfile } = useQuery({
+  // Fetch radiologue profile for the print header and to get radiologue_id
+  const { data: radioProfile, isLoading: isRadioProfileLoading } = useQuery({
     queryKey: ['radiologue-profile', user?.id],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('utilisateurs')
-        .select('prenom, nom')
-        .eq('id', user?.id)
+      // Get the radiologue record linked to this user string
+      const { data, error } = await supabase
+        .from('radiologues')
+        .select('id, utilisateur_id, utilisateurs(prenom, nom)')
+        .eq('utilisateur_id', user?.id)
         .single();
+        
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
       return data;
     },
     enabled: !!user?.id,
@@ -205,10 +210,14 @@ export const ReportEditor = () => {
       const content = editor?.getHTML();
       
       // Save Report
+      if (!radioProfile?.id) {
+         throw new Error("Impossible de sauvegarder : le profil Radiologue n'est pas lie correctement à cet utilisateur dans la base de donnees.");
+      }
+
       const report = await reportService.createReport({
         description_detaillee: content,
         est_valide: isValidated,
-        radiologue_id: user?.id,
+        radiologue_id: radioProfile.id,
         examen_id: id // Ensure link to exam
       });
       
