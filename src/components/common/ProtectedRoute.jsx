@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, role, loading, roleLoading } = useAuth();
+  const { user, role, profileComplete, loading, roleLoading } = useAuth();
   const location = useLocation();
 
   console.log("ROLE:", role, "roleLoading:", roleLoading);
@@ -21,6 +21,14 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
   if (!user) {
     // Redirect to login if unauthenticated
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Force onboarding if profile is not complete
+  if (user && !loading && !roleLoading && role && profileComplete === false) {
+    // Allow access to /onboarding to prevent infinite loop if wrapped
+    if (location.pathname !== '/onboarding') {
+      return <Navigate to="/onboarding" replace />;
+    }
   }
 
   const isAuthorized = () => {

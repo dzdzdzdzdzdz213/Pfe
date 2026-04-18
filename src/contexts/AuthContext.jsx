@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
     user: null,
     session: null,
     role: null,
+    profileComplete: false,
     loading: true,
     roleLoading: true,
     authInitialized: false
@@ -18,7 +19,7 @@ export const AuthProvider = ({ children }) => {
       console.log("Fetching role for user:", authUser.id);
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, profil_complet')
         .eq('id', authUser.id)
         .single();
       
@@ -56,16 +57,16 @@ export const AuthProvider = ({ children }) => {
           let roleToSet = finalRole.toLowerCase().trim();
           if (roleToSet === 'administrateur') roleToSet = 'admin';
           if (roleToSet === 'assistant') roleToSet = 'receptionniste';
-          return roleToSet;
+          return { role: roleToSet, profileComplete: false };
       }
 
       let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
       if (fetchedRole === 'administrateur') fetchedRole = 'admin';
       if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
-      return fetchedRole;
+      return { role: fetchedRole, profileComplete: !!data?.profil_complet };
     } catch (err) {
       console.error('Unexpected error fetching role:', err.message);
-      return null;
+      return { role: null, profileComplete: false };
     }
   }, []);
 
@@ -81,8 +82,11 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         const authUser = session?.user || null;
         let role = null;
+        let profileComplete = false;
         if (authUser) {
-          role = await fetchUserRole(authUser);
+          const res = await fetchUserRole(authUser);
+          role = res?.role;
+          profileComplete = res?.profileComplete;
         }
 
         if (isMounted) {
@@ -90,6 +94,7 @@ export const AuthProvider = ({ children }) => {
             session,
             user: authUser,
             role,
+            profileComplete,
             loading: false,
             roleLoading: false,
             authInitialized: true
@@ -114,6 +119,7 @@ export const AuthProvider = ({ children }) => {
           user: null,
           session: null,
           role: null,
+          profileComplete: false,
           loading: false,
           roleLoading: false,
           authInitialized: true
@@ -139,12 +145,13 @@ export const AuthProvider = ({ children }) => {
           setState(prev => ({ ...prev, session, user: authUser }));
         }
 
-        const role = await fetchUserRole(authUser);
+        const res = await fetchUserRole(authUser);
         if (isMounted) {
           setState({
             session,
             user: authUser,
-            role,
+            role: res?.role,
+            profileComplete: res?.profileComplete,
             loading: false,
             roleLoading: false,
             authInitialized: true

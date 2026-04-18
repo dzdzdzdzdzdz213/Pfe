@@ -25,6 +25,7 @@ const withErrorBoundary = (Component) => (props) => (
 const LandingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/Landing').then(m => ({ default: m.Landing }))));
 const BookingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/Booking').then(m => ({ default: m.Booking }))));
 const LoginSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/Login').then(m => ({ default: m.Login }))));
+const OnboardingSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/Onboarding').then(m => ({ default: m.Onboarding }))));
 
 // Admin Pages
 const AdminDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard }))));
@@ -132,6 +133,12 @@ const AppRoutes = () => {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginSafe />} />
         </Route>
+
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <OnboardingSafe />
+          </ProtectedRoute>
+        } />
 
         {/* Admin Routes */}
         <Route path="/admin" element={
