@@ -68,7 +68,7 @@ export const Booking = () => {
           
           const { error: uploadError } = await supabase.storage
             .from('documents')
-            .upload(path, file, { cacheControl: '3600', upsert: false });
+            .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
             
           if (!uploadError) {
             const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);

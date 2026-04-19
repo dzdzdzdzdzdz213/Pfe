@@ -23,9 +23,9 @@ export const FileUpload = ({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Relax limits for authenticated users (Staff/Admin)
-  const finalMaxSize = user ? 50 * 1024 * 1024 : maxSize;
-  const finalAccept = user ? null : accept; // null accept in useDropzone means all files accepted
+  // Remove all file restrictions as requested
+  const finalMaxSize = 0; // 0 disables maxSize check in useDropzone
+  const finalAccept = null; 
 
   const onDrop = useCallback(async (acceptedFiles) => {
     setError(null);
@@ -39,7 +39,7 @@ export const FileUpload = ({
 
         const { data, error: uploadError } = await supabase.storage
           .from(bucket)
-          .upload(fileName, file, { cacheControl: '3600', upsert: false });
+          .upload(fileName, file, { cacheControl: '3600', upsert: false, contentType: file.type });
 
         if (uploadError) throw uploadError;
 
@@ -76,8 +76,6 @@ export const FileUpload = ({
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: finalAccept,
-    maxSize: finalMaxSize,
     multiple,
     onDropRejected: (fileRejections) => {
       const msg = fileRejections[0]?.errors[0]?.message || 'Fichier non valide';
