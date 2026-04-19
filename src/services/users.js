@@ -108,6 +108,14 @@ export const userService = {
    * @returns {Promise<object>} Updated utilisateurs row.
    */
   async updateUser(id, updates) {
+    if (updates.role) {
+      const { error: rpcError } = await supabase.rpc('switch_user_role', {
+        p_user_id: id,
+        p_new_role: updates.role
+      });
+      if (rpcError) throw rpcError;
+    }
+
     const { data, error } = await supabase
       .from('utilisateurs')
       .update(updates)

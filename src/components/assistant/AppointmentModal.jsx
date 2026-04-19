@@ -194,19 +194,20 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div className="fixed inset-4 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 z-50 w-auto sm:w-full sm:max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between flex-shrink-0">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div>
-            <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
-              {isEditing ? t('modal_edit_rdv') : t('modal_new_rdv')}
-            </h2>
-            {isEditing && appointment?.patient && (
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Patient: {appointment.patient?.utilisateur?.prenom} {appointment.patient?.utilisateur?.nom}
+            <h2 className="text-lg font-extrabold text-slate-900">{isEditing ? t('modal_edit_rdv') : t('modal_new_rdv')}</h2>
+            {selectedPatient && (
+              <p className="text-sm font-bold text-primary mt-1 flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {selectedPatient.utilisateur?.prenom} {selectedPatient.utilisateur?.nom}
               </p>
             )}
-            {!isEditing && <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>}
+            {!isEditing && !selectedPatient && <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>}
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 group transition-colors">
+            <X className="h-5 w-5 group-hover:rotate-90 transition-transform duration-300" />
+          </button>
         </div>
 
         {/* Progress */}

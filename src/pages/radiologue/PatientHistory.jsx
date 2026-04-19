@@ -223,23 +223,32 @@ export const PatientHistory = () => {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
-        {patients.length > 0 && !selectedPatient && (
-          <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto">
+        {patients.length > 0 && !selectedPatient && searchTerm.length >= 2 && (
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-20 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2">
             {patients.map(patient => (
               <button
                 key={patient.id}
-                onClick={() => { setSelectedPatient(patient); setSearchTerm(`${patient.utilisateur?.prenom} ${patient.utilisateur?.nom}`); setActiveTab('examens'); }}
+                onClick={() => { 
+                  setSelectedPatient(patient); 
+                  setSearchTerm(`${patient.utilisateur?.prenom} ${patient.utilisateur?.nom}`); 
+                  setActiveTab('examens'); 
+                }}
                 className="w-full text-left px-4 py-3 hover:bg-slate-50 transition-colors flex items-center gap-3 border-b border-slate-50 last:border-0"
               >
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                   {patient.utilisateur?.prenom?.[0]}{patient.utilisateur?.nom?.[0]}
                 </div>
                 <div>
                   <p className="text-sm font-bold text-slate-800">{patient.utilisateur?.prenom} {patient.utilisateur?.nom}</p>
-                  <p className="text-xs text-slate-500 font-medium">{patient.utilisateur?.telephone}</p>
+                  <p className="text-xs text-slate-500 font-medium">{patient.utilisateur?.telephone || t('no_phone')}</p>
                 </div>
               </button>
             ))}
+          </div>
+        )}
+        {searchTerm.length >= 2 && patients.length === 0 && !selectedPatient && (
+          <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-20 p-8 text-center">
+            <p className="text-sm text-slate-500 font-medium">{t('no_patient_found')}</p>
           </div>
         )}
       </div>

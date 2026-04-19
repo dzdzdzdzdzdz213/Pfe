@@ -31,7 +31,12 @@ export const PatientAppointments = () => {
     queryKey: ['patient-record', utilisateur?.id],
     queryFn: async () => {
       if (!utilisateur?.id) return null;
-      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', utilisateur?.id).maybeSingle();
+      // Ensure we find the patient record using the utilisateur's database ID
+      const { data } = await supabase
+        .from('patients')
+        .select('*, utilisateur:utilisateur_id(*)')
+        .eq('utilisateur_id', utilisateur.id)
+        .maybeSingle();
       return data;
     },
     enabled: !!utilisateur?.id,

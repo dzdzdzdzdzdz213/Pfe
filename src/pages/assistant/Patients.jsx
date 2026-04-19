@@ -195,20 +195,8 @@ export const AssistantPatients = () => {
                   </select>
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('address')}</label>
-                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.adresse} onChange={e => setFormData(p => ({ ...p, adresse: e.target.value }))} />
-              </div>
-               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('records_blood_type')}</label>
-                  <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" placeholder="A+, B-, O+..." value={formData.groupeSanguin} onChange={e => setFormData(p => ({ ...p, groupeSanguin: e.target.value }))} />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_emergency')}</label>
-                  <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.telephoneUrgence} onChange={e => setFormData(p => ({ ...p, telephoneUrgence: e.target.value }))} />
-                </div>
-              </div>
+              {/* Removed unnecessary fields: adresse, groupeSanguin, telephoneUrgence */}
+            </div>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end sticky bottom-0 bg-white">
               <button onClick={() => setShowAddDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
