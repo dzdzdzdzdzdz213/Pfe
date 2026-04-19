@@ -30,7 +30,7 @@ export const DashboardLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const { user, role, logout } = useAuth();
+  const { user, utilisateur, role, logout } = useAuth();
   const { lang, toggleLang, t } = useLanguage();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -41,20 +41,20 @@ export const DashboardLayout = () => {
   }, [location]);
 
   const { data: notifications = [], refetch: refetchNotifs } = useQuery({
-    queryKey: ['notifications', user?.id],
+    queryKey: ['notifications', utilisateur?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!utilisateur?.id) return [];
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
-        .eq('utilisateur_id', user.id)
+        .eq('utilisateur_id', utilisateur.id)
         .order('date_envoi', { ascending: false })
         .limit(10);
       
       if (error) throw error;
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   const { data: userData } = useQuery({
