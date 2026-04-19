@@ -379,6 +379,16 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                       <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
                       <span className="font-bold text-amber-900">{formData.motif.match(/Âge:\s*(\d+)/)?.[1] || '-'}</span>
                     </div>
+                    <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
+                      <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
+                      <span className="font-black text-amber-900 text-base">{formData.motif.match(/\[(.*?)\]/)?.[1] || 'Non spécifiée'}</span>
+                    </div>
+                    {formData.motif.split('—')[0]?.replace(/\[(.*?)\]/, '')?.trim() && formData.motif.split('—')[0]?.replace(/\[(.*?)\]/, '')?.trim() !== 'Demande en ligne' && (
+                      <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
+                        <span className="text-amber-600/70 text-xs font-semibold">Message du patient</span>
+                        <span className="font-medium text-amber-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-amber-100">"{formData.motif.split('—')[0].replace(/\[(.*?)\]/, '').trim()}"</span>
+                      </div>
+                    )}
                   </div>
                   {formData.motif.includes('[DOC:') && (
                     <div className="mt-3 pt-3 border-t border-amber-200">

@@ -28,7 +28,8 @@ export const ProfileSettings = () => {
   const [profileData, setProfileData] = useState({
     nom: '',
     prenom: '',
-    telephone: ''
+    telephone: '',
+    specialite: ''
   });
 
   useEffect(() => {
@@ -41,15 +42,28 @@ export const ProfileSettings = () => {
         .single();
       
       if (data && !error) {
-        setProfileData({
+        setProfileData(prev => ({
+          ...prev,
           nom: data.nom || '',
           prenom: data.prenom || '',
           telephone: data.telephone || ''
-        });
+        }));
+      }
+
+      if (role === 'radiologue') {
+        const { data: radioData, error: radioError } = await supabase
+          .from('radiologues')
+          .select('specialite_principale')
+          .eq('utilisateur_id', user.id)
+          .maybeSingle();
+
+        if (radioData && !radioError) {
+          setProfileData(prev => ({ ...prev, specialite: radioData.specialite_principale || '' }));
+        }
       }
     };
     fetchProfile();
-  }, [user?.id]);
+  }, [user?.id, role]);
 
   const getRoleColor = (r) => {
     switch (r) {
@@ -81,6 +95,15 @@ export const ProfileSettings = () => {
         .eq('auth_id', user.id);
       
       if (profileError) throw profileError;
+
+      // Update radiologue specialty
+      if (role === 'radiologue') {
+        const { error: radioErr } = await supabase
+          .from('radiologues')
+          .update({ specialite_principale: profileData.specialite })
+          .eq('utilisateur_id', user.id);
+        if (radioErr) throw radioErr;
+      }
 
       localStorage.setItem(`prefs_${user?.id}`, JSON.stringify({ notifications }));
       toast.success('Vos modifications ont été enregistrées avec succès', {
@@ -218,6 +241,18 @@ export const ProfileSettings = () => {
                   className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-500 font-bold cursor-not-allowed"
                 />
               </div>
+              {role === 'radiologue' && (
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Spécialité Principale</label>
+                  <input 
+                    type="text" 
+                    value={profileData.specialite} 
+                    onChange={e => setProfileData({...profileData, specialite: e.target.value})}
+                    placeholder="Ex: Radiographie, Échographie..."
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all"
+                  />
+                </div>
+              )}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 p-6 rounded-2xl flex items-start gap-4">
