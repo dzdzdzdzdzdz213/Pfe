@@ -17,9 +17,9 @@ export const PhoneNumberPrompt = () => {
     const checkPhone = async () => {
       if (!user?.id) return;
       const { data, error } = await supabase
-        .from('profiles')
+        .from('utilisateurs')
         .select('telephone')
-        .eq('id', user.id)
+        .eq('auth_id', user.id)
         .single();
 
       if (!error && !data?.telephone) {
@@ -46,19 +46,13 @@ export const PhoneNumberPrompt = () => {
     setError('');
 
     try {
-      // Update profiles
+      // Update utilisateurs
       const { error: profileError } = await supabase
-        .from('profiles')
+        .from('utilisateurs')
         .update({ telephone: phone })
-        .eq('id', user.id);
+        .eq('auth_id', user.id);
 
       if (profileError) throw profileError;
-
-      // Update utilisateurs if applicable
-      const { data: profileData } = await supabase.from('profiles').select('email').eq('id', user.id).single();
-      if (profileData?.email || user?.email) {
-          await supabase.from('utilisateurs').update({ telephone: phone }).eq('email', user?.email || profileData?.email);
-      }
 
       setIsOpen(false);
     } catch (err) {

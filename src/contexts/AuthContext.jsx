@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [state, setState] = useState({
     user: null,
+    utilisateur: null,
     session: null,
     role: null,
     profileComplete: false,
@@ -16,17 +17,17 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserRole = useCallback(async (authUser) => {
     try {
-      console.log("Fetching role for user:", authUser.id);
+      console.log("Fetching utilisateur for auth_id:", authUser.id);
       const { data, error } = await supabase
-        .from('profiles')
-        .select('role, profil_complet')
-        .eq('id', authUser.id)
+        .from('utilisateurs')
+        .select('*')
+        .eq('auth_id', authUser.id)
         .single();
       
       console.log("DB Fetch Result -> Data:", data, "Error:", error);
 
       if (error && error.code === 'PGRST116') {
-          // Legacy check & Autoprovision
+          // Autoprovision: check if user exists by email without auth_id mapped yet
           const { data: legacyUser } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).single();
           const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
           const nameParts = fullName.split(' ');
@@ -34,39 +35,36 @@ export const AuthProvider = ({ children }) => {
           const finalNom = legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
           const finalPrenom = legacyUser?.prenom || nameParts[0];
 
-          const { error: insertError } = await supabase.from('profiles').insert({
-              id: authUser.id,
-              role: finalRole,
-              nom: finalNom,
-              prenom: finalPrenom,
-              telephone: legacyUser?.telephone || null,
-              profil_complet: false
-          });
-          
-          if (!insertError && !legacyUser) {
+          if (legacyUser) {
+              const { data: updatedUtil } = await supabase.from('utilisateurs').update({
+                  auth_id: authUser.id
+              }).eq('id', legacyUser.id).select().single();
+              
+              let roleToSet = finalRole.toLowerCase().trim();
+              if (roleToSet === 'administrateur') roleToSet = 'admin';
+              if (roleToSet === 'assistant') roleToSet = 'receptionniste';
+              return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
+          } else {
               const { data: newUtil } = await supabase.from('utilisateurs').insert({
-                  id: authUser.id,
+                  auth_id: authUser.id,
                   nom: finalNom, 
                   prenom: finalPrenom, 
                   email: authUser.email, 
-                  role: 'patient'
+                  role: 'patient',
+                  profil_complet: false
               }).select().single();
               if (newUtil) await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
+              return { role: 'patient', profileComplete: false, utilisateur: newUtil };
           }
-
-          let roleToSet = finalRole.toLowerCase().trim();
-          if (roleToSet === 'administrateur') roleToSet = 'admin';
-          if (roleToSet === 'assistant') roleToSet = 'receptionniste';
-          return { role: roleToSet, profileComplete: false };
       }
 
       let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
       if (fetchedRole === 'administrateur') fetchedRole = 'admin';
       if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
-      return { role: fetchedRole, profileComplete: !!data?.profil_complet };
+      return { role: fetchedRole, profileComplete: !!data?.profil_complet, utilisateur: data };
     } catch (err) {
-      console.error('Unexpected error fetching role:', err.message);
-      return { role: null, profileComplete: false };
+      console.error('Unexpected error fetching utilisateur:', err.message);
+      return { role: null, profileComplete: false, utilisateur: null };
     }
   }, []);
 
@@ -82,17 +80,20 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
         const authUser = session?.user || null;
         let role = null;
+        let utilisateur = null;
         let profileComplete = false;
         if (authUser) {
           const res = await fetchUserRole(authUser);
           role = res?.role;
           profileComplete = res?.profileComplete;
+          utilisateur = res?.utilisateur;
         }
 
         if (isMounted) {
           setState({
             session,
             user: authUser,
+            utilisateur,
             role,
             profileComplete,
             loading: false,
@@ -117,6 +118,7 @@ export const AuthProvider = ({ children }) => {
       if (event === 'SIGNED_OUT') {
         setState({
           user: null,
+          utilisateur: null,
           session: null,
           role: null,
           profileComplete: false,
@@ -150,6 +152,7 @@ export const AuthProvider = ({ children }) => {
           setState({
             session,
             user: authUser,
+            utilisateur: res?.utilisateur,
             role: res?.role,
             profileComplete: res?.profileComplete,
             loading: false,

@@ -28,26 +28,14 @@ export const Onboarding = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // Mettre à jour la table profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          nom: data.nom,
-          prenom: data.prenom,
-          telephone: data.telephone,
-          profil_complet: true
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
       // Mettre à jour la table utilisateurs (garder synchronisé)
       const { error: userError } = await supabase
         .from('utilisateurs')
         .update({
           nom: data.nom,
           prenom: data.prenom,
-          telephone: data.telephone
+          telephone: data.telephone,
+          profil_complet: true
         })
         .eq('id', user.id);
         

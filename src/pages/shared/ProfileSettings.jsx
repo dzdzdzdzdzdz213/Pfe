@@ -35,9 +35,9 @@ export const ProfileSettings = () => {
     const fetchProfile = async () => {
       if (!user?.id) return;
       const { data, error } = await supabase
-        .from('profiles')
+        .from('utilisateurs')
         .select('nom, prenom, age')
-        .eq('id', user.id)
+        .eq('auth_id', user.id)
         .single();
       
       if (data && !error) {
@@ -70,26 +70,17 @@ export const ProfileSettings = () => {
       });
       if (authError) throw authError;
 
-      // Update names and age in profiles table
+      // Update names and age in utilisateurs table
       const { error: profileError } = await supabase
-        .from('profiles')
+        .from('utilisateurs')
         .update({
           nom: profileData.nom,
           prenom: profileData.prenom,
           age: parseInt(profileData.age) || null
         })
-        .eq('id', user.id);
+        .eq('auth_id', user.id);
       
       if (profileError) throw profileError;
-
-      // Update name in utilisateurs table
-      await supabase
-        .from('utilisateurs')
-        .update({
-          nom: profileData.nom,
-          prenom: profileData.prenom
-        })
-        .eq('id', user.id);
 
       localStorage.setItem(`prefs_${user?.id}`, JSON.stringify({ notifications }));
       toast.success('Vos modifications ont été enregistrées avec succès', {

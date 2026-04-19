@@ -64,9 +64,9 @@ export const DashboardLayout = () => {
       
 
       const { data, error } = await supabase
-        .from('profiles')
+        .from('utilisateurs')
         .select('*')
-        .eq('id', user.id)
+        .eq('auth_id', user.id)
         .single();
       if (error) return null;
       return data;

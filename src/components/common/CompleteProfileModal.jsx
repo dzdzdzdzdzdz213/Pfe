@@ -23,32 +23,17 @@ export const CompleteProfileModal = ({ user, userData, onComplete }) => {
 
     setIsSubmitting(true);
     try {
-      // 1. Update profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          nom: formData.nom,
-          prenom: formData.prenom,
-          age: parseInt(formData.age),
-          profil_complet: true
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // 2. Update utilisateurs table
+      // Update utilisateurs table
       const { error: utilError } = await supabase
         .from('utilisateurs')
         .update({
           nom: formData.nom,
-          prenom: formData.prenom
+          prenom: formData.prenom,
+          profil_complet: true
         })
         .eq('id', user.id);
 
-      if (utilError) {
-          console.warn('Utilisateurs update failed (might be RLS):', utilError.message);
-          // We continue anyway since profiles is the source of truth for the login session
-      }
+      if (utilError) throw utilError;
 
       toast.success(t('profile_updated_success') || 'Profil mis à jour !');
       onComplete();

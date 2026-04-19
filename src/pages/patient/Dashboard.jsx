@@ -9,16 +9,16 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 export const PatientDashboard = () => {
-  const { user } = useAuth();
+  const { user, utilisateur } = useAuth();
   const { t } = useLanguage();
 
   const { data: patientRecord } = useQuery({
-    queryKey: ['patient-record', user?.id],
+    queryKey: ['patient-record', utilisateur?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('patients')
         .select('*, utilisateurs!inner(nom, prenom, email)')
-        .eq('utilisateur_id', user?.id)
+        .eq('utilisateur_id', utilisateur?.id)
         .single();
       if (error) {
         if (error.code === 'PGRST116') return null; // no row
@@ -26,7 +26,7 @@ export const PatientDashboard = () => {
       }
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   const { data: appointments = [] } = useQuery({
@@ -36,16 +36,16 @@ export const PatientDashboard = () => {
   });
 
   const { data: notifications = [] } = useQuery({
-    queryKey: ['patient-notifications', user?.id],
+    queryKey: ['patient-notifications', utilisateur?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.from('notifications').select('*').eq('utilisateur_id', user?.id).order('date_envoi', { ascending: false }).limit(5);
+      const { data, error } = await supabase.from('notifications').select('*').eq('utilisateur_id', utilisateur?.id).order('date_envoi', { ascending: false }).limit(5);
       if (error) {
         if (error.code) return [];
         throw error;
       }
       return data || [];
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   const upcomingAppointments = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'annule');
