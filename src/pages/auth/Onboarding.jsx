@@ -43,22 +43,20 @@ export const Onboarding = () => {
 
       // For patient: update date_naissance using the utilisateur's DB id (not auth id)
       if (role === 'patient' && data.date_naissance && utilisateur?.id) {
-        // Check if patient row already exists
+        // Use maybeSingle() to safely handle 0 rows without throwing
         const { data: existingPatient } = await supabase
           .from('patients')
           .select('id')
           .eq('utilisateur_id', utilisateur.id)
-          .single();
+          .maybeSingle();
 
-        if (existingPatient) {
-          // Update existing row
+        if (existingPatient?.id) {
           const { error: patientError } = await supabase
             .from('patients')
             .update({ date_naissance: data.date_naissance })
             .eq('id', existingPatient.id);
           if (patientError) throw patientError;
         } else {
-          // Insert new row
           const { error: patientError } = await supabase
             .from('patients')
             .insert({ utilisateur_id: utilisateur.id, date_naissance: data.date_naissance });

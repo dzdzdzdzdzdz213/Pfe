@@ -199,7 +199,7 @@ export const AdminUsers = () => {
                 >
                   <option value="receptionniste">{t('role_assistant')}</option>
                   <option value="radiologue">{t('role_radiologue')}</option>
-                  <option value="administrateur">{t('role_admin')}</option>
+                  <option value="admin">{t('role_admin')}</option>
                   <option value="patient">{t('role_patient')}</option>
                 </select>
               </div>
