@@ -92,13 +92,25 @@ export const AssistantCalendar = () => {
   useRealTime('rendez_vous', ['appointments'], { event: ['INSERT', 'UPDATE'] });
 
   const events = useMemo(() => {
-    return appointments.map((appt, _i) => ({
-      id: appt.id,
-      title: `${appt.patient?.utilisateur?.prenom || ''} ${appt.patient?.utilisateur?.nom || 'Patient'}`,
-      start: new Date(appt.date_heure_debut),
-      end: new Date(appt.date_heure_fin),
-      resource: appt,
-    }));
+    return appointments.map((appt, _i) => {
+      let patientName = 'Patient Externe';
+      if (appt.patient?.utilisateur?.prenom) {
+        patientName = `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`;
+      } else if (appt.motif) {
+        const parts = appt.motif.split('—');
+        if (parts.length > 1) {
+          patientName = `👤 ${parts[1].replace('Patient:', '').trim()}`;
+        }
+      }
+
+      return {
+        id: appt.id,
+        title: patientName,
+        start: new Date(appt.date_heure_debut),
+        end: new Date(appt.date_heure_fin),
+        resource: appt,
+      };
+    });
   }, [appointments]);
 
   const handleSelectEvent = (event) => {

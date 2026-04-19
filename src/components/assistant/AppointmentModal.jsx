@@ -6,7 +6,7 @@ import { consentementService } from '@/services/consentements';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { X, Search, UserPlus, Loader2, ChevronRight, Check, ShieldAlert, FileText, Calendar } from 'lucide-react';
+import { X, Search, UserPlus, Loader2, ChevronRight, Check, ShieldAlert, FileText, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr, arDZ } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -203,6 +203,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 {selectedPatient.utilisateur?.prenom} {selectedPatient.utilisateur?.nom}
               </p>
             )}
+            {isEditing && !selectedPatient && formData.motif && (
+              <p className="text-sm font-bold text-amber-600 mt-1 flex items-center gap-2">
+                <User className="h-4 w-4" />
+                {formData.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe (Guest)'}
+              </p>
+            )}
             {!isEditing && !selectedPatient && <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>}
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 group transition-colors">
@@ -361,10 +367,38 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" /> {t('modal_details')}
               </h3>
+              {isEditing && !selectedPatient && formData.motif && (
+                <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3">Informations Patient Externe</h4>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex flex-col">
+                      <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
+                      <span className="font-bold text-amber-900">{formData.motif.split('—')[2]?.replace('Tél:', '').trim() || '-'}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
+                      <span className="font-bold text-amber-900">{formData.motif.match(/Âge:\s*(\d+)/)?.[1] || '-'}</span>
+                    </div>
+                  </div>
+                  {formData.motif.includes('[DOC:') && (
+                    <div className="mt-3 pt-3 border-t border-amber-200">
+                      <a 
+                        href={formData.motif.match(/\[DOC:(.*?)\]/)?.[1]} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
+                      >
+                        <FileText className="h-3.5 w-3.5" /> Voir l'ordonnance jointe
+                      </a>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div>
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_motif_label')}</label>
                 <textarea
-                  rows={3}
+                  rows={4}
                   placeholder={t('booking_motif_placeholder')}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none"
                   value={formData.motif}
