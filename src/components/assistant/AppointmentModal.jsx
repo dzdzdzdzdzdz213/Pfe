@@ -18,7 +18,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   const { t, lang } = useLanguage();
   const queryClient = useQueryClient();
   const isEditing = !!appointment;
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(isEditing ? 4 : 1);
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewPatient, setShowNewPatient] = useState(false);
 
