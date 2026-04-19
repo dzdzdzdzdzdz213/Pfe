@@ -133,6 +133,9 @@ export const AuthProvider = ({ children }) => {
       console.log("Auth event:", event);
       if (!isMounted) return;
 
+      // INITIAL_SESSION is already handled by initialize() above — skip to avoid race condition
+      if (event === 'INITIAL_SESSION') return;
+
       if (event === 'SIGNED_OUT') {
         setState({
           user: null,

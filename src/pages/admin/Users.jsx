@@ -91,7 +91,7 @@ export const AdminUsers = () => {
     if (editUser) {
       updateMutation.mutate({ 
         id: editUser.id, 
-        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone } 
+        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: formData.role } 
       });
     } else {
       createMutation.mutate(formData);
@@ -189,38 +189,43 @@ export const AdminUsers = () => {
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_label')}</label>
                 <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} />
               </div>
+              {/* Role field always visible in both create and edit */}
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('role_label')} *</label>
+                <select 
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
+                  value={formData.role} 
+                  onChange={e => setFormData(p => ({ ...p, role: e.target.value }))}
+                >
+                  <option value="receptionniste">{t('role_assistant')}</option>
+                  <option value="radiologue">{t('role_radiologue')}</option>
+                  <option value="administrateur">{t('role_admin')}</option>
+                  <option value="patient">{t('role_patient')}</option>
+                </select>
+              </div>
+              {!editUser && formData.role === 'radiologue' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('matricule_sante')}</label>
+                    <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.matricule_sante} onChange={e => setFormData(p => ({ ...p, matricule_sante: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('specialty')}</label>
+                    <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.specialite_principale} onChange={e => setFormData(p => ({ ...p, specialite_principale: e.target.value }))} />
+                  </div>
+                </div>
+              )}
               {!editUser && (
-                <>
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('role_label')} *</label>
-                    <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.role} onChange={e => setFormData(p => ({ ...p, role: e.target.value }))}>
-                      <option value="receptionniste">{t('role_assistant')}</option>
-                      <option value="radiologue">{t('role_radiologue')}</option>
-                    </select>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('temp_password')}</label>
+                  <div className="flex gap-2">
+                    <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-medium outline-none" value={formData.password} readOnly />
+                    <button onClick={() => { navigator.clipboard.writeText(formData.password); toast.success(t('copied')); }} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors">
+                      <Copy className="h-4 w-4 text-slate-500" />
+                    </button>
+                    <button onClick={() => setFormData(p => ({ ...p, password: generatePassword() }))} className="px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl text-primary text-xs font-bold hover:bg-primary/10 transition-colors">{t('generate')}</button>
                   </div>
-                  {formData.role === 'radiologue' && (
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('matricule_sante')}</label>
-                        <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.matricule_sante} onChange={e => setFormData(p => ({ ...p, matricule_sante: e.target.value }))} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('specialty')}</label>
-                        <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.specialite_principale} onChange={e => setFormData(p => ({ ...p, specialite_principale: e.target.value }))} />
-                      </div>
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('temp_password')}</label>
-                    <div className="flex gap-2">
-                      <input className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-medium outline-none" value={formData.password} readOnly />
-                      <button onClick={() => { navigator.clipboard.writeText(formData.password); toast.success(t('copied')); }} className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors">
-                        <Copy className="h-4 w-4 text-slate-500" />
-                      </button>
-                      <button onClick={() => setFormData(p => ({ ...p, password: generatePassword() }))} className="px-4 py-3 bg-primary/5 border border-primary/20 rounded-xl text-primary text-xs font-bold hover:bg-primary/10 transition-colors">{t('generate')}</button>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end sticky bottom-0 bg-white">
