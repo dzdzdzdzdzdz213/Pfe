@@ -187,6 +187,9 @@ const PatientCard = ({ patient }) => {
     ? patient.rendez_vous.map(rv => rv.examens).filter(Boolean)
     : patient.examens || [];
 
+  // Guard: skip rendering if utilisateur relation is missing
+  if (!patient.utilisateur) return null;
+
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
       {/* Header */}

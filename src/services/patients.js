@@ -64,9 +64,11 @@ export const patientService = {
    * @returns {Promise<{ user: object, patient: object }>} The created user and patient records.
    */
   async createPatient(patientData, utilisateurData) {
+    // Insert utilisateur row — RLS allows this because the logged-in user is admin/receptionniste
+    // auth_id is left NULL intentionally: patient will claim it on first login via autoprovision
     const { data: user, error: userError } = await supabase
       .from('utilisateurs')
-      .insert({ ...utilisateurData, role: 'patient' })
+      .insert({ ...utilisateurData, role: 'patient', profil_complet: false })
       .select()
       .single();
 

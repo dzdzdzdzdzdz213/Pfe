@@ -9,6 +9,7 @@ import { UserPlus, X, Edit, Trash2, Copy, Loader2, Check, Shield, Stethoscope, H
 import { useLanguage } from '@/contexts/LanguageContext';
 
 const ROLE_CONFIG = (t) => ({
+  admin: { label: t('role_admin'), color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Shield },
   administrateur: { label: t('role_admin'), color: 'bg-purple-50 text-purple-700 border-purple-200', icon: Shield },
   radiologue: { label: t('role_radiologue'), color: 'bg-blue-50 text-blue-700 border-blue-200', icon: Stethoscope },
   receptionniste: { label: t('role_assistant'), color: 'bg-teal-50 text-teal-700 border-teal-200', icon: HeadphonesIcon },

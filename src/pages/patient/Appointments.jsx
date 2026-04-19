@@ -14,7 +14,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 const TIME_SLOTS = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'];
 
 export const PatientAppointments = () => {
-  const { user } = useAuth();
+  const { user, utilisateur } = useAuth();
   const { t, lang } = useLanguage();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -28,12 +28,13 @@ export const PatientAppointments = () => {
   const dateLocale = lang === 'ar' ? arSA : fr;
 
   const { data: patientRecord } = useQuery({
-    queryKey: ['patient-record', user?.id],
+    queryKey: ['patient-record', utilisateur?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', user?.id).single();
+      if (!utilisateur?.id) return null;
+      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', utilisateur?.id).maybeSingle();
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   const { data: appointments = [] } = useQuery({

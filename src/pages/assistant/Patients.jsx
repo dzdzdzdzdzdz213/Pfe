@@ -141,7 +141,7 @@ export const AssistantPatients = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('patients_mgmt_title')}</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">{t('patients_registered').replace('{count}', patients.length)}</p>
+          <p className="text-sm text-slate-500 font-medium mt-1">{patients.length} patient{patients.length !== 1 ? 's' : ''} enregistré{patients.length !== 1 ? 's' : ''}</p>
         </div>
         <button
           onClick={() => { resetForm(); setSelectedPatient(null); setShowAddDialog(true); }}

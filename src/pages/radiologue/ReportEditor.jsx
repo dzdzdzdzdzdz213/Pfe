@@ -145,7 +145,7 @@ export const ReportEditor = () => {
   const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, utilisateur } = useAuth();
   const queryClient = useQueryClient();
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -161,21 +161,18 @@ export const ReportEditor = () => {
 
   // Fetch radiologue profile for the print header and to get radiologue_id
   const { data: radioProfile, isLoading: isRadioProfileLoading } = useQuery({
-    queryKey: ['radiologue-profile', user?.id],
+    queryKey: ['radiologue-profile', utilisateur?.id],
     queryFn: async () => {
-      // Get the radiologue record linked to this user string
       const { data, error } = await supabase
         .from('radiologues')
         .select('id, utilisateur_id, utilisateurs(prenom, nom)')
-        .eq('utilisateur_id', user?.id)
-        .single();
+        .eq('utilisateur_id', utilisateur?.id)
+        .maybeSingle();
         
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+      if (error && error.code !== 'PGRST116') throw error;
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   const editor = useEditor({
