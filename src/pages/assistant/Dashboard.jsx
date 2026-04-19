@@ -74,9 +74,15 @@ export const AssistantDashboard = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800 truncate">
-                      {appt.patient?.utilisateur?.prenom} {appt.patient?.utilisateur?.nom}
+                      {appt.patient?.utilisateur?.prenom
+                        ? `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`
+                        : appt.motif ? `👤 ${appt.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe'}` : 'Patient Externe'}
                     </p>
-                    <p className="text-xs text-slate-500 font-medium truncate">{appt.motif || 'Consultation'}</p>
+                    <p className="text-xs text-slate-500 font-medium truncate">
+                      {!appt.patient?.utilisateur?.prenom && appt.motif 
+                        ? (appt.motif.split('—')[0] || t('consultation')) + ' • ' + (appt.motif.split('—')[2]?.replace('Tél:', '').trim() || '')
+                        : appt.motif || t('consultation')}
+                    </p>
                   </div>
                   <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor(appt.statut))}>
                     {getStatusLabel(appt.statut)}
