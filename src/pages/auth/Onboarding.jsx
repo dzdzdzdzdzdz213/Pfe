@@ -10,7 +10,7 @@ import { Loader2, User, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition';
 
 export const Onboarding = () => {
-  const { user, role } = useAuth();
+  const { user, utilisateur, role } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +28,7 @@ export const Onboarding = () => {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // Mettre à jour la table utilisateurs (garder synchronisé)
+      // Fix: use auth_id to identify the current user in utilisateurs
       const { error: userError } = await supabase
         .from('utilisateurs')
         .update({
@@ -37,26 +37,37 @@ export const Onboarding = () => {
           telephone: data.telephone,
           profil_complet: true
         })
-        .eq('id', user.id);
+        .eq('auth_id', user.id);
         
       if (userError) throw userError;
 
-      // Si c'est un patient, on ajoute la date de naissance !
-      if (role === 'patient' && data.date_naissance) {
-        const { error: patientError } = await supabase
+      // For patient: update date_naissance using the utilisateur's DB id (not auth id)
+      if (role === 'patient' && data.date_naissance && utilisateur?.id) {
+        // Check if patient row already exists
+        const { data: existingPatient } = await supabase
           .from('patients')
-          .upsert({ 
-            utilisateur_id: user.id, 
-            date_naissance: data.date_naissance 
-          }, { onConflict: 'utilisateur_id' });
-          
-        if (patientError) throw patientError;
+          .select('id')
+          .eq('utilisateur_id', utilisateur.id)
+          .single();
+
+        if (existingPatient) {
+          // Update existing row
+          const { error: patientError } = await supabase
+            .from('patients')
+            .update({ date_naissance: data.date_naissance })
+            .eq('id', existingPatient.id);
+          if (patientError) throw patientError;
+        } else {
+          // Insert new row
+          const { error: patientError } = await supabase
+            .from('patients')
+            .insert({ utilisateur_id: utilisateur.id, date_naissance: data.date_naissance });
+          if (patientError) throw patientError;
+        }
       }
 
       toast.success("Profil complété avec succès !");
       
-      // Forcer le rafraîchissement global via window.location pour ré-hydrater correctement AuthContext
-      // ou rediriger vers le dashboard approprié
       const dest = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
       window.location.href = dest;
       
