@@ -23,6 +23,7 @@ export const PatientAppointments = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [motif, setMotif] = useState('');
+  const [uploadedDocUrl, setUploadedDocUrl] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const dateLocale = lang === 'ar' ? arSA : fr;
@@ -80,13 +81,15 @@ export const PatientAppointments = () => {
 
       if (examError) throw examError;
 
+      const finalMotif = uploadedDocUrl ? `${motif} [DOC:${uploadedDocUrl}]` : motif;
+
       // 2. Create the appointment linked to the exam
       return appointmentService.createAppointment({
         patient_id: patientRecord?.id,
         examen_id: exam.id,
         date_heure_debut: start.toISOString(),
         date_heure_fin: end.toISOString(),
-        motif,
+        motif: finalMotif,
         statut: 'planifie',
       });
     },
@@ -112,6 +115,8 @@ export const PatientAppointments = () => {
     setSelectedDate(null);
     setSelectedTime(null);
     setMotif('');
+    setUploadedDocUrl('');
+    setCalendarMonth(new Date());
   };
 
   const monthDays = eachDayOfInterval({ start: startOfMonth(calendarMonth), end: endOfMonth(calendarMonth) });
@@ -332,7 +337,15 @@ export const PatientAppointments = () => {
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_prescription')}</label>
-                <FileUpload bucket="documents" folder="prescriptions" />
+                <FileUpload 
+                  bucket="documents" 
+                  folder="prescriptions" 
+                  onUploadComplete={(files) => {
+                    if (files.length > 0) {
+                      setUploadedDocUrl(files[0].url);
+                    }
+                  }}
+                />
               </div>
               <button onClick={() => setBookingStep(4)} className="w-full py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
                 {t('next')} <ChevronRight className="h-4 w-4" />

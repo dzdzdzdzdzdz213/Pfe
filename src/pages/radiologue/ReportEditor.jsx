@@ -262,7 +262,7 @@ export const ReportEditor = () => {
     try {
       const inserts = uploadedFiles.map(file => ({
         examen_id: id,
-        url_stockage: file.path, 
+        url_stockage: file.url, // Store the full public URL so it renders correctly
         nom_fichier: file.name
       }));
       

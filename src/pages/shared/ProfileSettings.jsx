@@ -28,7 +28,7 @@ export const ProfileSettings = () => {
   const [profileData, setProfileData] = useState({
     nom: '',
     prenom: '',
-    age: ''
+    telephone: ''
   });
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export const ProfileSettings = () => {
       if (!user?.id) return;
       const { data, error } = await supabase
         .from('utilisateurs')
-        .select('nom, prenom, age')
+        .select('nom, prenom, telephone')
         .eq('auth_id', user.id)
         .single();
       
@@ -44,7 +44,7 @@ export const ProfileSettings = () => {
         setProfileData({
           nom: data.nom || '',
           prenom: data.prenom || '',
-          age: data.age || ''
+          telephone: data.telephone || ''
         });
       }
     };
@@ -76,7 +76,7 @@ export const ProfileSettings = () => {
         .update({
           nom: profileData.nom,
           prenom: profileData.prenom,
-          age: parseInt(profileData.age) || null
+          telephone: profileData.telephone || null
         })
         .eq('auth_id', user.id);
       
@@ -201,11 +201,11 @@ export const ProfileSettings = () => {
                 />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Âge</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Téléphone</label>
                 <input 
-                  type="number" 
-                  value={profileData.age} 
-                  onChange={e => setProfileData({...profileData, age: e.target.value})}
+                  type="text" 
+                  value={profileData.telephone} 
+                  onChange={e => setProfileData({...profileData, telephone: e.target.value})}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none focus:ring-4 focus:ring-primary/10 transition-all"
                 />
               </div>
