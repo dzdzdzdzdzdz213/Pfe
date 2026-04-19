@@ -163,13 +163,17 @@ export const ReportEditor = () => {
   const { data: radioProfile, isLoading: isRadioProfileLoading } = useQuery({
     queryKey: ['radiologue-profile', utilisateur?.id],
     queryFn: async () => {
+      if (!utilisateur?.id) return null;
       const { data, error } = await supabase
         .from('radiologues')
-        .select('id, utilisateur_id, utilisateurs(prenom, nom)')
-        .eq('utilisateur_id', utilisateur?.id)
+        .select('id, utilisateur_id, specialite_principale, utilisateurs(prenom, nom)')
+        .eq('utilisateur_id', utilisateur.id)
         .maybeSingle();
         
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) {
+        console.error("Error fetching radiologue profile:", error);
+        throw error;
+      }
       return data;
     },
     enabled: !!utilisateur?.id,
@@ -208,9 +212,9 @@ export const ReportEditor = () => {
       
       // Save Report
       if (!radioProfile?.id) {
-         throw new Error("Impossible de sauvegarder : le profil Radiologue n'est pas lie correctement à cet utilisateur dans la base de donnees.");
+        toast.error("Impossible de sauvegarder : votre profil Radiologue n'est pas encore activé. Veuillez contacter l'administrateur.");
+        return;
       }
-
       const report = await reportService.createReport({
         description_detaillee: content,
         est_valide: isValidated,

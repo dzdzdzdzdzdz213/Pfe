@@ -202,13 +202,13 @@ const PatientCard = ({ patient }) => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-base font-extrabold text-slate-900">
-            {patient.utilisateur.prenom} {patient.utilisateur.nom}
+            {patient.utilisateur?.prenom || ''} {patient.utilisateur?.nom || ''}
           </p>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">{patient.utilisateur.email} • {patient.utilisateur.telephone}</p>
+          <p className="text-xs text-slate-500 font-medium mt-0.5">{patient.utilisateur?.email || ''} • {patient.utilisateur?.telephone || ''}</p>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
-            {t('exam_count_alt').replace('{count}', patientExams.length)}
+            {t('exam_count_alt').replace('{count}', (patientExams || []).length)}
           </span>
           <button
             onClick={e => { e.stopPropagation(); setSendModal({ patient, exam: null }); }}
@@ -448,7 +448,7 @@ export const RadiologuePatientSearch = () => {
       ) : patients.length > 0 ? (
         <div className="space-y-3">
           <p className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
-            {t('patient_count_found').replace('{count}', patients.length)}
+            {t('patient_count_found').replace('{count}', (patients || []).length)}
           </p>
           {patients.map(patient => (
             <PatientCard key={patient.id} patient={patient} />

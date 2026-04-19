@@ -228,8 +228,8 @@ export const translations = {
     // ── Patient Search (Radiologue) ──────────────────────────────────────────
     patient_search_subtitle: 'Trouvez un patient, consultez ses examens et envoyez-lui ses documents',
     patient_search_placeholder_alt: 'Rechercher par nom, prénom ou email...',
-    patient_count_found: '{count} patient{count !== 1 ? "s" : ""} trouvé{count !== 1 ? "s" : ""}',
-    exam_count_alt: '{count} examen{count !== 1 ? "s" : ""}',
+    patient_count_found: '{count} patients trouvés',
+    exam_count_alt: '{count} examens',
     no_exams_registered: 'Aucun examen enregistré',
     send_doc_title: 'Envoyer un Document',
     send_doc_btn: 'Envoyer le Document',
@@ -286,7 +286,7 @@ export const translations = {
 
     // ── Admin User Management ────────────────────────────────────────────────
     user_management: 'Gestion des Utilisateurs',
-    user_count_summary: '{count} utilisateur{count !== 1 ? "s" : ""} enregistré{count !== 1 ? "s" : ""}',
+    user_count_summary: '{count} utilisateurs enregistrés',
     new_user: 'Nouvel Utilisateur',
     user_edit_title: 'Modifier Utilisateur',
     user_search_placeholder: 'Rechercher un utilisateur...',
@@ -321,7 +321,7 @@ export const translations = {
 
     // ── Admin Audit Logs ─────────────────────────────────────────────────────
     audit_log_title: 'Journal d\'Audit',
-    n_entries: '{count} entrée{count !== 1 ? "s" : ""}',
+    n_entries: '{count} entrées',
     export_csv: 'Exporter CSV',
     audit_search_placeholder: 'Rechercher dans les logs...',
     filter_action_type: 'Type d\'action',

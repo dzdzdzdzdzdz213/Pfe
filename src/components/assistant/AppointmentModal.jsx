@@ -14,7 +14,7 @@ import { FileUpload } from '@/components/common/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AppointmentModal = ({ isOpen, onClose, appointment = null, selectedSlot = null }) => {
-  const { user } = useAuth();
+  const { user, utilisateur } = useAuth();
   const { t, lang } = useLanguage();
   const queryClient = useQueryClient();
   const isEditing = !!appointment;
@@ -133,8 +133,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       const { data: recepData } = await supabase
         .from('receptionnistes')
         .select('id')
-        .eq('utilisateur_id', user?.id)
-        .single();
+        .eq('utilisateur_id', utilisateur?.id)
+        .maybeSingle();
       const receptionniste_id = recepData?.id || null;
 
       const rdvData = {
@@ -199,7 +199,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
             <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">
               {isEditing ? t('modal_edit_rdv') : t('modal_new_rdv')}
             </h2>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>
+            {isEditing && appointment?.patient && (
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                Patient: {appointment.patient?.utilisateur?.prenom} {appointment.patient?.utilisateur?.nom}
+              </p>
+            )}
+            {!isEditing && <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('booking_step_progress').replace('{step}', step).replace('{total}', totalSteps)}</p>}
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"><X className="h-5 w-5" /></button>
         </div>

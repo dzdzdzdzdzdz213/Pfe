@@ -86,7 +86,7 @@ export const AdminAuditLogs = () => {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('audit_log_title')}</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">{t('n_entries').replace('{n}', logs.length)}</p>
+          <p className="text-sm text-slate-500 font-medium mt-1">{t('n_entries').replace('{count}', (logs || []).length)}</p>
         </div>
         <button onClick={exportCSV} className="px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center gap-2 shadow-sm">
           <Download className="h-5 w-5" /> {t('export_csv')}

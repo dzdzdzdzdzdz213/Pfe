@@ -139,7 +139,7 @@ export const AdminUsers = () => {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('user_management')}</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">{t('user_count_summary').replace('{count}', allUsers.length)}</p>
+          <p className="text-sm text-slate-500 font-medium mt-1">{t('user_count_summary').replace('{count}', (allUsers || []).length)}</p>
         </div>
         <button onClick={openCreate} className="px-5 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2">
           <UserPlus className="h-5 w-5" /> {t('new_user')}

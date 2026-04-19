@@ -18,6 +18,7 @@ export const Onboarding = () => {
     nom: z.string().min(2, "Le nom est requis"),
     prenom: z.string().min(2, "Le prénom est requis"),
     telephone: z.string().min(8, "Le numéro de téléphone est requis"),
+    sexe: z.enum(['M', 'F', 'Autre']).default('M'),
     date_naissance: role === 'patient' ? z.string().min(1, "La date de naissance est requise") : z.string().optional(),
   });
 
@@ -42,7 +43,7 @@ export const Onboarding = () => {
       if (userError) throw userError;
 
       // For patient: update date_naissance using the utilisateur's DB id (not auth id)
-      if (role === 'patient' && data.date_naissance && utilisateur?.id) {
+      if (role === 'patient' && utilisateur?.id) {
         // Use maybeSingle() to safely handle 0 rows without throwing
         const { data: existingPatient } = await supabase
           .from('patients')
@@ -53,13 +54,13 @@ export const Onboarding = () => {
         if (existingPatient?.id) {
           const { error: patientError } = await supabase
             .from('patients')
-            .update({ date_naissance: data.date_naissance })
+            .update({ date_naissance: data.date_naissance, sexe: data.sexe || 'M' })
             .eq('id', existingPatient.id);
           if (patientError) throw patientError;
         } else {
           const { error: patientError } = await supabase
             .from('patients')
-            .insert({ utilisateur_id: utilisateur.id, date_naissance: data.date_naissance });
+            .insert({ utilisateur_id: utilisateur.id, date_naissance: data.date_naissance, sexe: data.sexe || 'M' });
           if (patientError) throw patientError;
         }
       }
@@ -125,6 +126,18 @@ export const Onboarding = () => {
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm flex-1"
               />
               {errors.telephone && <p className="text-xs text-red-500 font-semibold mt-1">{errors.telephone.message}</p>}
+            </FadeInItem>
+
+            <FadeInItem className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Genre</label>
+              <select
+                {...register('sexe')}
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
+              >
+                <option value="M">Masculin</option>
+                <option value="F">Féminin</option>
+                <option value="Autre">Autre</option>
+              </select>
             </FadeInItem>
 
             {role === 'patient' && (

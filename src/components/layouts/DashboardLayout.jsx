@@ -76,7 +76,7 @@ export const DashboardLayout = () => {
 
   const displayName = userData?.prenom 
     ? `${userData.prenom} ${userData.nom}` 
-    : (user?.email?.split('@')[0] || t('role_visiteur'));
+    : (user?.user_metadata?.full_name || user?.email?.split('@')[0] || t('role_visiteur'));
 
   const translateRole = (r) => {
     switch (r) {

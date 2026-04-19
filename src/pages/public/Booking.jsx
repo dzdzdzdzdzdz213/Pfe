@@ -57,12 +57,31 @@ export const Booking = () => {
       const startDate = new Date(`${formData.date}T${formData.time}`);
       const endDate = new Date(startDate.getTime() + 30 * 60000);
 
+      // Upload document if attached
+      let documentInfo = '';
+      if (formData.document) {
+        try {
+          const file = formData.document;
+          const ext = file.name.split('.').pop();
+          const path = `public/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+          const { error: uploadError } = await supabase.storage
+            .from('documents')
+            .upload(path, file, { cacheControl: '3600', upsert: false });
+          if (!uploadError) {
+            const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+            documentInfo = ` | Document: ${urlData.publicUrl}`;
+          }
+        } catch (_) { /* Upload failed silently, booking still goes through */ }
+      }
+
+      const motif = `[${formData.serviceName}] ${formData.notes || 'Demande en ligne'} — ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
+
       const bookingPromise = supabase
         .from('rendez_vous')
         .insert({
           date_heure_debut: startDate.toISOString(),
           date_heure_fin: endDate.toISOString(),
-          motif: `[${formData.serviceName}] ${formData.notes || 'Demande en ligne'} — ${formData.nom} ${formData.prenom} — Tél: ${formData.telephone}`,
+          motif,
           statut: 'planifie',
         });
 
