@@ -18,11 +18,19 @@ export const AuthProvider = ({ children }) => {
   const fetchUserRole = useCallback(async (authUser) => {
     try {
       console.log("Fetching utilisateur for auth_id:", authUser.id);
-      const { data, error } = await supabase
+
+      // Safety timeout: if the DB query hangs (e.g. broken RLS), resolve after 6s
+      const queryPromise = supabase
         .from('utilisateurs')
         .select('*')
         .eq('auth_id', authUser.id)
         .single();
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('DB_TIMEOUT')), 6000)
+      );
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
       
       console.log("DB Fetch Result -> Data:", data, "Error:", error);
 
@@ -58,12 +66,22 @@ export const AuthProvider = ({ children }) => {
           }
       }
 
+      // Any other DB error (e.g. RLS infinite recursion) — don't hang, fail fast
+      if (error) {
+        console.error('DB error fetching utilisateur:', error.message, error.code);
+        return { role: null, profileComplete: false, utilisateur: null };
+      }
+
       let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
       if (fetchedRole === 'administrateur') fetchedRole = 'admin';
       if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
       return { role: fetchedRole, profileComplete: !!data?.profil_complet, utilisateur: data };
     } catch (err) {
-      console.error('Unexpected error fetching utilisateur:', err.message);
+      if (err.message === 'DB_TIMEOUT') {
+        console.error('fetchUserRole timed out — check RLS policies on utilisateurs table');
+      } else {
+        console.error('Unexpected error fetching utilisateur:', err.message);
+      }
       return { role: null, profileComplete: false, utilisateur: null };
     }
   }, []);
