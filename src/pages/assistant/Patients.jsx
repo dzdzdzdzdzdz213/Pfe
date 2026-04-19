@@ -197,7 +197,6 @@ export const AssistantPatients = () => {
               </div>
               {/* Removed unnecessary fields: adresse, groupeSanguin, telephoneUrgence */}
             </div>
-            </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end sticky bottom-0 bg-white">
               <button onClick={() => setShowAddDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
               <button 
