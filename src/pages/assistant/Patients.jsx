@@ -22,16 +22,16 @@ export const AssistantPatients = () => {
   });
 
   const [formData, setFormData] = useState({
-    nom: '', prenom: '', email: '', telephone: '', adresse: '', sexe: 'M', date_naissance: '', groupeSanguin: '', telephoneUrgence: ''
+    nom: '', prenom: '', email: '', telephone: '', adresse: '', sexe: 'M', date_naissance: ''
   });
 
   const resetForm = () => {
-    setFormData({ nom: '', prenom: '', email: '', telephone: '', adresse: '', sexe: 'M', date_naissance: '', groupeSanguin: '', telephoneUrgence: '' });
+    setFormData({ nom: '', prenom: '', email: '', telephone: '', adresse: '', sexe: 'M', date_naissance: '' });
   };
 
   const createMutation = useMutation({
     mutationFn: () => patientService.createPatient(
-      { adresse: formData.adresse, sexe: formData.sexe, date_naissance: formData.date_naissance, groupeSanguin: formData.groupeSanguin, telephoneUrgence: formData.telephoneUrgence },
+      { adresse: formData.adresse, sexe: formData.sexe, date_naissance: formData.date_naissance },
       { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: 'patient' }
     ),
     onSuccess: () => {
@@ -46,7 +46,7 @@ export const AssistantPatients = () => {
   const editMutation = useMutation({
     mutationFn: () => patientService.updatePatient(
       selectedPatient.id,
-      { adresse: formData.adresse, groupe_sanguin: formData.groupeSanguin, date_naissance: formData.date_naissance },
+      { adresse: formData.adresse, date_naissance: formData.date_naissance },
       selectedPatient.utilisateur_id,
       { nom: formData.nom, prenom: formData.prenom, telephone: formData.telephone }
     ),
@@ -130,8 +130,6 @@ export const AssistantPatients = () => {
       adresse: patient.adresse || '',
       sexe: patient.sexe || 'M',
       date_naissance: patient.date_naissance || '',
-      groupeSanguin: patient.groupeSanguin || '',
-      telephoneUrgence: patient.telephoneUrgence || '',
     });
     setShowAddDialog(true);
   };
@@ -236,12 +234,7 @@ export const AssistantPatients = () => {
                 <div className="flex items-center gap-3 text-sm"><Mail className="h-4 w-4 text-slate-400" /><span className="font-medium">{selectedPatient.utilisateur?.email || '-'}</span></div>
                 <div className="flex items-center gap-3 text-sm"><MapPin className="h-4 w-4 text-slate-400" /><span className="font-medium">{selectedPatient.adresse || '-'}</span></div>
               </div>
-              {selectedPatient.groupeSanguin && (
-                <div className="p-3 bg-red-50 rounded-xl border border-red-100">
-                  <p className="text-xs font-bold text-red-700 uppercase tracking-wider">{t('records_blood_type')}</p>
-                  <p className="text-lg font-bold text-red-600 mt-0.5">{selectedPatient.groupeSanguin}</p>
-                </div>
-              )}
+
             </div>
           </div>
         </>
