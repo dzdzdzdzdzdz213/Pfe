@@ -362,59 +362,83 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           )}
 
           {/* Step 4: Details */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-primary" /> {t('modal_details')}
-              </h3>
-              {isEditing && !selectedPatient && formData.motif && (
-                <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
-                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3">Informations Patient Externe</h4>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex flex-col">
-                      <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
-                      <span className="font-bold text-amber-900">{formData.motif.split('—')[2]?.replace('Tél:', '').trim() || '-'}</span>
+          {step === 4 && (() => {
+            const rawMotif = formData.motif || '';
+            const hasDoc = rawMotif.includes('[DOC:');
+            const docUrl = rawMotif.match(/\[DOC:(.*?)\]/)?.[1];
+            const isGuestBooking = rawMotif.includes('— Patient:');
+            
+            const guestSpecialty = isGuestBooking ? rawMotif.match(/\[(.*?)\]/)?.[1] : '';
+            const guestMessage = isGuestBooking 
+              ? rawMotif.split('—')[0].replace(/\[(.*?)\]/, '').trim() 
+              : rawMotif.replace(/\[DOC:.*?\]/g, '').trim();
+            const guestPhone = isGuestBooking ? rawMotif.split('—')[2]?.replace('Tél:', '').trim() : '';
+            const guestAge = rawMotif.match(/Âge:\s*(\d+)/)?.[1] || '';
+
+            return (
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary" /> {t('modal_details')}
+                </h3>
+
+                {isEditing && rawMotif && (guestMessage || hasDoc || isGuestBooking) && (
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
+                    <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3">
+                      {isGuestBooking ? "Informations de Réservation" : "Détails envoyés par le patient"}
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {isGuestBooking && (
+                        <>
+                          <div className="flex flex-col">
+                            <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
+                            <span className="font-bold text-amber-900">{guestPhone || '-'}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
+                            <span className="font-bold text-amber-900">{guestAge || '-'}</span>
+                          </div>
+                          <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
+                            <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
+                            <span className="font-black text-amber-900 text-base">{guestSpecialty || 'Non spécifiée'}</span>
+                          </div>
+                        </>
+                      )}
+                      
+                      {guestMessage && guestMessage !== 'Demande en ligne' && (
+                        <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
+                          <span className="text-amber-600/70 text-xs font-semibold">Message du patient</span>
+                          <span className="font-medium text-amber-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-amber-100">"{guestMessage}"</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex flex-col">
-                      <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
-                      <span className="font-bold text-amber-900">{formData.motif.match(/Âge:\s*(\d+)/)?.[1] || '-'}</span>
-                    </div>
-                    <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
-                      <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
-                      <span className="font-black text-amber-900 text-base">{formData.motif.match(/\[(.*?)\]/)?.[1] || 'Non spécifiée'}</span>
-                    </div>
-                    {formData.motif.split('—')[0]?.replace(/\[(.*?)\]/, '')?.trim() && formData.motif.split('—')[0]?.replace(/\[(.*?)\]/, '')?.trim() !== 'Demande en ligne' && (
-                      <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
-                        <span className="text-amber-600/70 text-xs font-semibold">Message du patient</span>
-                        <span className="font-medium text-amber-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-amber-100">"{formData.motif.split('—')[0].replace(/\[(.*?)\]/, '').trim()}"</span>
+                    {hasDoc && (
+                      <div className="mt-3 pt-3 border-t border-amber-200">
+                        <a 
+                          href={docUrl} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
+                        >
+                          <FileText className="h-3.5 w-3.5" /> Voir le document joint
+                        </a>
                       </div>
                     )}
                   </div>
-                  {formData.motif.includes('[DOC:') && (
-                    <div className="mt-3 pt-3 border-t border-amber-200">
-                      <a 
-                        href={formData.motif.match(/\[DOC:(.*?)\]/)?.[1]} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
-                      >
-                        <FileText className="h-3.5 w-3.5" /> Voir l'ordonnance jointe
-                      </a>
-                    </div>
-                  )}
+                )}
+                
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>{t('booking_motif_label')}</span>
+                    {isEditing && isGuestBooking && <span className="text-[10px] text-amber-600">(Modifiable - contient les infos brutes)</span>}
+                  </label>
+                  <textarea
+                    rows={4}
+                    placeholder={t('booking_motif_placeholder')}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none"
+                    value={formData.motif}
+                    onChange={(e) => setFormData(prev => ({ ...prev, motif: e.target.value }))}
+                  />
                 </div>
-              )}
-              
-              <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_motif_label')}</label>
-                <textarea
-                  rows={4}
-                  placeholder={t('booking_motif_placeholder')}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none"
-                  value={formData.motif}
-                  onChange={(e) => setFormData(prev => ({ ...prev, motif: e.target.value }))}
-                />
-              </div>
               {isEditing && (
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('modal_status')}</label>
@@ -476,7 +500,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.date_heure_debut ? format(new Date(formData.date_heure_debut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
 
         {/* Footer */}

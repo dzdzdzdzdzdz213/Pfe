@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus, Filter } from 'lucide-react';
 import { formatDate, cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { FileUpload } from '@/components/common/FileUpload';
 
 // ---------------------------------------------------------------------------
 
@@ -37,22 +38,24 @@ const SendDocModal = ({ patient, exam, onClose }) => {
   const { t } = useLanguage();
   const [docType, setDocType] = useState('compte_rendu');
   const [message, setMessage] = useState('');
+  const [uploadedUrl, setUploadedUrl] = useState('');
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
 
   const handleSend = async () => {
-    if (!message.trim()) {
+    if (!message.trim() && !uploadedUrl) {
       toast.error(t('error_missing_doc_content'));
       return;
     }
     setSending(true);
     try {
+      const finalContenu = uploadedUrl ? `${message} [DOC:${uploadedUrl}]`.trim() : message.trim();
       const { error } = await supabase
         .from('notifications')
         .insert({
           utilisateur_id: patient.utilisateur_id,
           type: docType,
-          contenu: message,
+          contenu: finalContenu,
           lu: false,
           date_envoi: new Date().toISOString()
         });
@@ -133,12 +136,19 @@ const SendDocModal = ({ patient, exam, onClose }) => {
               </div>
             )}
 
-            {/* Upload zone for images */}
-            {docType === 'image' && (
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
-                <Upload className="h-8 w-8 text-slate-300 group-hover:text-primary mx-auto mb-2 transition-colors" />
-                <p className="text-sm font-bold text-slate-500 group-hover:text-slate-700">{t('upload_drag_alt')}</p>
-                <p className="text-xs text-slate-400 mt-1">{t('upload_any_type_hint')}</p>
+            {/* Upload zone for images and results */}
+            {(docType === 'image' || docType === 'resultat') && (
+              <div>
+                <label className="text-xs font-black text-slate-600 uppercase tracking-wider mb-2 block">{t('upload_click')} / {t('upload_drag')}</label>
+                <FileUpload 
+                  bucket="documents" 
+                  folder="patients" 
+                  onUploadComplete={(files) => {
+                    if (files.length > 0) {
+                      setUploadedUrl(files[0].url);
+                    }
+                  }} 
+                />
               </div>
             )}
 
@@ -298,10 +308,13 @@ export const RadiologuePatientSearch = () => {
       // 1. First, search for users that match the query if any
       let matchingIds = [];
       if (query.trim()) {
+        const terms = query.trim().split(/\s+/);
+        const orConditions = terms.map(t => `prenom.ilike.%${t}%,nom.ilike.%${t}%,telephone.ilike.%${t}%`).join(',');
+        
         const { data: users } = await supabase
           .from('utilisateurs')
           .select('id')
-          .or(`prenom.ilike.%${query}%,nom.ilike.%${query}%`);
+          .or(orConditions);
         matchingIds = (users || []).map(u => u.id);
         
         // If query present but no user found, return empty early
@@ -426,7 +439,7 @@ export const RadiologuePatientSearch = () => {
                   <option value="">{t('all_statuses')}</option>
                   <option value="planifie">{t('status_planifie')}</option>
                   <option value="en_cours">{t('status_en_cours')}</option>
-                  <option value="completed">{t('status_termine')}</option>
+                  <option value="termine">{t('status_termine')}</option>
                   <option value="annule">{t('status_annule')}</option>
                 </select>
               </div>
