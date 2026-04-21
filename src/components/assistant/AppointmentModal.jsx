@@ -173,9 +173,19 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
 
   const handleCreatePatient = async () => {
     try {
+      const utilisateurData = {
+        nom: newPatientForm.nom,
+        prenom: newPatientForm.prenom,
+        telephone: newPatientForm.telephone,
+        role: 'patient',
+      };
+      // Only include email if provided to avoid unique constraint clash
+      if (newPatientForm.email.trim()) {
+        utilisateurData.email = newPatientForm.email.trim();
+      }
       const result = await patientService.createPatient(
         { adresse: newPatientForm.adresse, sexe: newPatientForm.sexe, date_naissance: newPatientForm.date_naissance },
-        { nom: newPatientForm.nom, prenom: newPatientForm.prenom, email: newPatientForm.email, telephone: newPatientForm.telephone, role: 'patient' }
+        utilisateurData
       );
       
       queryClient.invalidateQueries({ queryKey: ['patients'] });
@@ -183,7 +193,11 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       setShowNewPatient(false);
       toast.success(t('patient_save_success'));
     } catch (err) {
-      toast.error(err.message || t('error_generic'));
+      if (err.message?.includes('utilisateurs_email_key') || err.message?.includes('duplicate key')) {
+        toast.error('Cet email est déjà utilisé par un autre patient.');
+      } else {
+        toast.error(err.message || t('error_generic'));
+      }
     }
   };
 
