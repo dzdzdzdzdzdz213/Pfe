@@ -16,10 +16,14 @@ export const AssistantDashboard = () => {
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
 
-  const { data: todayAppointments = [], isLoading: loadingAppts } = useQuery({
-    queryKey: ['appointments', 'today'],
-    queryFn: () => appointmentService.fetchAppointments({ startDate: startOfDay, endDate: endOfDay }),
+  const { data: allAppointments = [], isLoading: loadingAppts } = useQuery({
+    queryKey: ['appointments', 'all'],
+    queryFn: () => appointmentService.fetchAppointments({}),
     refetchInterval: 30000,
+  });
+
+  const todayAppointments = allAppointments.filter(a => {
+    return a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay;
   });
 
   const { data: allPatients = [] } = useQuery({
@@ -48,7 +52,7 @@ export const AssistantDashboard = () => {
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('assistant_schedule')}</h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">{formatDate(today)}</p>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5">Tous les rendez-vous</p>
             </div>
             <Link to="/receptionniste/calendar" className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
               {t('view_calendar')} <ChevronRight className="h-3 w-3" />
@@ -65,12 +69,12 @@ export const AssistantDashboard = () => {
                   </div>
                 </div>
               ))
-            ) : todayAppointments.length > 0 ? (
-              todayAppointments.map((appt) => (
+            ) : allAppointments.length > 0 ? (
+              allAppointments.map((appt) => (
                 <div key={appt.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="text-center bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-[70px]">
+                    <p className="text-[10px] text-slate-500 font-bold mb-0.5">{formatDate(new Date(appt.date_heure_debut))}</p>
                     <p className="text-sm font-extrabold text-primary tracking-tight">{formatTime(appt.date_heure_debut)}</p>
-                    <p className="text-[10px] text-slate-400 font-bold">{formatTime(appt.date_heure_fin)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-800 truncate">
