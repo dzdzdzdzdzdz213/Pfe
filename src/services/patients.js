@@ -55,20 +55,40 @@ export const patientService = {
   },
 
   /**
-   * Create a patient together with their `utilisateurs` row in a single call.
-   * Note: For production, prefer a Supabase Edge Function to keep this atomic.
+   * Create a patient together with their `utilisateurs` row.
+   * If an email is provided, sends an invitation email via Supabase Auth so
+   * the patient can confirm their account and set a password.
    *
-   * @param {object} patientData - Columns for the `patients` table (e.g. groupe_sanguin).
-   * @param {{ nom: string, prenom: string, email: string, telephone?: string }} utilisateurData
-   *   Columns for the `utilisateurs` table. `role` is automatically set to `'patient'`.
-   * @returns {Promise<{ user: object, patient: object }>} The created user and patient records.
+   * @param {object} patientData - Columns for the `patients` table.
+   * @param {{ nom: string, prenom: string, email?: string, telephone?: string }} utilisateurData
+   * @returns {Promise<{ user: object, patient: object }>}
    */
   async createPatient(patientData, utilisateurData) {
-    // Insert utilisateur row — RLS allows this because the logged-in user is admin/receptionniste
-    // auth_id is left NULL intentionally: patient will claim it on first login via autoprovision
+    let authId = null;
+
+    // If email is provided, create an auth account → Supabase sends a confirmation email
+    if (utilisateurData.email) {
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: utilisateurData.email,
+        password: Math.random().toString(36).slice(-12) + 'A1!', // random temp password
+        options: {
+          data: {
+            nom: utilisateurData.nom,
+            prenom: utilisateurData.prenom,
+            role: 'patient',
+          },
+          emailRedirectTo: `${window.location.origin}/login`,
+        },
+      });
+
+      if (authError) throw authError;
+      authId = authData?.user?.id || null;
+    }
+
+    // Insert utilisateurs row, linking auth_id if we have one
     const { data: user, error: userError } = await supabase
       .from('utilisateurs')
-      .insert({ ...utilisateurData, role: 'patient', profil_complet: false })
+      .insert({ ...utilisateurData, role: 'patient', profil_complet: false, auth_id: authId })
       .select()
       .single();
 

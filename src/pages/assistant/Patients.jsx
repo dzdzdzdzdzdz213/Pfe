@@ -48,7 +48,11 @@ export const AssistantPatients = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
-      toast.success(t('patient_save_success'));
+      if (formData.email.trim()) {
+        toast.success('Patient ajouté ! Un email d’invitation a été envoyé à ' + formData.email.trim());
+      } else {
+        toast.success(t('patient_save_success'));
+      }
       setShowAddDialog(false);
       resetForm();
     },
