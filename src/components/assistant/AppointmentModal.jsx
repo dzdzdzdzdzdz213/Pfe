@@ -98,7 +98,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   });
 
   const handleSubmit = async () => {
-    if (!formData.patient_id || !formData.date_heure_debut) {
+    if ((!isEditing && !formData.patient_id) || !formData.date_heure_debut) {
       toast.error(t('error_required_fields'));
       return;
     }
@@ -374,6 +374,8 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               : rawMotif.replace(/\[DOC:.*?\]/g, '').trim();
             const guestPhone = isGuestBooking ? rawMotif.split('—')[2]?.replace('Tél:', '').trim() : '';
             const guestAge = rawMotif.match(/Âge:\s*(\d+)/)?.[1] || '';
+            const guestNameMatch = rawMotif.match(/Patient:\s*([^\—\-]+)/);
+            const guestName = guestNameMatch ? guestNameMatch[1].trim() : (isGuestBooking ? rawMotif.split('—')[1]?.replace('Patient:', '').trim() : 'Patient');
 
             return (
               <div className="space-y-4">
@@ -414,7 +416,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                     {hasDoc && (
                       <div className="mt-3 pt-3 border-t border-amber-200">
                         <a 
-                          href={docUrl} 
+                          href={`${docUrl}?download=Ordonnance_${encodeURIComponent(guestName.replace(/\s+/g, '_'))}.${docUrl.split('.').pop()}`} 
                           target="_blank" 
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"

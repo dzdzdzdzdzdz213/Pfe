@@ -97,9 +97,14 @@ export const AssistantCalendar = () => {
       if (appt.patient?.utilisateur?.prenom) {
         patientName = `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`;
       } else if (appt.motif) {
-        const parts = appt.motif.split('—');
-        if (parts.length > 1) {
-          patientName = `👤 ${parts[1].replace('Patient:', '').trim()}`;
+        const match = appt.motif.match(/Patient:\s*([^\—\-]+)/);
+        if (match && match[1].trim() !== '') {
+          patientName = `👤 ${match[1].trim()}`;
+        } else {
+          const parts = appt.motif.split('—');
+          if (parts.length > 1) {
+            patientName = `👤 ${parts[1].replace('Patient:', '').trim()}`;
+          }
         }
       }
 
