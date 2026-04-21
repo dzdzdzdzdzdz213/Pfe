@@ -76,7 +76,7 @@ export const AssistantDashboard = () => {
                     <p className="text-sm font-bold text-slate-800 truncate">
                       {appt.patient?.utilisateur?.prenom
                         ? `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`
-                        : appt.motif ? `👤 ${appt.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe'}` : 'Patient Externe'}
+                        : appt.motif ? `👤 ${appt.motif.match(/Patient:\s*([^\—\-]+)/)?.[1]?.trim() || appt.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe'}` : 'Patient Externe'}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">
                       {!appt.patient?.utilisateur?.prenom && appt.motif 

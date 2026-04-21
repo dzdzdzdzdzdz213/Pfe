@@ -108,7 +108,9 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     }
 
     if (isEditing) {
-      updateMutation.mutate({ id: appointment.id, data: formData });
+      const updateData = { ...formData };
+      delete updateData.service_id; // service_id goes on 'examens' not 'rendez_vous'
+      updateMutation.mutate({ id: appointment.id, data: updateData });
       return;
     }
 
