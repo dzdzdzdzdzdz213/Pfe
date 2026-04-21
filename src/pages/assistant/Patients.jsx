@@ -30,17 +30,35 @@ export const AssistantPatients = () => {
   };
 
   const createMutation = useMutation({
-    mutationFn: () => patientService.createPatient(
-      { adresse: formData.adresse, sexe: formData.sexe, date_naissance: formData.date_naissance },
-      { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: 'patient' }
-    ),
+    mutationFn: () => {
+      const utilisateurData = {
+        nom: formData.nom,
+        prenom: formData.prenom,
+        telephone: formData.telephone,
+        role: 'patient',
+      };
+      // Only include email if provided — avoids unique constraint clash
+      if (formData.email.trim()) {
+        utilisateurData.email = formData.email.trim();
+      }
+      return patientService.createPatient(
+        { adresse: formData.adresse, sexe: formData.sexe, date_naissance: formData.date_naissance },
+        utilisateurData
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       toast.success(t('patient_save_success'));
       setShowAddDialog(false);
       resetForm();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      if (err.message?.includes('utilisateurs_email_key') || err.message?.includes('duplicate key')) {
+        toast.error('Cet email est déjà utilisé par un autre patient.');
+      } else {
+        toast.error(err.message);
+      }
+    },
   });
   
   const editMutation = useMutation({
