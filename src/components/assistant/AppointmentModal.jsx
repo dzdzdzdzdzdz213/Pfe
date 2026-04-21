@@ -492,10 +492,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_prescription')}</label>
-                <FileUpload bucket="documents" folder="prescriptions" onUploadComplete={(_files) => {}} />
-              </div>
+              {!isEditing && (
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('booking_prescription')}</label>
+                  <FileUpload bucket="documents" folder="prescriptions" onUploadComplete={(_files) => {}} />
+                </div>
+              )}
 
               {/* Summary */}
               <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">

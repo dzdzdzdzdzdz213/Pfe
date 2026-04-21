@@ -79,9 +79,9 @@ export const AssistantDashboard = () => {
                         : appt.motif ? `👤 ${appt.motif.match(/Patient:\s*([^\—\-]+)/)?.[1]?.trim() || appt.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe'}` : 'Patient Externe'}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">
-                      {!appt.patient?.utilisateur?.prenom && appt.motif 
-                        ? `🩺 ${appt.motif.match(/\[(.*?)\]/)?.[1] || t('consultation')} • 📞 ` + (appt.motif.split('—')[2]?.replace('Tél:', '').trim() || '')
-                        : appt.motif || t('consultation')}
+                      {appt.patient?.utilisateur?.prenom
+                        ? `${appt.motif || t('consultation')} • 📞 ${appt.patient.utilisateur.telephone || 'N/A'}`
+                        : `🩺 ${appt.motif?.match(/\[(.*?)\]/)?.[1] || t('consultation')} • 📞 ${appt.motif?.match(/Tél:\s*([\d\s]+)/)?.[1]?.trim() || appt.motif?.split('—')[2]?.replace('Tél:', '').trim() || 'N/A'} `}
                     </p>
                   </div>
                   <span className={cn('px-3 py-1 rounded-full text-[11px] font-bold border', getStatusColor(appt.statut))}>
