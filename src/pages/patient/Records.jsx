@@ -144,7 +144,7 @@ const StandaloneDocuments = ({ dossierId, t }) => {
 
 
 export const PatientRecords = () => {
-  const { user } = useAuth();
+  const { user, utilisateur } = useAuth();
   const { t, lang } = useLanguage();
   const [activeReport, setActiveReport] = useState(null); // {report, exam}
   const [activeImageExam, setActiveImageExam] = useState(null);
@@ -152,23 +152,17 @@ export const PatientRecords = () => {
 
   // Fetch patient row
   const { data: patientRecord } = useQuery({
-    queryKey: ['patient-record', user?.id],
+    queryKey: ['patient-record', utilisateur?.id],
     queryFn: async () => {
-      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', user?.id).single();
+      if (!utilisateur?.id) return null;
+      const { data } = await supabase.from('patients').select('*').eq('utilisateur_id', utilisateur.id).single();
       return data;
     },
-    enabled: !!user?.id,
+    enabled: !!utilisateur?.id,
   });
 
   // Fetch patient info for print
-  const { data: patientUser } = useQuery({
-    queryKey: ['patient-user', user?.id],
-    queryFn: async () => {
-      const { data } = await supabase.from('utilisateurs').select('prenom, nom').eq('id', user?.id).single();
-      return data;
-    },
-    enabled: !!user?.id,
-  });
+  const patientUser = utilisateur;
 
   // Fetch dossier medical
   const { data: dossier } = useQuery({
