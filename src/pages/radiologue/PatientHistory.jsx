@@ -137,27 +137,40 @@ export const PatientHistory = () => {
   const { data: patients = [] } = useQuery({
     queryKey: ['patients-search', searchTerm],
     queryFn: async () => {
-      if (!searchTerm || searchTerm.length < 2) return [];
+      if (!searchTerm || searchTerm.trim().length < 2) return [];
       
-      // Step 1: Search for users by name
-      const { data: users } = await supabase
-        .from('utilisateurs')
-        .select('id')
-        .or(`prenom.ilike.%${searchTerm}%,nom.ilike.%${searchTerm}%`);
+      const terms = searchTerm.trim().split(/\s+/).filter(Boolean);
+      // Build conditions for each term to match at least one field
+      const orConditions = terms.map(t => 
+        `prenom.ilike.%${t}%,nom.ilike.%${t}%,telephone.ilike.%${t}%,email.ilike.%${t}%`
+      ).join(',');
       
-      const ids = (users || []).map(u => u.id);
-      if (ids.length === 0) return [];
+      try {
+        // Step 1: Search for users by terms
+        const { data: users, error: userError } = await supabase
+          .from('utilisateurs')
+          .select('id')
+          .or(orConditions);
+        
+        if (userError) throw userError;
+        
+        const ids = (users || []).map(u => u.id);
+        if (ids.length === 0) return [];
 
-      // Step 2: Fetch patients using those IDs
-      const { data, error } = await supabase
-        .from('patients')
-        .select('*, utilisateur:utilisateur_id(nom, prenom, email, telephone)')
-        .in('utilisateur_id', ids);
-      
-      if (error) throw error;
-      return data || [];
+        // Step 2: Fetch patients using those IDs
+        const { data, error } = await supabase
+          .from('patients')
+          .select('*, utilisateur:utilisateur_id(nom, prenom, email, telephone)')
+          .in('utilisateur_id', ids);
+        
+        if (error) throw error;
+        return data || [];
+      } catch (err) {
+        console.error('Patient search error:', err);
+        return [];
+      }
     },
-    enabled: searchTerm.length >= 2,
+    enabled: searchTerm.trim().length >= 2,
   });
 
 

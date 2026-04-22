@@ -143,26 +143,38 @@ export const patientService = {
    * @returns {Promise<Array<object>>} Matching patient records with joined user data.
    */
   async searchPatients(query) {
-    const { data: users, error: userError } = await supabase
-      .from('utilisateurs')
-      .select('id')
-      .or(`nom.ilike.%${query}%,prenom.ilike.%${query}%,email.ilike.%${query}%,telephone.ilike.%${query}%`);
+    if (!query || !query.trim()) return [];
+    
+    const terms = query.trim().split(/\s+/).filter(Boolean);
+    const orConditions = terms.map(t => 
+      `nom.ilike.%${t}%,prenom.ilike.%${t}%,email.ilike.%${t}%,telephone.ilike.%${t}%`
+    ).join(',');
 
-    if (userError) throw userError;
-    const userIds = users.map(u => u.id);
+    try {
+      const { data: users, error: userError } = await supabase
+        .from('utilisateurs')
+        .select('id')
+        .or(orConditions);
 
-    if (userIds.length === 0) return [];
+      if (userError) throw userError;
+      const userIds = (users || []).map(u => u.id);
 
-    const { data, error } = await supabase
-      .from('patients')
-      .select(`
-        *,
-        utilisateur:utilisateur_id(nom, prenom, email, telephone)
-      `)
-      .in('utilisateur_id', userIds);
+      if (userIds.length === 0) return [];
 
-    if (error) throw error;
-    return data;
+      const { data, error } = await supabase
+        .from('patients')
+        .select(`
+          *,
+          utilisateur:utilisateur_id(nom, prenom, email, telephone)
+        `)
+        .in('utilisateur_id', userIds);
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.error('Patient search service error:', err);
+      return [];
+    }
   },
 
   /**

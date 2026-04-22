@@ -38,11 +38,20 @@ export const DataTable = ({
   const filteredData = useMemo(() => {
     let result = [...data];
     
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter((row) =>
-        flattenValues(row).some((val) => val.toLowerCase().includes(term))
-      );
+    if (searchTerm.trim()) {
+      const searchWords = searchTerm.toLowerCase().trim().split(/\s+/);
+      
+      result = result.filter((row) => {
+        const rowValues = flattenValues(row).map(v => 
+          v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        );
+        
+        // Every word in the search term must match at least one value in the row
+        return searchWords.every(word => {
+          const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+          return rowValues.some(val => val.includes(normalizedWord));
+        });
+      });
     }
 
     if (sortConfig.key) {

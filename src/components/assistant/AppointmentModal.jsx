@@ -57,8 +57,17 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   });
 
   const filteredPatients = patients.filter(p => {
-    const name = `${p.utilisateur?.prenom} ${p.utilisateur?.nom} ${p.utilisateur?.telephone || ''}`.toLowerCase();
-    return name.includes(searchTerm.toLowerCase());
+    if (!searchTerm.trim()) return true;
+    const searchWords = searchTerm.toLowerCase().trim().split(/\s+/);
+    const patientData = `${p.utilisateur?.prenom || ''} ${p.utilisateur?.nom || ''} ${p.utilisateur?.telephone || ''}`
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    
+    return searchWords.every(word => {
+      const normalizedWord = word.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      return patientData.includes(normalizedWord);
+    });
   });
 
   const selectedPatient = patients.find(p => p.id === formData.patient_id);

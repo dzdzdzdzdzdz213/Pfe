@@ -305,16 +305,28 @@ export const RadiologuePatientSearch = () => {
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['radiologue-patients', query, dateFrom, dateTo, serviceFilter, statusFilter],
     queryFn: async () => {
-      // 1. First, search for users that match the query if any
       let matchingIds = [];
+      
+      // 1. First, search for users that match the query if any
       if (query.trim()) {
-        const terms = query.trim().split(/\s+/);
-        const orConditions = terms.map(t => `prenom.ilike.%${t}%,nom.ilike.%${t}%,telephone.ilike.%${t}%`).join(',');
+        const terms = query.trim().split(/\s+/).filter(Boolean);
+        // Build a query that matches users who satisfy ALL search terms in some field
+        // This is a bit tricky with Supabase's simple .or(), so we'll search for users matching ANY term
+        // and then we can optionally refine, but for now ANY term is safer than NOTHING.
+        const orConditions = terms.map(t => 
+          `prenom.ilike.%${t}%,nom.ilike.%${t}%,telephone.ilike.%${t}%,email.ilike.%${t}%`
+        ).join(',');
         
-        const { data: users } = await supabase
+        const { data: users, error: userError } = await supabase
           .from('utilisateurs')
           .select('id')
           .or(orConditions);
+        
+        if (userError) {
+          console.error('User search error:', userError);
+          return [];
+        }
+        
         matchingIds = (users || []).map(u => u.id);
         
         // If query present but no user found, return empty early
@@ -324,6 +336,7 @@ export const RadiologuePatientSearch = () => {
       // 2. Build the patient query
       let q = supabase.from('patients').select(`
         id,
+        utilisateur_id,
         utilisateur:utilisateur_id(prenom, nom, email, telephone),
         rendez_vous(
            examens:examen_id(
@@ -338,9 +351,12 @@ export const RadiologuePatientSearch = () => {
         q = q.in('utilisateur_id', matchingIds);
       }
 
-      const { data, error } = await q.limit(50);
-      if (error) throw error;
-
+      const { data, error } = await q.limit(100); // Increased limit slightly
+      if (error) {
+        console.error('Patient fetch error:', error);
+        throw error;
+      }
+      
       let result = data || [];
 
       // Client-side filtering by exam date/service/status
