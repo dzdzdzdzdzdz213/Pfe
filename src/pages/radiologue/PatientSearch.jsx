@@ -80,19 +80,31 @@ const SendDocModal = ({ patient, exam, onClose }) => {
           }
         } else {
           // No specific exam selected - link to patient's dossier
-          const { data: dossier } = await supabase
+          let { data: dossier } = await supabase
             .from('dossiers_medicaux')
             .select('id')
             .eq('patient_id', patient.id)
             .maybeSingle();
           
+          // Create dossier if missing
+          if (!dossier) {
+            const { data: newDossier, error: dossierError } = await supabase
+              .from('dossiers_medicaux')
+              .insert({ patient_id: patient.id })
+              .select('id')
+              .single();
+            if (dossierError) throw dossierError;
+            dossier = newDossier;
+          }
+
           if (dossier) {
-            await supabase.from('documents_medicaux').insert({
+            const { error: docError } = await supabase.from('documents_medicaux').insert({
               dossier_id: dossier.id,
               chemin_fichier: uploadedUrl,
               statut: 'valide',
               date_creation: new Date().toISOString().split('T')[0]
             });
+            if (docError) throw docError;
           }
         }
       }
