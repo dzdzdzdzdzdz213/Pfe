@@ -112,7 +112,7 @@ export const FileUpload = ({
               {isDragActive ? 'Déposez les fichiers ici...' : 'Glissez-déposez vos fichiers ici'}
             </p>
             <p className="text-xs text-slate-500 mt-1 font-medium">
-              ou <span className="text-primary underline">parcourir</span> — Max {Math.round(finalMaxSize / 1024 / 1024)}MB
+              ou <span className="text-primary underline">parcourir</span>
             </p>
           </div>
         </div>
