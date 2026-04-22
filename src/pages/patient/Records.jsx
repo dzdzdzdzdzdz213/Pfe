@@ -143,7 +143,8 @@ export const PatientRecords = () => {
             statut,
             services:service_id(nom),
             comptes_rendus(id, description_detaillee, est_valide),
-            images_radiologiques(id, url_stockage, type_image)
+            images_radiologiques(id, url_stockage, type_image),
+            documents_medicaux(id, chemin_fichier, statut, date_creation)
           )
         `)
         .eq('patient_id', patientRecord?.id)
@@ -255,6 +256,28 @@ export const PatientRecords = () => {
                               >
                                 <Printer className="h-3.5 w-3.5" /> {t('records_pdf')}
                               </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* General Documents (from Radiologue Send) */}
+                    {exam?.documents_medicaux?.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {exam.documents_medicaux.map(doc => (
+                          <div key={doc.id} className="flex items-center gap-2 p-3 bg-blue-50/30 border border-blue-100 rounded-xl">
+                            <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                            <span className="text-xs font-bold text-slate-600 flex-1 truncate">Document Médical — {formatDate(doc.date_creation)}</span>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={doc.chemin_fichier}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
+                              >
+                                <Eye className="h-3.5 w-3.5" /> {t('view')}
+                              </a>
                             </div>
                           </div>
                         ))}

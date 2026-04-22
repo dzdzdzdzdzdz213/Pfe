@@ -60,6 +60,29 @@ const SendDocModal = ({ patient, exam, onClose }) => {
           date_envoi: new Date().toISOString()
         });
       if (error) throw error;
+
+      // NEW: Also save to medical record tables if an exam is linked
+      if (exam?.id && uploadedUrl) {
+        if (docType === 'image') {
+          await supabase.from('images_radiologiques').insert({
+            examen_id: exam.id,
+            url_stockage: uploadedUrl,
+            type_image: 'Radiographie'
+          });
+        } else {
+          // Save as general medical document
+          await supabase.from('documents_medicaux').insert({
+            examen_id: exam.id,
+            chemin_fichier: uploadedUrl,
+            statut: 'valide',
+            date_creation: new Date().toISOString().split('T')[0]
+          });
+        }
+      } else if (exam?.id && docType === 'compte_rendu' && message.trim()) {
+        // If it's a quick compte-rendu text, and there's an exam, we could create a report
+        // But usually reports go through the ReportEditor. 
+        // We'll skip for now to avoid duplicate reports, or we could update existing.
+      }
       setSent(true);
       toast.success(t('doc_sent_success').replace('{name}', `${patient.utilisateur.prenom} ${patient.utilisateur.nom}`));
     } catch (err) {
@@ -318,9 +341,6 @@ const RadiologuePatientSearchContent = () => {
       // 1. First, search for users that match the query if any
       if (query.trim()) {
         const terms = query.trim().split(/\s+/).filter(Boolean);
-        // Build a query that matches users who satisfy ALL search terms in some field
-        // This is a bit tricky with Supabase's simple .or(), so we'll search for users matching ANY term
-        // and then we can optionally refine, but for now ANY term is safer than NOTHING.
         const orConditions = terms.map(t => 
           `prenom.ilike.%${t}%,nom.ilike.%${t}%,telephone.ilike.%${t}%,email.ilike.%${t}%`
         ).join(',');
@@ -337,7 +357,6 @@ const RadiologuePatientSearchContent = () => {
         
         matchingIds = (users || []).map(u => u.id);
         
-        // If query present but no user found, return empty early
         if (matchingIds.length === 0) return [];
       }
 
@@ -351,7 +370,10 @@ const RadiologuePatientSearchContent = () => {
              id, 
              date_realisation, 
              statut,
-             service:service_id(id, nom)
+             service:service_id(id, nom),
+             comptes_rendus(id, description_detaillee, est_valide),
+             images_radiologiques(id, url_stockage, type_image),
+             documents_medicaux(id, chemin_fichier, statut, date_creation)
            )
         )
       `);
@@ -360,7 +382,7 @@ const RadiologuePatientSearchContent = () => {
         q = q.in('utilisateur_id', matchingIds);
       }
 
-      const { data, error } = await q.limit(100); // Increased limit slightly
+      const { data, error } = await q.limit(100); 
       if (error) {
         console.error('Patient fetch error:', error);
         throw error;
