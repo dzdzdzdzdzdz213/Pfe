@@ -391,13 +391,9 @@ export const DashboardLayout = () => {
         {/* Dynamic Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-8 custom-scrollbar bg-slate-50/50">
           <div className="max-w-7xl mx-auto h-full">
-            <AnimatePresence mode="wait">
-              <PageTransition key={location.pathname}>
-                <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
-                  <Outlet />
-                </Suspense>
-              </PageTransition>
-            </AnimatePresence>
+            <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+              <Outlet />
+            </Suspense>
           </div>
         </main>
         {/* Profile Completion Modal */}

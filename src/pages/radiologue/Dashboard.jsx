@@ -9,6 +9,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 export const RadiologueDashboard = () => {
+  return (
+    <React.Suspense fallback={<div className="h-full w-full flex items-center justify-center py-20"><div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+      <RadiologueDashboardContent />
+    </React.Suspense>
+  );
+};
+
+const RadiologueDashboardContent = () => {
   const { t } = useLanguage();
   const { data: pendingExams = [] } = useQuery({
     queryKey: ['exams', 'pending'],
