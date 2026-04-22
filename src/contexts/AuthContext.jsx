@@ -111,6 +111,13 @@ export const AuthProvider = ({ children }) => {
           role = res?.role;
           profileComplete = res?.profileComplete;
           utilisateur = res?.utilisateur;
+
+          // NEW: Double check role-specific rows exist on every init
+          if (utilisateur?.id) {
+            if (role === 'patient') await supabase.from('patients').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
+            if (role === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
+            if (role === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
+          }
         }
 
         if (isMounted) {

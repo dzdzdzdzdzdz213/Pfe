@@ -393,7 +393,7 @@ const RadiologuePatientSearchContent = () => {
         date_naissance,
         sexe,
         adresse,
-        rendez_vous!rendez_vous_patient_id_fkey(
+        rendez_vous(
            id,
            date_heure_debut,
            examens:examen_id(
