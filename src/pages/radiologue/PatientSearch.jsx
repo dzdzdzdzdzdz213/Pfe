@@ -348,9 +348,10 @@ const RadiologuePatientSearchContent = () => {
         utilisateur:utilisateur_id(prenom, nom, email, telephone),
         rendez_vous(
            examens:examen_id(
-             id, date_realisation, statut,
-             services:service_id(id, nom),
-             comptes_rendus(description_detaillee, est_valide)
+             id, 
+             date_realisation, 
+             statut,
+             service:service_id(id, nom)
            )
         )
       `);
