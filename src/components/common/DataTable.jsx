@@ -7,7 +7,7 @@ import {
   ChevronLeft, 
   ChevronRight
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDate } from '@/lib/utils';
 
 export const DataTable = ({ 
   columns, 
