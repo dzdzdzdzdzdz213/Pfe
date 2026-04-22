@@ -39,8 +39,9 @@ export const examService = {
     const { data, error } = await query.order('date_realisation', { ascending: false });
     if (error) throw error;
 
+    const results = data || [];
     // Flatten rendez_vous.patient up to the top level for components that expect .patient
-    return data.map(exam => ({
+    return results.map(exam => ({
       ...exam,
       patient: exam.rendez_vous?.[0]?.patient || null
     }));
@@ -88,7 +89,7 @@ export const examService = {
       .select()
       .single();
     if (error) throw error;
-    return data;
+    return data || [];
   },
 
   /**

@@ -29,15 +29,15 @@ export const RadiologueDashboard = () => {
   });
 
   const today = new Date().toISOString().slice(0, 10);
-  const todayExams = allExams.filter(e => e.date_realisation?.startsWith(today));
+  const todayExams = (allExams || []).filter(e => e?.date_realisation?.startsWith(today));
 
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title={t('exams_pending')} value={pendingExams.length} icon={Clock} color="amber" />
-        <StatCard title={t('exams_today')} value={todayExams.length} icon={Stethoscope} color="blue" />
-        <StatCard title={t('reports_validated')} value={recentReports.length} icon={FileText} color="emerald" />
-        <StatCard title={t('exams_total')} value={allExams.length} icon={Activity} color="violet" />
+        <StatCard title={t('exams_pending')} value={(pendingExams || []).length} icon={Clock} color="amber" />
+        <StatCard title={t('exams_today')} value={(todayExams || []).length} icon={Stethoscope} color="blue" />
+        <StatCard title={t('reports_validated')} value={(recentReports || []).length} icon={FileText} color="emerald" />
+        <StatCard title={t('exams_total')} value={(allExams || []).length} icon={Activity} color="violet" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -50,7 +50,7 @@ export const RadiologueDashboard = () => {
             </Link>
           </div>
           <div className="divide-y divide-slate-50">
-            {pendingExams.length > 0 ? pendingExams.slice(0, 5).map((exam) => (
+            {(pendingExams || []).length > 0 ? pendingExams.slice(0, 5).map((exam) => (
               <div key={exam.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 <div className="h-10 w-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 flex-shrink-0">
                   <Stethoscope className="h-5 w-5" />
@@ -79,14 +79,14 @@ export const RadiologueDashboard = () => {
             <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('reports_recent')}</h3>
           </div>
           <div className="divide-y divide-slate-50">
-            {recentReports.length > 0 ? recentReports.map((report) => (
+            {(recentReports || []).length > 0 ? recentReports.map((report) => (
               <div key={report.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                 <div className="h-10 w-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100 flex-shrink-0">
                   <FileText className="h-5 w-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-slate-800 truncate">
-                    {t('report_id_label').replace('{id}', report.id?.slice(0, 8))}
+                    {t('report_id_label') ? t('report_id_label').replace('{id}', (report.id || '').slice(0, 8)) : `Report ${(report.id || '').slice(0, 8)}`}
                   </p>
                   <p className="text-xs text-slate-500 font-medium">
                     {report.radiologue?.utilisateur?.prenom || ''} {report.radiologue?.utilisateur?.nom || ''}
