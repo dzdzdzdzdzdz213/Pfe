@@ -150,6 +150,7 @@ export const ReportEditor = () => {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isValidated, setIsValidated] = useState(false);
+  const [reportId, setReportId] = useState(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [ordonnance, setOrdonnance] = useState({ description: '', nom_medecin_prescripteur: '' });
 
@@ -189,7 +190,10 @@ export const ReportEditor = () => {
   useEffect(() => {
     if (exam?.comptes_rendus?.length > 0) {
       const existing = exam.comptes_rendus[0];
-      editor?.commands.setContent(existing.description_detaillee || '');
+      if (editor && !editor.isDestroyed && (editor.getHTML() === '<p></p>' || editor.getHTML() === t('report_content_default'))) {
+        editor.commands.setContent(existing.description_detaillee || '');
+      }
+      setReportId(existing.id);
       setIsValidated(existing.est_valide || false);
     }
     // Load existing ordonnance
@@ -215,12 +219,21 @@ export const ReportEditor = () => {
         toast.error("Impossible de sauvegarder : votre profil Radiologue n'est pas encore activé. Veuillez contacter l'administrateur.");
         return;
       }
-      const report = await reportService.createReport({
-        description_detaillee: content,
-        est_valide: isValidated,
-        radiologue_id: radioProfile.id,
-        examen_id: id // Ensure link to exam
-      });
+      let report;
+      if (reportId) {
+        report = await reportService.updateReport(reportId, {
+          description_detaillee: content,
+          est_valide: isValidated,
+        });
+      } else {
+        report = await reportService.createReport({
+          description_detaillee: content,
+          est_valide: isValidated,
+          radiologue_id: radioProfile.id,
+          examen_id: id 
+        });
+        if (report) setReportId(report.id);
+      }
       
       // Save Ordonnance if content exists
       if (ordonnance.description.trim()) {

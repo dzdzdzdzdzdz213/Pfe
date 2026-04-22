@@ -62,7 +62,8 @@ export const examService = {
         rendez_vous!examen_id(patient_id, patient:patient_id(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateur_id(nom, prenom, telephone))),
         radiologue:radiologue_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom, specialite_principale)),
         service:service_id(*),
-        images:images_radiologiques(*)
+        images:images_radiologiques(*),
+        comptes_rendus(*)
       `)
       .eq('id', id)
       .single();
