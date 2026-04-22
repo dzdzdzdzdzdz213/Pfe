@@ -29,14 +29,19 @@ export const DataTable = ({
     setSortConfig({ key, direction });
   };
 
+  // Flatten nested objects so search works on fields like utilisateur.nom, utilisateur.prenom, etc.
+  const flattenValues = (obj) => {
+    if (!obj || typeof obj !== 'object') return [String(obj ?? '')];
+    return Object.values(obj).flatMap(flattenValues);
+  };
+
   const filteredData = useMemo(() => {
     let result = [...data];
     
     if (searchTerm) {
-      result = result.filter((row) => 
-        Object.values(row).some((val) => 
-          String(val).toLowerCase().includes(searchTerm.toLowerCase())
-        )
+      const term = searchTerm.toLowerCase();
+      result = result.filter((row) =>
+        flattenValues(row).some((val) => val.toLowerCase().includes(term))
       );
     }
 
