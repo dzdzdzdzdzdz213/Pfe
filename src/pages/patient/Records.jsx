@@ -85,8 +85,62 @@ const ReportModal = ({ report, exam, _patientName, onClose, t }) => (
 );
 
 // ---------------------------------------------------------------------------
-// Main Patient Records Page
+// Standalone Documents (Linked to dossier but no exam)
 // ---------------------------------------------------------------------------
+const StandaloneDocuments = ({ dossierId, t }) => {
+  const { data: docs = [], isLoading } = useQuery({
+    queryKey: ['standalone-docs', dossierId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('documents_medicaux')
+        .select('*')
+        .eq('dossier_id', dossierId)
+        .is('examen_id', null)
+        .order('date_creation', { ascending: false });
+      return data || [];
+    },
+    enabled: !!dossierId,
+  });
+
+  if (!isLoading && docs.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+          <FileText className="h-4 w-4" />
+        </div>
+        <h3 className="text-sm font-extrabold text-slate-800">{t('records_other_docs') || 'Documents Généraux'}</h3>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {isLoading ? (
+          [1, 2].map(i => <div key={i} className="h-16 bg-slate-50 rounded-xl animate-pulse" />)
+        ) : (
+          docs.map(doc => (
+            <div key={doc.id} className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 transition-colors">
+              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm">
+                <FileText className="h-5 w-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-700 truncate">{t('document_label') || 'Document'} — {new Date(doc.date_creation).toLocaleDateString()}</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{doc.statut || 'Valide'}</p>
+              </div>
+              <a
+                href={doc.chemin_fichier}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+              >
+                {t('view') || 'Voir'}
+              </a>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
 
 
 export const PatientRecords = () => {
@@ -205,6 +259,11 @@ export const PatientRecords = () => {
             )}
           </div>
         </div>
+      )}
+
+      {/* Standalone Documents Section */}
+      {dossier && (
+        <StandaloneDocuments dossierId={dossier.id} t={t} />
       )}
 
       {/* Exam List */}

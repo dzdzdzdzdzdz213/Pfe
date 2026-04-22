@@ -61,27 +61,40 @@ const SendDocModal = ({ patient, exam, onClose }) => {
         });
       if (error) throw error;
 
-      // NEW: Also save to medical record tables if an exam is linked
-      if (exam?.id && uploadedUrl) {
-        if (docType === 'image') {
-          await supabase.from('images_radiologiques').insert({
-            examen_id: exam.id,
-            url_stockage: uploadedUrl,
-            type_image: 'Radiographie'
-          });
+      // NEW: Also save to medical record tables
+      if (uploadedUrl) {
+        if (exam?.id) {
+          if (docType === 'image') {
+            await supabase.from('images_radiologiques').insert({
+              examen_id: exam.id,
+              url_stockage: uploadedUrl,
+              type_image: 'Radiographie'
+            });
+          } else {
+            await supabase.from('documents_medicaux').insert({
+              examen_id: exam.id,
+              chemin_fichier: uploadedUrl,
+              statut: 'valide',
+              date_creation: new Date().toISOString().split('T')[0]
+            });
+          }
         } else {
-          // Save as general medical document
-          await supabase.from('documents_medicaux').insert({
-            examen_id: exam.id,
-            chemin_fichier: uploadedUrl,
-            statut: 'valide',
-            date_creation: new Date().toISOString().split('T')[0]
-          });
+          // No specific exam selected - link to patient's dossier
+          const { data: dossier } = await supabase
+            .from('dossiers_medicaux')
+            .select('id')
+            .eq('patient_id', patient.id)
+            .maybeSingle();
+          
+          if (dossier) {
+            await supabase.from('documents_medicaux').insert({
+              dossier_id: dossier.id,
+              chemin_fichier: uploadedUrl,
+              statut: 'valide',
+              date_creation: new Date().toISOString().split('T')[0]
+            });
+          }
         }
-      } else if (exam?.id && docType === 'compte_rendu' && message.trim()) {
-        // If it's a quick compte-rendu text, and there's an exam, we could create a report
-        // But usually reports go through the ReportEditor. 
-        // We'll skip for now to avoid duplicate reports, or we could update existing.
       }
       setSent(true);
       toast.success(t('doc_sent_success').replace('{name}', `${patient.utilisateur.prenom} ${patient.utilisateur.nom}`));
