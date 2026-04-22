@@ -283,6 +283,14 @@ const PatientCard = ({ patient }) => {
 // Main Page
 // ---------------------------------------------------------------------------
 export const RadiologuePatientSearch = () => {
+  return (
+    <React.Suspense fallback={<div className="h-full w-full flex items-center justify-center py-20"><div className="h-10 w-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+      <RadiologuePatientSearchContent />
+    </React.Suspense>
+  );
+};
+
+const RadiologuePatientSearchContent = () => {
   const { t } = useLanguage();
   const [query, setQuery] = useState('');
   const [dateFrom, setDateFrom] = useState('');

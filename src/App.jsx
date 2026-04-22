@@ -44,7 +44,7 @@ const RadiologueDashboardSafe = withErrorBoundary(React.lazy(() => import('./pag
 const RadiologueExamsSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/Exams').then(m => ({ default: m.RadiologueExams }))));
 const ReportEditorSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/ReportEditor').then(m => ({ default: m.ReportEditor }))));
 const PatientHistorySafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientHistory').then(m => ({ default: m.PatientHistory }))));
-const RadiologuePatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.PatientSearch }))));
+const RadiologuePatientSearchSafe = withErrorBoundary(React.lazy(() => import('./pages/radiologue/PatientSearch').then(m => ({ default: m.RadiologuePatientSearch }))));
 
 // Patient Pages
 const PatientDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/patient/Dashboard').then(m => ({ default: m.PatientDashboard }))));
