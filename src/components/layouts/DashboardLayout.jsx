@@ -393,7 +393,9 @@ export const DashboardLayout = () => {
           <div className="max-w-7xl mx-auto h-full">
             <AnimatePresence mode="wait">
               <PageTransition key={location.pathname}>
-                <Outlet />
+                <Suspense fallback={<div className="h-full w-full flex items-center justify-center"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>}>
+                  <Outlet />
+                </Suspense>
               </PageTransition>
             </AnimatePresence>
           </div>
