@@ -51,6 +51,12 @@ export const AuthProvider = ({ children }) => {
               let roleToSet = finalRole.toLowerCase().trim();
               if (roleToSet === 'administrateur') roleToSet = 'admin';
               if (roleToSet === 'assistant') roleToSet = 'receptionniste';
+
+              // Ensure role-specific row exists
+              if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+              if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+              if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+
               return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
           } else {
               const { data: newUtil } = await supabase.from('utilisateurs').insert({

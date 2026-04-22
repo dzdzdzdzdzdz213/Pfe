@@ -387,10 +387,15 @@ const RadiologuePatientSearchContent = () => {
 
       // 2. Build the patient query
       let q = supabase.from('patients').select(`
-        id,
+        id, 
         utilisateur_id,
         utilisateur:utilisateur_id(prenom, nom, email, telephone),
-        rendez_vous(
+        date_naissance,
+        sexe,
+        adresse,
+        rendez_vous!rendez_vous_patient_id_fkey(
+           id,
+           date_heure_debut,
            examens:examen_id(
              id, 
              date_realisation, 
@@ -413,13 +418,18 @@ const RadiologuePatientSearchContent = () => {
         throw error;
       }
       
-      let result = data || [];
+      // Flatten the data: patient.rendez_vous[].examens -> patient.exams[]
+      let result = (data || []).map(p => ({
+        ...p,
+        exams: (p.rendez_vous || [])
+          .map(rv => rv.examens)
+          .filter(Boolean)
+      }));
 
       // Client-side filtering by exam date/service/status
       if (dateFrom || dateTo || serviceFilter || statusFilter) {
         result = result.filter(patient => {
-          const exams = (patient.rendez_vous || []).map(rv => rv.examens).filter(Boolean);
-          return exams.some(exam => {
+          return patient.exams.some(exam => {
             const date = exam.date_realisation ? new Date(exam.date_realisation) : null;
             if (dateFrom && date && date < new Date(dateFrom)) return false;
             if (dateTo && date && date > new Date(dateTo + 'T23:59:59')) return false;
