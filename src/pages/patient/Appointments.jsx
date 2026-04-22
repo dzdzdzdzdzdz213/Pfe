@@ -81,7 +81,8 @@ export const PatientAppointments = () => {
 
       if (examError) throw examError;
 
-      const finalMotif = uploadedDocUrl ? `${motif} [DOC:${uploadedDocUrl}]` : motif;
+      const serviceTag = selectedService?.nom ? `[${selectedService.nom}] ` : '';
+      const finalMotif = uploadedDocUrl ? `${serviceTag}${motif} [DOC:${uploadedDocUrl}]` : `${serviceTag}${motif}`;
 
       // 2. Create the appointment linked to the exam
       return appointmentService.createAppointment({
@@ -165,8 +166,13 @@ export const PatientAppointments = () => {
                     <p className="text-xs text-slate-500 font-bold">{formatDate(appt.date_heure_debut)}</p>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800">{appt.motif || t('consultation')}</p>
-                    {appt.examen?.service?.nom && <p className="text-xs text-slate-500 font-medium mt-0.5">{appt.examen.service.nom}</p>}
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <p className="text-sm font-bold text-slate-800">{appt.motif?.match(/\[(.*?)\]/)?.[1] || appt.examen?.service?.nom || t('consultation')}</p>
+                      <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold border', getStatusColor(status))}>
+                        {getStatusLabel(status, t)}
+                      </span>
+                    </div>
+                    {appt.motif && <p className="text-xs text-slate-500 font-medium truncate">{appt.motif.replace(/\[.*?\]/, '').trim()}</p>}
                   </div>
                   <button
                     onClick={() => cancelMutation.mutate(appt.id)}
