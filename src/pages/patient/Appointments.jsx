@@ -58,8 +58,8 @@ export const PatientAppointments = () => {
     },
   });
 
-  const upcomingAppts = appointments.filter(a => new Date(a.date_heure_debut) > new Date() && a.statut !== 'annule');
-  const pastAppts = appointments.filter(a => new Date(a.date_heure_debut) <= new Date());
+  const upcomingAppts = appointments.filter(a => a.statut !== 'termine' && a.statut !== 'annule');
+  const pastAppts = appointments.filter(a => a.statut === 'termine' || a.statut === 'annule');
 
   const createMutation = useMutation({
     mutationFn: async () => {

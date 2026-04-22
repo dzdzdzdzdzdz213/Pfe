@@ -22,27 +22,27 @@ export const AssistantDashboard = () => {
     refetchInterval: 30000,
   });
 
-  const todayAppointments = allAppointments.filter(a => {
-    return a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay;
-  });
-
   const { data: allPatients = [] } = useQuery({
     queryKey: ['patients'],
     queryFn: () => patientService.fetchPatients(),
   });
 
-  const confirmedToday = todayAppointments.filter(a => a.statut === 'confirme').length;
-  const pendingToday = todayAppointments.filter(a => a.statut === 'planifie').length;
-  const cancelledToday = todayAppointments.filter(a => a.statut === 'annule').length;
+  const activeAppointments = allAppointments
+    .filter(a => a.statut !== 'termine' && a.statut !== 'annule')
+    .sort((a, b) => new Date(a.date_heure_debut) - new Date(b.date_heure_debut));
+
+  const confirmedCount = allAppointments.filter(a => a.statut === 'confirme' && a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay).length;
+  const pendingCount = allAppointments.filter(a => a.statut === 'planifie' && a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay).length;
+  const cancelledCount = allAppointments.filter(a => a.statut === 'annule' && a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay).length;
 
   return (
     <div className="space-y-8">
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title={t('assistant_rdv_today')} value={loadingAppts ? '…' : todayAppointments.length} icon={Calendar} color="blue" />
-        <StatCard title={t('assistant_confirmed')} value={loadingAppts ? '…' : confirmedToday} icon={ClipboardList} color="emerald" />
-        <StatCard title={t('assistant_pending')} value={loadingAppts ? '…' : pendingToday} icon={Clock} color="amber" />
-        <StatCard title={t('assistant_cancelled')} value={loadingAppts ? '…' : cancelledToday} icon={Users} color="red" />
+        <StatCard title={t('assistant_rdv_today')} value={loadingAppts ? '…' : allAppointments.filter(a => a.date_heure_debut >= startOfDay && a.date_heure_debut <= endOfDay).length} icon={Calendar} color="blue" />
+        <StatCard title={t('assistant_confirmed')} value={loadingAppts ? '…' : confirmedCount} icon={ClipboardList} color="emerald" />
+        <StatCard title={t('assistant_pending')} value={loadingAppts ? '…' : pendingCount} icon={Clock} color="amber" />
+        <StatCard title={t('assistant_cancelled')} value={loadingAppts ? '…' : cancelledCount} icon={Users} color="red" />
       </div>
 
 
@@ -69,8 +69,8 @@ export const AssistantDashboard = () => {
                   </div>
                 </div>
               ))
-            ) : allAppointments.length > 0 ? (
-              allAppointments.map((appt) => (
+            ) : activeAppointments.length > 0 ? (
+              activeAppointments.map((appt) => (
                 <div key={appt.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="text-center bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-[70px]">
                     <p className="text-[10px] text-slate-500 font-bold mb-0.5">{formatDate(new Date(appt.date_heure_debut))}</p>
