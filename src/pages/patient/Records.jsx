@@ -95,7 +95,6 @@ const StandaloneDocuments = ({ dossierId, t }) => {
         .from('documents_medicaux')
         .select('*')
         .eq('dossier_id', dossierId)
-        .is('examen_id', null)
         .order('date_creation', { ascending: false });
       return data || [];
     },
@@ -198,7 +197,7 @@ export const PatientRecords = () => {
         .eq('patient_id', patientRecord?.id)
         .order('date_heure_debut', { ascending: false });
       if (error) throw error;
-      return (data || []).filter(rv => rv.examens);
+      return (data || []);
     },
     enabled: !!patientRecord?.id,
   });

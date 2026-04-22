@@ -63,48 +63,48 @@ const SendDocModal = ({ patient, exam, onClose }) => {
 
       // NEW: Also save to medical record tables
       if (uploadedUrl) {
-        if (exam?.id) {
-          if (docType === 'image') {
-            await supabase.from('images_radiologiques').insert({
-              examen_id: exam.id,
-              url_stockage: uploadedUrl,
-              type_image: 'Radiographie'
-            });
-          } else {
-            await supabase.from('documents_medicaux').insert({
-              examen_id: exam.id,
-              chemin_fichier: uploadedUrl,
-              statut: 'valide',
-              date_creation: new Date().toISOString().split('T')[0]
-            });
-          }
-        } else {
-          // No specific exam selected - link to patient's dossier
-          let { data: dossier } = await supabase
+        // 1. Ensure we have the dossier_id
+        let { data: dossier } = await supabase
+          .from('dossiers_medicaux')
+          .select('id')
+          .eq('patient_id', patient.id)
+          .maybeSingle();
+        
+        if (!dossier) {
+          const { data: newDossier, error: dossierError } = await supabase
             .from('dossiers_medicaux')
+            .insert({ patient_id: patient.id })
             .select('id')
-            .eq('patient_id', patient.id)
-            .maybeSingle();
-          
-          // Create dossier if missing
-          if (!dossier) {
-            const { data: newDossier, error: dossierError } = await supabase
-              .from('dossiers_medicaux')
-              .insert({ patient_id: patient.id })
-              .select('id')
-              .single();
-            if (dossierError) throw dossierError;
-            dossier = newDossier;
-          }
+            .single();
+          if (dossierError) throw dossierError;
+          dossier = newDossier;
+        }
 
-          if (dossier) {
-            const { error: docError } = await supabase.from('documents_medicaux').insert({
+        if (dossier) {
+          if (exam?.id) {
+            if (docType === 'image') {
+              await supabase.from('images_radiologiques').insert({
+                examen_id: exam.id,
+                url_stockage: uploadedUrl,
+                type_image: 'Radiographie'
+              });
+            } else {
+              await supabase.from('documents_medicaux').insert({
+                examen_id: exam.id,
+                dossier_id: dossier.id,
+                chemin_fichier: uploadedUrl,
+                statut: 'valide',
+                date_creation: new Date().toISOString().split('T')[0]
+              });
+            }
+          } else {
+            // No specific exam selected
+            await supabase.from('documents_medicaux').insert({
               dossier_id: dossier.id,
               chemin_fichier: uploadedUrl,
               statut: 'valide',
               date_creation: new Date().toISOString().split('T')[0]
             });
-            if (docError) throw docError;
           }
         }
       }
