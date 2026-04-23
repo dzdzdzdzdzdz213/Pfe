@@ -17,8 +17,6 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserRole = useCallback(async (authUser) => {
     try {
-      console.log("Fetching utilisateur for auth_id:", authUser.id);
-
       // Safety timeout: if the DB query hangs (e.g. broken RLS), resolve after 6s
       const queryPromise = supabase
         .from('utilisateurs')
@@ -31,8 +29,6 @@ export const AuthProvider = ({ children }) => {
       );
 
       const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
-      
-      console.log("DB Fetch Result -> Data:", data, "Error:", error);
 
       if (error && error.code === 'PGRST116') {
           // Autoprovision: check if user exists by email without auth_id mapped yet
@@ -143,7 +139,6 @@ export const AuthProvider = ({ children }) => {
     initialize();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth event:", event);
       if (!isMounted) return;
 
       // INITIAL_SESSION is already handled by initialize() above — skip to avoid race condition
