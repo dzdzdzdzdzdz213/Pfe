@@ -75,10 +75,4 @@ export function getStatusLabel(status, t) {
   }
 }
 
-export const SERVICE_COLORS = [
-  '#2563eb', '#0d9488', '#8b5cf6', '#ec4899', '#f59e0b', '#ef4444', '#10b981', '#6366f1'
-];
 
-export function getServiceColor(index) {
-  return SERVICE_COLORS[index % SERVICE_COLORS.length];
-}
