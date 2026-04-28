@@ -70,7 +70,6 @@ export const PublicLayout = () => {
       </main>
 
       {/* Premium Footer */}
-      {/* Premium Footer */}
       <footer id="contact" className="bg-white border-t border-slate-100 pt-20 pb-10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 blur-3xl rounded-full -mr-20 -mt-20" />
 
@@ -105,16 +104,16 @@ export const PublicLayout = () => {
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">{t('contact')}</h3>
               <div className="space-y-4">
                 <a href="tel:0770991111" className="flex items-center gap-3 group">
-                  <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                     <Phone className="h-5 w-5" />
                   </div>
-                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">0770 99 11 11</span>
+                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors font-cairo">0770 99 11 11</span>
                 </a>
                 <a href="tel:0558222317" className="flex items-center gap-3 group">
-                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                     <Phone className="h-5 w-5" />
                   </div>
-                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">0558 22 23 17</span>
+                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors font-cairo">0558 22 23 17</span>
                 </a>
               </div>
             </div>
@@ -123,7 +122,7 @@ export const PublicLayout = () => {
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">Localisation</h3>
               <button
                 onClick={() => window.open('https://maps.google.com', '_blank')}
-                className="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 group"
+                className="w-full inline-flex items-center justify-center px-6 py-4 bg-gradient-to-r from-blue-600 to-primary text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-blue-500/20 hover:scale-[1.02] transition-all group"
               >
                 <MapPin className="mr-2 h-4 w-4" />
                 {t('voir_carte')}
