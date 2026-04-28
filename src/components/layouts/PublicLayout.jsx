@@ -38,14 +38,14 @@ export const PublicLayout = () => {
 
             {/* Actions & Language */}
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={toggleLang}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/80 hover:bg-slate-200 text-slate-600 font-bold text-xs transition-colors border border-slate-200"
               >
                 <Globe className="h-4 w-4 text-primary" />
                 {lang === 'fr' ? 'العربية' : 'Français'}
               </button>
-              
+
               <Link
                 to="/login"
                 className="hidden md:inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-primary bg-blue-50/80 border border-blue-100/50 rounded-xl hover:bg-blue-100 transition-all shadow-sm"
@@ -70,57 +70,73 @@ export const PublicLayout = () => {
       </main>
 
       {/* Premium Footer */}
-      <footer id="contact" className="bg-slate-900 text-slate-300 py-16 border-t border-slate-800 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 relative z-10">
-          <div className="col-span-1 md:col-span-2">
-            <div className="flex items-center mb-6">
-              <img src="/logo.png" alt={t('clinic_name')} className="h-20 w-auto object-contain bg-white/95 rounded-2xl shadow-lg border border-white/10" />
+      {/* Premium Footer */}
+      <footer id="contact" className="bg-white border-t border-slate-100 pt-20 pb-10 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 blur-3xl rounded-full -mr-20 -mt-20" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-1 md:col-span-1">
+              <img src="/logo.png" alt={t('clinic_name')} className="h-16 w-auto object-contain mix-blend-multiply mb-6" />
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">
+                {t('description_footer')}
+              </p>
             </div>
-            <p className="text-sm font-medium text-slate-400 max-w-sm leading-relaxed">
-              {t('description_footer')}
-            </p>
+
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">{t('horaires')}</h3>
+              <ul className="space-y-3 text-sm font-semibold">
+                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
+                  <span>{t('dim_jeu')}</span>
+                  <span className="text-blue-600 font-bold">08:00 - 17:00</span>
+                </li>
+                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
+                  <span>{t('samedi')}</span>
+                  <span className="text-blue-600 font-bold">08:00 - 12:00</span>
+                </li>
+                <li className="flex justify-between items-center text-red-500 bg-red-50 px-3 py-1.5 rounded-lg">
+                  <span>{t('vendredi')}</span>
+                  <span className="font-black text-[10px] uppercase">{t('ferme')}</span>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">{t('contact')}</h3>
+              <div className="space-y-4">
+                <a href="tel:0770991111" className="flex items-center gap-3 group">
+                  <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
+                    <Phone className="h-5 w-5" />
+                  </div>
+                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">0770 99 11 11</span>
+                </a>
+                <a href="tel:0558222317" className="flex items-center gap-3 group">
+                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                    <Phone className="h-5 w-5" />
+                  </div>
+                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors">0558 22 23 17</span>
+                </a>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">Localisation</h3>
+              <button
+                onClick={() => window.open('https://maps.google.com', '_blank')}
+                className="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 group"
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                {t('voir_carte')}
+              </button>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-6 opacity-80">{t('horaires')}</h3>
-            <ul className="space-y-3 text-sm font-medium">
-              <li className="flex justify-between pb-2 border-b border-slate-800"><span className="text-slate-400">{t('dim_jeu')}</span><span className="text-slate-200">08:00 - 17:00</span></li>
-              <li className="flex justify-between pb-2 border-b border-slate-800"><span className="text-slate-400">{t('vendredi')}</span><span className="text-rose-400 font-bold">{t('ferme')}</span></li>
-              <li className="flex justify-between"><span className="text-slate-400">{t('samedi')}</span><span className="text-slate-200">08:00 - 12:00</span></li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-6 opacity-80">{t('contact')}</h3>
-            <ul className="space-y-4 text-sm font-medium">
-              <li className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm">
-                <div className="p-2 bg-primary/20 rounded-lg text-primary">
-                  <Phone className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="block text-white font-bold text-lg mb-1">0770 99 11 11</span>
-                  <span className="block text-white font-bold text-lg mb-1">0558 22 23 17</span>
-                  <span className="text-emerald-400 text-xs font-bold tracking-wide uppercase">{t('urgences')}</span>
-                </div>
-              </li>
-              <li className="flex items-start gap-4 p-4 rounded-2xl bg-slate-800/50 border border-slate-700/50 backdrop-blur-sm hover:bg-slate-800 transition-colors cursor-pointer" onClick={() => window.open('https://maps.app.goo.gl/svFjfVStarFtH7GM7', '_blank')}>
-                <div className="p-2 bg-rose-500/20 rounded-lg text-rose-400 shadow-[0_0_10px_rgba(244,63,94,0.2)]">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="block text-white font-bold text-base mb-1">{t('voir_carte')}</span>
-                  <span className="text-rose-400 text-xs font-bold tracking-wide uppercase">Google Maps</span>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-        
-        {/* Copyright Bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-slate-800 text-center md:text-left text-sm font-medium flex flex-col md:flex-row justify-between items-center text-slate-500 relative z-10">
-          <p>&copy; {new Date().getFullYear()} {t('clinic_name')}. {t('all_rights_reserved')}</p>
-          <div className="flex gap-6 mt-6 md:mt-0">
-            <button className="hover:text-white transition-colors bg-transparent border-0 p-0 text-sm font-medium cursor-pointer">{t('mentions_legales')}</button>
-            <button className="hover:text-white transition-colors bg-transparent border-0 p-0 text-sm font-medium cursor-pointer">{t('politique_confidentialite')}</button>
+
+          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <p>© {new Date().getFullYear()} {t('clinic_name')}. {t('all_rights_reserved')}</p>
+            <div className="flex gap-8">
+              <button className="hover:text-blue-600 transition-colors">{t('mentions_legales')}</button>
+              <button className="hover:text-blue-600 transition-colors">{t('politique_confidentialite')}</button>
+            </div>
           </div>
         </div>
       </footer>

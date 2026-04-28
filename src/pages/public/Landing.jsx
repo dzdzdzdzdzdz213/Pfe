@@ -186,82 +186,8 @@ export const Landing = () => {
           </div>
         </div>
       </motion.section>
-      {/* SECTION CONTACT & FOOTER */}
-      <footer className="bg-white border-t border-slate-100 pt-20 pb-10 relative overflow-hidden">
-        {/* Effet de lumière bleu en arrière-plan */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 blur-3xl rounded-full -mr-20 -mt-20" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
 
-            {/* 1. Logo et Description */}
-            <div className="space-y-6">
-              <h3 className="text-2xl font-black text-slate-900">
-                Chemloul<span className="text-blue-600">Radiologie</span>
-              </h3>
-              <p className={`text-slate-600 leading-relaxed font-medium ${lang === 'ar' ? 'font-tajawal text-base' : 'text-sm'}`}>
-                Cabinet de radiologie de référence à Sétif, offrant des services d'imagerie de haute précision avec une expertise médicale reconnue.
-              </p>
-            </div>
-
-            {/* 2. Horaires - Utilisation du bleu pour les heures */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] mb-6">Horaires d'Ouverture</h4>
-              <ul className="space-y-3 text-sm font-semibold">
-                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
-                  <span>Dimanche - Jeudi</span>
-                  <span className="text-blue-600 font-bold">08:00 - 17:00</span>
-                </li>
-                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
-                  <span>Samedi</span>
-                  <span className="text-blue-600 font-bold">08:00 - 12:00</span>
-                </li>
-                <li className="flex justify-between items-center text-red-500 bg-red-50/50 px-3 py-2 rounded-xl">
-                  <span>Vendredi</span>
-                  <span className="font-black uppercase">Fermé</span>
-                </li>
-              </ul>
-            </div>
-
-            {/* 3. Contact avec icônes cliquables */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] mb-6">Contact & Urgences</h4>
-              <div className="space-y-4">
-                <a href="tel:0770991111" className="flex items-center gap-3 group">
-                  <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-200 group-hover:scale-110 transition-transform">
-                    <Activity className="h-5 w-5" />
-                  </div>
-                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors tracking-tight">0770 99 11 11</span>
-                </a>
-                <a href="tel:0558222317" className="flex items-center gap-3 group">
-                  <div className="h-10 w-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
-                    <HeartPulse className="h-5 w-5" />
-                  </div>
-                  <span className="text-lg font-black text-slate-800 group-hover:text-blue-600 transition-colors tracking-tight">0558 22 23 17</span>
-                </a>
-              </div>
-            </div>
-
-            {/* 4. Google Maps - Bouton noir élégant */}
-            <div>
-              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-[0.2em] mb-6">Localisation</h4>
-              <button className="w-full inline-flex items-center justify-center px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 group">
-                Voir sur Google Maps
-                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform rtl:rotate-180" />
-              </button>
-            </div>
-          </div>
-
-          {/* Barre de Copyright très discrète */}
-          <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <p>© 2026 Chemloul Radiologie. Tous droits réservés.</p>
-            <div className="flex gap-8">
-              <button className="hover:text-blue-600 transition-colors">Mentions Légales</button>
-              <button className="hover:text-blue-600 transition-colors">Politique de Confidentialité</button>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 };
