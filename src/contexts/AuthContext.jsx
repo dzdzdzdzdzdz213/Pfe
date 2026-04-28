@@ -210,6 +210,42 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const register = async (userData) => {
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          full_name: `${userData.prenom} ${userData.nom}`
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    if (data.user) {
+      const { data: newUtil, error: utilError } = await supabase.from('utilisateurs').insert({
+        auth_id: data.user.id,
+        nom: userData.nom,
+        prenom: userData.prenom,
+        email: userData.email,
+        telephone: userData.telephone,
+        age: userData.age ? parseInt(userData.age, 10) : null,
+        role: 'patient',
+        profil_complet: true
+      }).select().single();
+
+      if (utilError) throw utilError;
+
+      if (newUtil) {
+        await supabase.from('patients').insert({
+          utilisateur_id: newUtil.id
+        });
+      }
+    }
+    return data;
+  };
+
   const loginWithGoogle = async () => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -220,7 +256,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, logout }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

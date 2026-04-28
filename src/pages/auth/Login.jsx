@@ -19,13 +19,23 @@ export const Login = () => {
     password: z.string().min(4, { message: t('error_password_too_short') }),
   });
 
+  const registerSchema = z.object({
+    nom: z.string().min(2, "Le nom est requis"),
+    prenom: z.string().min(2, "Le prénom est requis"),
+    telephone: z.string().min(8, "Le numéro est requis"),
+    age: z.string().min(1, "L'âge est requis"),
+    email: z.string().email({ message: t('error_invalid_email') }),
+    password: z.string().min(6, { message: t('error_password_short') }),
+  });
+
+  const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   
-  const { user, role, login, loginWithGoogle } = useAuth();
+  const { user, role, login, loginWithGoogle, register: registerUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -54,22 +64,28 @@ export const Login = () => {
     register,
     handleSubmit,
     formState: { errors },
+    reset,
   } = useForm({
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(isSignUp ? registerSchema : loginSchema),
   });
 
   const onSubmit = useCallback(async (data) => {
     setIsSubmitting(true);
     try {
-      await login(data.email, data.password);
-      toast.success(t('login_success'));
-      // Note: Navigation is handled by the useEffect once role resolves
+      if (isSignUp) {
+        await registerUser(data);
+        toast.success('Compte créé avec succès !');
+        // Will auto-redirect thanks to auth listener
+      } else {
+        await login(data.email, data.password);
+        toast.success(t('login_success'));
+      }
     } catch (error) {
       console.error(error);
       toast.error(error.message || t('login_failed'));
-      setIsSubmitting(false); // Only stop loading if error, otherwise keep loading while role fetches and redirects
+      setIsSubmitting(false);
     }
-  }, [login, t]);
+  }, [login, registerUser, t, isSignUp]);
 
 
   const handleResetPassword = async (e) => {
@@ -93,14 +109,85 @@ export const Login = () => {
     <>
       <StaggerContainer className="space-y-6">
         <FadeInItem className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">{t('login_welcome')}</h1>
-          <p className="text-sm text-slate-500 font-medium">
-            {t('login_subtitle')}
+          <div className="flex justify-center mb-6">
+            <div className="bg-slate-100 p-1 rounded-xl inline-flex">
+              <button 
+                type="button"
+                onClick={() => { setIsSignUp(false); reset(); }}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${!isSignUp ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Se Connecter
+              </button>
+              <button 
+                type="button"
+                onClick={() => { setIsSignUp(true); reset(); }}
+                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${isSignUp ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+              >
+                Créer un compte
+              </button>
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 text-center">
+            {isSignUp ? 'Bienvenue parmi nous' : t('login_welcome')}
+          </h1>
+          <p className="text-sm text-slate-500 font-medium text-center">
+            {isSignUp ? 'Remplissez vos informations pour créer un compte patient.' : t('login_subtitle')}
           </p>
         </FadeInItem>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-          
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {isSignUp && (
+            <FadeInItem className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Prénom</label>
+                  <input
+                    type="text"
+                    placeholder="Prénom"
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 ${errors.prenom ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
+                    {...register('prenom')}
+                    disabled={isSubmitting}
+                  />
+                  {errors.prenom && <p className="text-xs text-red-500 mt-1 font-semibold">{errors.prenom.message}</p>}
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Nom</label>
+                  <input
+                    type="text"
+                    placeholder="Nom"
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 ${errors.nom ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
+                    {...register('nom')}
+                    disabled={isSubmitting}
+                  />
+                  {errors.nom && <p className="text-xs text-red-500 mt-1 font-semibold">{errors.nom.message}</p>}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Téléphone</label>
+                  <input
+                    type="text"
+                    placeholder="0555 55 55 55"
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 ${errors.telephone ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
+                    {...register('telephone')}
+                    disabled={isSubmitting}
+                  />
+                  {errors.telephone && <p className="text-xs text-red-500 mt-1 font-semibold">{errors.telephone.message}</p>}
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-1.5">Âge</label>
+                  <input
+                    type="number"
+                    placeholder="Âge"
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 ${errors.age ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
+                    {...register('age')}
+                    disabled={isSubmitting}
+                  />
+                  {errors.age && <p className="text-xs text-red-500 mt-1 font-semibold">{errors.age.message}</p>}
+                </div>
+              </div>
+            </FadeInItem>
+          )}
 
           <FadeInItem className="space-y-1.5 mt-4">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center" htmlFor="email">
@@ -127,14 +214,16 @@ export const Login = () => {
           </FadeInItem>
 
           <FadeInItem className="space-y-1.5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center" htmlFor="password">
                 <Lock className="h-3 w-3 mr-1.5 text-primary" />
                 {t('login_password')}
               </label>
-              <button type="button" onClick={() => setShowResetModal(true)} className="text-xs font-bold text-primary hover:text-blue-700 transition-colors">
-                {t('login_forgot')}
-              </button>
+              {!isSignUp && (
+                <button type="button" onClick={() => setShowResetModal(true)} className="text-xs font-bold text-primary hover:text-blue-700 transition-colors">
+                  {t('login_forgot')}
+                </button>
+              )}
             </div>
             <div className="relative group">
               <input
@@ -162,16 +251,18 @@ export const Login = () => {
             )}
           </FadeInItem>
 
-          <FadeInItem className="flex items-center space-x-2">
-            <input 
-              type="checkbox" 
-              id="remember" 
-              className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary focus:ring-offset-2" 
-            />
-            <label htmlFor="remember" className="text-sm font-medium text-slate-600 cursor-pointer select-none hover:text-slate-900 transition-colors">
-              {t('login_remember')}
-            </label>
-          </FadeInItem>
+          {!isSignUp && (
+            <FadeInItem className="flex items-center space-x-2">
+              <input 
+                type="checkbox" 
+                id="remember" 
+                className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary/20 accent-primary focus:ring-offset-2" 
+              />
+              <label htmlFor="remember" className="text-sm font-medium text-slate-600 cursor-pointer select-none hover:text-slate-900 transition-colors">
+                {t('login_remember')}
+              </label>
+            </FadeInItem>
+          )}
 
           <FadeInItem>
             <button
@@ -187,7 +278,7 @@ export const Login = () => {
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
                 <>
-                  {t('login_submit')}
+                  {isSignUp ? "Créer mon compte" : t('login_submit')}
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </>
               )}
