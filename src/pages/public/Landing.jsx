@@ -123,7 +123,6 @@ export const Landing = () => {
                   key={service.id}
                   className="flex flex-col bg-white rounded-[2rem] p-8 border border-slate-100 transition-all duration-300 group hover:-translate-y-2 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-xl hover:shadow-blue-500/10"
                 >
-                  {/* L'icône change aussi de couleur au survol */}
                   <div className="h-14 w-14 bg-slate-50 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300">
                     <ServiceIcon className="h-7 w-7 text-blue-600 group-hover:text-white" />
                   </div>
@@ -136,7 +135,6 @@ export const Landing = () => {
                     {t(`service_${service.id}_desc`)}
                   </p>
 
-                  {/* Bouton modifié : de NOIR à BLEU */}
                   <Link
                     to="/book"
                     state={{ serviceId: service.id, serviceName: t(`service_${service.id}_title`) }}
