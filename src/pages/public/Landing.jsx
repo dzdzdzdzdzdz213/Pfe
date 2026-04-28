@@ -150,6 +150,7 @@ export const Landing = () => {
       </motion.section>
 
       {/* Call to Action Promo */}
+      {/* Call to Action Promo - Plus stylé et sans noir */}
       <motion.section
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -157,18 +158,29 @@ export const Landing = () => {
         transition={{ duration: 0.8 }}
         className="py-24 relative overflow-hidden"
       >
-        <div className="absolute inset-0 bg-slate-900" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-transparent to-emerald-900/40 opacity-80 mix-blend-overlay" />
+        {/* Fond avec dégradé bleu médical premium au lieu du noir */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900" />
+
+        {/* Effets de lumière décoratifs */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-30">
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-emerald-400 rounded-full blur-[120px]" />
+          <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-400 rounded-full blur-[120px]" />
+        </div>
+
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-lg">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-md tracking-tight">
             {t('sante_merite_meilleur')}
           </h2>
-          <p className={`text-xl text-slate-300 font-medium mb-12 max-w-2xl mx-auto ${lang === 'ar' ? 'font-tajawal' : ''}`}>
+          <p className={`text-xl text-blue-50 font-medium mb-12 max-w-2xl mx-auto leading-relaxed ${lang === 'ar' ? 'font-tajawal' : ''}`}>
             {t('acceder_comptes_rendus')}
           </p>
           <div className="flex justify-center">
-            <Link to="/login" className="inline-flex items-center justify-center px-10 py-5 bg-white text-slate-900 rounded-2xl font-extrabold text-lg shadow-2xl hover:scale-105 transition-all">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-700 rounded-2xl font-extrabold text-lg shadow-[0_20px_50px_rgba(0,0,0,0.2)] hover:scale-105 hover:bg-blue-50 transition-all duration-300 group"
+            >
               {t('acceder_espace_patient')}
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>
