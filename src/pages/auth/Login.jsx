@@ -80,19 +80,21 @@ export const Login = () => {
           setEmailConfirmationSent(true);
           setIsSubmitting(false);
         } else {
-          // Session is live — onAuthStateChange will trigger redirect
-          toast.success('Compte créé avec succès !');
+          // Session is live — navigate directly to patient dashboard
+          toast.success('Compte créé avec succès ! Bienvenue 👋');
+          navigate('/patient/dashboard', { replace: true });
         }
       } else {
         await login(data.email, data.password);
         toast.success(t('login_success'));
+        // Auth listener handles redirect for login
       }
     } catch (error) {
       console.error(error);
       toast.error(error.message || t('login_failed'));
       setIsSubmitting(false);
     }
-  }, [login, registerUser, t, isSignUp]);
+  }, [login, registerUser, navigate, t, isSignUp]);
 
 
   const handleResetPassword = async (e) => {
