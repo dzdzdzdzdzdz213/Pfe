@@ -9,13 +9,13 @@ export const Landing = () => {
 
   const services = [
     { id: 1, icon: Scan, color: 'blue' },
-    { id: 2, icon: Bone, color: 'emerald' },
-    { id: 3, icon: Waves, color: 'violet' },
-    { id: 4, icon: Activity, color: 'orange' },
-    { id: 5, icon: HeartPulse, color: 'pink' },
-    { id: 6, icon: Microscope, color: 'teal' },
-    { id: 7, icon: Syringe, color: 'red' },
-    { id: 8, icon: ClipboardCheck, color: 'amber' },
+    { id: 2, icon: Bone, color: 'blue' },
+    { id: 3, icon: Waves, color: 'blue' },
+    { id: 4, icon: Activity, color: 'blue' },
+    { id: 5, icon: HeartPulse, color: 'blue' },
+    { id: 6, icon: Microscope, color: 'blue' },
+    { id: 7, icon: Syringe, color: 'blue' },
+    { id: 8, icon: ClipboardCheck, color: 'blue' },
   ];
 
   const getColorClasses = (color) => {
@@ -39,7 +39,7 @@ export const Landing = () => {
         <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-blue-100/40 to-indigo-100/40 blur-3xl opacity-70" />
         <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-[600px] h-[600px] rounded-full bg-gradient-to-tr from-emerald-50/50 to-teal-50/50 blur-3xl opacity-70" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/0 via-white/50 to-white/80 pointer-events-none" />
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 block lg:flex items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center lg:text-start lg:rtl:text-right mt-10 lg:mt-0">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50/80 border border-blue-100/80 shadow-sm text-primary text-xs font-bold mb-8 backdrop-blur-sm">
@@ -49,7 +49,7 @@ export const Landing = () => {
               </span>
               {t('cabinet_ouvert')}
             </div>
-            
+
             <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
               {t('imagerie_haute_precision').split('\n').map((line, i) => (
                 <React.Fragment key={i}>
@@ -61,11 +61,11 @@ export const Landing = () => {
                 </React.Fragment>
               ))}
             </h1>
-            
+
             <p className={`text-lg md:text-xl text-slate-500 font-medium mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed ${lang === 'ar' ? 'font-tajawal text-slate-600' : ''}`}>
               {t('hero_description')}
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <Link to="/book" className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-primary to-blue-700 text-white rounded-2xl font-bold shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-1 transition-all group">
                 {t('prendre_rdv')}
@@ -84,14 +84,14 @@ export const Landing = () => {
               <div className="relative h-full w-full rounded-[2.3rem] border border-white/10 bg-slate-900/80 backdrop-blur-xl flex flex-col justify-between p-8 overflow-hidden">
                 {/* Decorative glowing orb */}
                 <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/30 blur-[50px] rounded-full" />
-                
+
                 <div className="flex justify-between items-start relative z-10">
                   <ActivitySquare className="h-12 w-12 text-emerald-400 drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]" />
                   <div className="px-4 py-1.5 rounded-full bg-emerald-500/10 text-emerald-300 text-xs font-extrabold border border-emerald-500/20 backdrop-blur-md">
                     {t('systeme_en_ligne')}
                   </div>
                 </div>
-                
+
                 <div className="space-y-5 relative z-10 mt-12">
                   <div className="h-3 w-1/3 bg-slate-700/50 rounded-full overflow-hidden">
                     <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-600 to-transparent -translate-x-full animate-[shimmer_2s_infinite]" />
@@ -104,7 +104,7 @@ export const Landing = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Floating Cards */}
             <div className="absolute -bottom-8 rtl:-right-8 ltr:-left-8 bg-white/90 backdrop-blur-xl p-5 rounded-3xl shadow-2xl shadow-slate-200/50 border border-white/50 flex items-center gap-5 hidden md:flex animate-bounce-slow">
               <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center text-primary shadow-inner border border-blue-100/50">
@@ -120,12 +120,12 @@ export const Landing = () => {
       </section>
 
       {/* Services Section */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8, ease: "easeOut" }}
-        id="services" 
+        id="services"
         className="py-24 bg-slate-50 relative border-t border-slate-100"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -136,7 +136,7 @@ export const Landing = () => {
               {t('services_desc')}
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {services.map((service) => {
               const ServiceIcon = service.icon;
@@ -151,8 +151,8 @@ export const Landing = () => {
                   <p className={`text-sm text-slate-500 font-medium flex-grow mb-8 leading-relaxed ${lang === 'ar' ? 'font-tajawal text-slate-600' : ''}`}>
                     {t(`service_${service.id}_desc`)}
                   </p>
-                  <Link 
-                    to="/book" 
+                  <Link
+                    to="/book"
                     state={{ serviceId: service.id, serviceName: t(`service_${service.id}_title`) }}
                     className="inline-flex items-center justify-center w-full px-5 py-3 bg-slate-900 text-white text-sm font-bold rounded-xl shadow-md hover:bg-primary hover:shadow-blue-500/20 transition-all group-hover:scale-[1.02]"
                   >
@@ -164,9 +164,9 @@ export const Landing = () => {
           </div>
         </div>
       </motion.section>
-      
+
       {/* Call to Action Promo */}
-      <motion.section 
+      <motion.section
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true, margin: "-100px" }}
@@ -176,7 +176,7 @@ export const Landing = () => {
         <div className="absolute inset-0 bg-slate-900" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-transparent to-emerald-900/40 opacity-80 mix-blend-overlay" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_var(--tw-gradient-stops))] from-primary/30 to-transparent" />
-        
+
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-6 drop-shadow-lg">
             {t('sante_merite_meilleur')}
