@@ -222,18 +222,20 @@ export const AuthProvider = ({ children }) => {
           full_name: `${userData.prenom} ${userData.nom}`,
           prenom: userData.prenom,
           nom: userData.nom,
-          telephone: userData.telephone
+          telephone: userData.telephone,
+          age: userData.age,
+          // Mark as manual signup so trigger sets profil_complet=true
+          manual_signup: true
         }
       }
     });
 
     if (error) throw error;
-    
-    // Auto-provisioning is handled by onAuthStateChange -> fetchUserRole
-    // This avoids RLS errors if email confirmation is required,
-    // and avoids race conditions if auto-login occurs immediately.
 
-    return data;
+    // If session is immediately available (email confirmation disabled),
+    // the onAuthStateChange listener will handle the redirect.
+    // If session is null (email confirmation required), we return a flag.
+    return { ...data, requiresEmailConfirmation: !data.session };
   };
 
   const loginWithGoogle = async () => {

@@ -34,6 +34,7 @@ export const Login = () => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   
   const { user, role, login, loginWithGoogle, register: registerUser } = useAuth();
   const navigate = useNavigate();
@@ -73,9 +74,15 @@ export const Login = () => {
     setIsSubmitting(true);
     try {
       if (isSignUp) {
-        await registerUser(data);
-        toast.success('Compte créé avec succès !');
-        // Will auto-redirect thanks to auth listener
+        const result = await registerUser(data);
+        if (result?.requiresEmailConfirmation) {
+          // Email confirmation required — show confirmation screen
+          setEmailConfirmationSent(true);
+          setIsSubmitting(false);
+        } else {
+          // Session is live — onAuthStateChange will trigger redirect
+          toast.success('Compte créé avec succès !');
+        }
       } else {
         await login(data.email, data.password);
         toast.success(t('login_success'));
@@ -107,6 +114,24 @@ export const Login = () => {
 
   return (
     <>
+      {/* Email Confirmation Screen */}
+      {emailConfirmationSent ? (
+        <div className="text-center space-y-4 py-4">
+          <div className="h-16 w-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100">
+            <Mail className="h-8 w-8 text-emerald-500" />
+          </div>
+          <h2 className="text-xl font-extrabold text-slate-800">Vérifiez votre email</h2>
+          <p className="text-sm text-slate-500 font-medium max-w-xs mx-auto">
+            Un lien de confirmation a été envoyé à votre adresse email. Cliquez dessus pour accéder à votre espace patient.
+          </p>
+          <button
+            onClick={() => { setEmailConfirmationSent(false); setIsSignUp(false); reset(); }}
+            className="text-sm font-bold text-primary hover:underline"
+          >
+            Retour à la connexion
+          </button>
+        </div>
+      ) : (
       <StaggerContainer className="space-y-6">
         <FadeInItem className="space-y-1">
           <div className="flex justify-center mb-6">
@@ -310,6 +335,7 @@ export const Login = () => {
           </button>
         </FadeInItem>
       </StaggerContainer>
+      )}
 
       {/* Reset Password Modal */}
       {showResetModal && (
