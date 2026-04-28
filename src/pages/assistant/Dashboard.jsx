@@ -70,7 +70,11 @@ export const AssistantDashboard = () => {
                 </div>
               ))
             ) : activeAppointments.length > 0 ? (
-              activeAppointments.map((appt) => (
+              activeAppointments.map((appt) => {
+                const isGuestBooking = appt.motif?.includes('— Patient:');
+                const guestNameMatch = appt.motif?.match(/Patient:\s*([^—-]+)/);
+                const guestName = guestNameMatch ? guestNameMatch[1].trim() : (isGuestBooking ? appt.motif?.split('—')[1]?.replace('Patient:', '').trim() : 'Patient Externe');
+                return (
                 <div key={appt.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50/50 transition-colors">
                   <div className="text-center bg-slate-50 rounded-xl px-3 py-2 border border-slate-100 min-w-[70px]">
                     <p className="text-[10px] text-slate-500 font-bold mb-0.5">{formatDate(new Date(appt.date_heure_debut))}</p>
@@ -80,7 +84,7 @@ export const AssistantDashboard = () => {
                     <p className="text-sm font-bold text-slate-800 truncate">
                       {appt.patient?.utilisateur?.prenom
                         ? `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`
-                        : appt.motif ? `👤 ${appt.motif.match(/Patient:\s*([^\—\-]+)/)?.[1]?.trim() || appt.motif.split('—')[1]?.replace('Patient:', '').trim() || 'Patient Externe'}` : 'Patient Externe'}
+                        : guestName}
                     </p>
                     <p className="text-xs text-slate-500 font-medium truncate">
                       {appt.patient?.utilisateur?.prenom
@@ -92,7 +96,7 @@ export const AssistantDashboard = () => {
                     {getStatusLabel(appt.statut)}
                   </span>
                 </div>
-              ))
+              )})
             ) : (
               <div className="py-16 text-center text-slate-400">
                 <Calendar className="h-10 w-10 mx-auto mb-3 opacity-30" />

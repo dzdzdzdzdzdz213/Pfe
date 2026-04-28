@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, Upload, FilePlus, Filter } from 'lucide-react';
+import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, FilePlus, Filter } from 'lucide-react';
 import { formatDate, cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { FileUpload } from '@/components/common/FileUpload';

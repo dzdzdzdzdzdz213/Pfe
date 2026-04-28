@@ -145,7 +145,7 @@ export const ReportEditor = () => {
   const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, utilisateur } = useAuth();
+  const { utilisateur } = useAuth();
   const queryClient = useQueryClient();
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -161,7 +161,7 @@ export const ReportEditor = () => {
   });
 
   // Fetch radiologue profile for the print header and to get radiologue_id
-  const { data: radioProfile, isLoading: isRadioProfileLoading } = useQuery({
+  const { data: radioProfile } = useQuery({
     queryKey: ['radiologue-profile', utilisateur?.id],
     queryFn: async () => {
       if (!utilisateur?.id) return null;
@@ -208,7 +208,7 @@ export const ReportEditor = () => {
       }
     };
     fetchOrdonnance();
-  }, [exam, editor, id]);
+  }, [exam, editor, id, t]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {

@@ -36,12 +36,14 @@ export const AuthProvider = ({ children }) => {
           const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
           const nameParts = fullName.split(' ');
           const finalRole = legacyUser?.role || 'patient';
-          const finalNom = legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
-          const finalPrenom = legacyUser?.prenom || nameParts[0];
+          const finalNom = authUser.user_metadata?.nom || legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
+          const finalPrenom = authUser.user_metadata?.prenom || legacyUser?.prenom || nameParts[0];
+          const finalTelephone = authUser.user_metadata?.telephone || legacyUser?.telephone || null;
 
           if (legacyUser) {
               const { data: updatedUtil } = await supabase.from('utilisateurs').update({
-                  auth_id: authUser.id
+                  auth_id: authUser.id,
+                  telephone: finalTelephone || legacyUser.telephone
               }).eq('id', legacyUser.id).select().single();
               
               let roleToSet = finalRole.toLowerCase().trim();
@@ -60,11 +62,12 @@ export const AuthProvider = ({ children }) => {
                   nom: finalNom, 
                   prenom: finalPrenom, 
                   email: authUser.email, 
+                  telephone: finalTelephone,
                   role: 'patient',
-                  profil_complet: false
+                  profil_complet: finalTelephone ? true : false
               }).select().single();
-              if (newUtil) await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
-              return { role: 'patient', profileComplete: false, utilisateur: newUtil };
+              if (newUtil) await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' });
+              return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
           }
       }
 
@@ -216,33 +219,20 @@ export const AuthProvider = ({ children }) => {
       password: userData.password,
       options: {
         data: {
-          full_name: `${userData.prenom} ${userData.nom}`
+          full_name: `${userData.prenom} ${userData.nom}`,
+          prenom: userData.prenom,
+          nom: userData.nom,
+          telephone: userData.telephone
         }
       }
     });
 
     if (error) throw error;
+    
+    // Auto-provisioning is handled by onAuthStateChange -> fetchUserRole
+    // This avoids RLS errors if email confirmation is required,
+    // and avoids race conditions if auto-login occurs immediately.
 
-    if (data.user) {
-      const { data: newUtil, error: utilError } = await supabase.from('utilisateurs').insert({
-        auth_id: data.user.id,
-        nom: userData.nom,
-        prenom: userData.prenom,
-        email: userData.email,
-        telephone: userData.telephone,
-        age: userData.age ? parseInt(userData.age, 10) : null,
-        role: 'patient',
-        profil_complet: true
-      }).select().single();
-
-      if (utilError) throw utilError;
-
-      if (newUtil) {
-        await supabase.from('patients').insert({
-          utilisateur_id: newUtil.id
-        });
-      }
-    }
     return data;
   };
 

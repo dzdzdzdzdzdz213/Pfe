@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { User, Calendar, Save, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';

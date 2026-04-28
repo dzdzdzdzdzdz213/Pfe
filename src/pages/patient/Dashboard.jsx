@@ -9,7 +9,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 
 export const PatientDashboard = () => {
-  const { user, utilisateur } = useAuth();
+  const { utilisateur } = useAuth();
   const { t } = useLanguage();
 
   const { data: patientRecord } = useQuery({

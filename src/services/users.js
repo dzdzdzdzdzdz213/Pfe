@@ -34,9 +34,9 @@ export const userService = {
       .from('utilisateurs')
       .select(`
         *,
-        radiologue:radiologues!utilisateur_id(id, matricule_sante, specialite_principale),
-        receptionniste:receptionnistes!utilisateur_id(id),
-        administrateur:administrateurs!utilisateur_id(id)
+        radiologue:radiologues(id, matricule_sante, specialite_principale),
+        receptionniste:receptionnistes(id),
+        administrateur:administrateurs(id)
       `);
     if (error) throw error;
     return data;
@@ -164,9 +164,9 @@ export const userService = {
       .from('utilisateurs')
       .select(`
         *,
-        radiologue:radiologues!utilisateur_id(*),
-        receptionniste:receptionnistes!utilisateur_id(*),
-        administrateur:administrateurs!utilisateur_id(*)
+        radiologue:radiologues(*),
+        receptionniste:receptionnistes(*),
+        administrateur:administrateurs(*)
       `)
       .eq('id', id)
       .single();

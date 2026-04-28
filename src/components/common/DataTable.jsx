@@ -9,6 +9,14 @@ import {
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
 
+// Flatten nested objects so search works on fields like utilisateur.nom, utilisateur.prenom, etc.
+const flattenValues = (obj) => {
+  if (!obj) return [String(obj ?? '')];
+  if (obj instanceof Date) return [obj.toISOString(), formatDate(obj)];
+  if (typeof obj !== 'object') return [String(obj)];
+  return Object.values(obj).flatMap(flattenValues);
+};
+
 export const DataTable = ({ 
   columns, 
   data, 
@@ -29,13 +37,6 @@ export const DataTable = ({
     setSortConfig({ key, direction });
   };
 
-  // Flatten nested objects so search works on fields like utilisateur.nom, utilisateur.prenom, etc.
-  const flattenValues = (obj) => {
-    if (!obj) return [String(obj ?? '')];
-    if (obj instanceof Date) return [obj.toISOString(), formatDate(obj)];
-    if (typeof obj !== 'object') return [String(obj)];
-    return Object.values(obj).flatMap(flattenValues);
-  };
 
   const filteredData = useMemo(() => {
     let result = [...data];

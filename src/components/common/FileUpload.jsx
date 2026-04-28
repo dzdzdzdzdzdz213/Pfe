@@ -2,30 +2,16 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/lib/supabase';
 import { UploadCloud, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 
 export const FileUpload = ({
   bucket = 'documents',
   folder = '',
-  accept = { 
-    'application/pdf': ['.pdf'], 
-    'image/*': ['.jpg', '.jpeg', '.png'],
-    'application/msword': ['.doc'],
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
-    'text/plain': ['.txt']
-  },
-  maxSize = 10 * 1024 * 1024, // 10MB Default
   onUploadComplete,
   multiple = false,
 }) => {
-  const { user } = useAuth();
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
-
-  // Remove all file restrictions as requested
-  const finalMaxSize = 0; // 0 disables maxSize check in useDropzone
-  const finalAccept = null; 
 
   const onDrop = useCallback(async (acceptedFiles) => {
     setError(null);

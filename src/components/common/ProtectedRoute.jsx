@@ -5,8 +5,6 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, role, profileComplete, loading, roleLoading } = useAuth();
   const location = useLocation();
 
-  console.log("ROLE:", role, "roleLoading:", roleLoading);
-
   if (loading || roleLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">

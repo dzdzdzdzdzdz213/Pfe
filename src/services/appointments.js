@@ -35,11 +35,11 @@ export const appointmentService = {
       .from('rendez_vous')
       .select(`
         *,
-        patient:patient_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom, telephone)),
-        assistant:receptionniste_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom)),
-        examen:examen_id(
+        patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom, telephone)),
+        assistant:receptionnistes(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
+        examen:examens(
           id,
-          service:service_id(*)
+          service:services(*)
         )
       `);
 

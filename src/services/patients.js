@@ -26,7 +26,7 @@ export const patientService = {
       .from('patients')
       .select(`
         *,
-        utilisateur:utilisateur_id(nom, prenom, email, telephone)
+        utilisateur:utilisateurs(nom, prenom, email, telephone)
       `);
     if (error) throw error;
     return data;
@@ -44,7 +44,7 @@ export const patientService = {
       .from('patients')
       .select(`
         *,
-        utilisateur:utilisateur_id(*),
+        utilisateur:utilisateurs(*),
         dossier:dossiers_medicaux(*),
         appointments:rendez_vous(*)
       `)
@@ -165,7 +165,7 @@ export const patientService = {
         .from('patients')
         .select(`
           *,
-          utilisateur:utilisateur_id(nom, prenom, email, telephone)
+          utilisateur:utilisateurs(nom, prenom, email, telephone)
         `)
         .in('utilisateur_id', userIds);
 

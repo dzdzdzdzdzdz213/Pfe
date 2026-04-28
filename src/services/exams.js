@@ -23,9 +23,9 @@ export const examService = {
       .from('examens')
       .select(`
         *,
-        rendez_vous!examen_id(patient_id, patient:patient_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom))),
-        radiologue:radiologue_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom)),
-        service:service_id(*)
+        rendez_vous!examen_id(patient_id, patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom))),
+        radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
+        service:services(*)
       `);
 
     if (options.statut) {
@@ -59,9 +59,9 @@ export const examService = {
       .from('examens')
       .select(`
         *,
-        rendez_vous!examen_id(patient_id, patient:patient_id(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateur_id(nom, prenom, telephone))),
-        radiologue:radiologue_id(id, utilisateur_id, utilisateur:utilisateur_id(nom, prenom, specialite_principale)),
-        service:service_id(*),
+        rendez_vous!examen_id(patient_id, patient:patients(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateurs(nom, prenom, telephone))),
+        radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom, specialite_principale)),
+        service:services(*),
         images:images_radiologiques(*),
         comptes_rendus(*)
       `)

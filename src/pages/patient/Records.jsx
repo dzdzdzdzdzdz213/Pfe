@@ -143,7 +143,7 @@ const StandaloneDocuments = ({ dossierId, t }) => {
 
 
 export const PatientRecords = () => {
-  const { user, utilisateur } = useAuth();
+  const { utilisateur } = useAuth();
   const { t, lang } = useLanguage();
   const [activeReport, setActiveReport] = useState(null); // {report, exam}
   const [activeImageExam, setActiveImageExam] = useState(null);

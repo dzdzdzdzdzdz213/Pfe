@@ -14,7 +14,7 @@ import { FileUpload } from '@/components/common/FileUpload';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export const AppointmentModal = ({ isOpen, onClose, appointment = null, selectedSlot = null }) => {
-  const { user, utilisateur } = useAuth();
+  const { utilisateur } = useAuth();
   const { t, lang } = useLanguage();
   const queryClient = useQueryClient();
   const isEditing = !!appointment;
@@ -400,7 +400,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               : rawMotif.replace(/\[DOC:.*?\]/g, '').trim();
             const guestPhone = isGuestBooking ? rawMotif.split('—')[2]?.replace('Tél:', '').trim() : '';
             const guestAge = rawMotif.match(/Âge:\s*(\d+)/)?.[1] || '';
-            const guestNameMatch = rawMotif.match(/Patient:\s*([^\—\-]+)/);
+            const guestNameMatch = rawMotif.match(/Patient:\s*([^—-]+)/);
             const guestName = guestNameMatch ? guestNameMatch[1].trim() : (isGuestBooking ? rawMotif.split('—')[1]?.replace('Patient:', '').trim() : 'Patient');
 
             return (

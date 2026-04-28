@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,7 +10,6 @@ import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition
 
 export const Onboarding = () => {
   const { user, utilisateur, role } = useAuth();
-  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const schema = z.object({

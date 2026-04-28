@@ -97,7 +97,7 @@ export const AssistantCalendar = () => {
       if (appt.patient?.utilisateur?.prenom) {
         patientName = `${appt.patient.utilisateur.prenom} ${appt.patient.utilisateur.nom}`;
       } else if (appt.motif) {
-        const match = appt.motif.match(/Patient:\s*([^\—\-]+)/);
+        const match = appt.motif.match(/Patient:\s*([^—-]+)/);
         if (match && match[1].trim() !== '') {
           patientName = `👤 ${match[1].trim()}`;
         } else {
