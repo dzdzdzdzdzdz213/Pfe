@@ -17,18 +17,22 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserRole = useCallback(async (authUser) => {
     try {
-      // Safety timeout: if the DB query hangs (e.g. broken RLS), resolve after 6s
-      const queryPromise = supabase
-        .from('utilisateurs')
-        .select('*')
-        .eq('auth_id', authUser.id)
-        .single();
-
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('DB_TIMEOUT')), 6000)
-      );
-
-      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      // Retry up to 3 times to handle timing gap between trigger and query
+      let data = null;
+      let error = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = await supabase
+          .from('utilisateurs')
+          .select('*')
+          .eq('auth_id', authUser.id)
+          .single();
+        data = result.data;
+        error = result.error;
+        // If found or non-404 error, stop retrying
+        if (!error || error.code !== 'PGRST116') break;
+        // Wait 700ms before retrying
+        await new Promise(r => setTimeout(r, 700));
+      }
 
       if (error && error.code === 'PGRST116') {
           // Autoprovision: check if user exists by email without auth_id mapped yet
@@ -224,7 +228,6 @@ export const AuthProvider = ({ children }) => {
           nom: userData.nom,
           telephone: userData.telephone,
           age: userData.age,
-          // Mark as manual signup so trigger sets profil_complet=true
           manual_signup: true
         }
       }
@@ -232,9 +235,38 @@ export const AuthProvider = ({ children }) => {
 
     if (error) throw error;
 
-    // If session is immediately available (email confirmation disabled),
-    // the onAuthStateChange listener will handle the redirect.
-    // If session is null (email confirmation required), we return a flag.
+    // If session is immediately available, directly provision the profile
+    // This guarantees the utilisateurs row exists before we navigate
+    // (the trigger may have a tiny delay)
+    if (data.session && data.user) {
+      // 1. Upsert utilisateurs row
+      const { data: util } = await supabase
+        .from('utilisateurs')
+        .upsert({
+          auth_id: data.user.id,
+          nom: userData.nom,
+          prenom: userData.prenom,
+          email: userData.email,
+          telephone: userData.telephone,
+          role: 'patient',
+          profil_complet: true
+        }, { onConflict: 'auth_id' })
+        .select('id')
+        .single();
+
+      // 2. Create patient row if not exists
+      if (util?.id) {
+        const { data: existing } = await supabase
+          .from('patients')
+          .select('id')
+          .eq('utilisateur_id', util.id)
+          .maybeSingle();
+        if (!existing) {
+          await supabase.from('patients').insert({ utilisateur_id: util.id });
+        }
+      }
+    }
+
     return { ...data, requiresEmailConfirmation: !data.session };
   };
 
