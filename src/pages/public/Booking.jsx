@@ -15,8 +15,7 @@ export const Booking = () => {
   const [step, setStep] = useState(initialService ? 2 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    service: initialService,
-    serviceName: initialServiceName,
+    services: initialService ? [{ id: initialService, name: initialServiceName }] : [],
     date: '',
     time: '',
     nom: '',
@@ -81,7 +80,9 @@ export const Booking = () => {
         }
       }
 
-      const motif = `[${formData.serviceName}] ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
+      const serviceNames = formData.services.map(s => s.name).join(', ');
+      const serviceTags = formData.services.map(s => `[${s.name}]`).join(' ');
+      const motif = `${serviceTags} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
 
       const bookingPromise = supabase
         .from('rendez_vous')
@@ -170,11 +171,18 @@ export const Booking = () => {
                   {servicesList.map((srv) => {
                     const SrvIcon = srv.icon;
                     const serviceTitle = t(`service_${srv.id}_title`);
-                    const isSelected = formData.service === srv.id;
+                    const isSelected = formData.services.some(s => s.id === srv.id);
                     return (
                       <button
                         key={srv.id}
-                        onClick={() => setFormData({ ...formData, service: srv.id, serviceName: serviceTitle })}
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            services: isSelected 
+                              ? prev.services.filter(s => s.id !== srv.id)
+                              : [...prev.services, { id: srv.id, name: serviceTitle }]
+                          }));
+                        }}
                         className={`
                           p-5 rounded-2xl text-left border-2 transition-all duration-200 group flex flex-col items-start
                           ${isSelected 
@@ -183,7 +191,12 @@ export const Booking = () => {
                           }
                         `}
                       >
-                        <SrvIcon className={`w-7 h-7 mb-3 ${isSelected ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`} />
+                        <div className="w-full flex justify-between items-start mb-3">
+                          <SrvIcon className={`w-7 h-7 ${isSelected ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`} />
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary' : 'border-slate-200'}`}>
+                            {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                          </div>
+                        </div>
                         <h3 className="font-bold text-slate-800 text-sm mb-1">{serviceTitle}</h3>
                         <p className="text-[10px] font-medium text-slate-500 leading-snug line-clamp-2">{t(`service_${srv.id}_desc`)}</p>
                       </button>
@@ -193,7 +206,7 @@ export const Booking = () => {
                 <div className="pt-6 flex justify-end">
                   <button
                     onClick={handleNext}
-                    disabled={!formData.service}
+                    disabled={formData.services.length === 0}
                     className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     {t('next')} <ArrowRight className="w-4 h-4 ml-2" />
@@ -383,7 +396,7 @@ export const Booking = () => {
                 <h3 className="text-3xl font-black text-slate-800 mb-2">{t('booking_sent')}</h3>
                 <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
                   {t('booking_success_desc')
-                    .replace('{service}', formData.serviceName)
+                    .replace('{service}', formData.services.map(s => s.name).join(', '))
                     .replace('{date}', formData.date)
                     .replace('{time}', formData.time)
                     .replace('{phone}', formData.telephone)}

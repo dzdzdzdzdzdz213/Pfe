@@ -19,7 +19,7 @@ export const PatientAppointments = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookingStep, setBookingStep] = useState(0);
-  const [selectedService, setSelectedService] = useState(null);
+  const [selectedServices, setSelectedServices] = useState([]);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [motif, setMotif] = useState('');
@@ -68,31 +68,44 @@ export const PatientAppointments = () => {
       start.setHours(parseInt(hours), parseInt(minutes), 0);
       const end = new Date(start.getTime() + 30 * 60000);
 
-      // 1. Create the exam first to hold the service_id
-      const { data: exam, error: examError } = await supabase
+      // 1. Create multiple exams
+      const examensData = selectedServices.map(service => ({
+        service_id: service.id,
+        statut: 'planifie',
+        date_realisation: start.toISOString(),
+      }));
+
+      const { data: createdExams, error: examError } = await supabase
         .from('examens')
-        .insert({
-          service_id: selectedService?.id,
-          statut: 'planifie',
-          date_realisation: start.toISOString(),
-        })
-        .select()
-        .single();
+        .insert(examensData)
+        .select('id');
 
       if (examError) throw examError;
+      const examIds = createdExams.map(e => e.id);
 
-      const serviceTag = selectedService?.nom ? `[${selectedService.nom}] ` : '';
-      const finalMotif = uploadedDocUrl ? `${serviceTag}${motif} [DOC:${uploadedDocUrl}]` : `${serviceTag}${motif}`;
+      const serviceTags = selectedServices.map(s => `[${s.nom}]`).join(' ');
+      const finalMotif = uploadedDocUrl ? `${serviceTags} ${motif} [DOC:${uploadedDocUrl}]` : `${serviceTags} ${motif}`;
 
-      // 2. Create the appointment linked to the exam
-      return appointmentService.createAppointment({
+      // 2. Create the appointment
+      const rdv = await appointmentService.createAppointment({
         patient_id: patientRecord?.id,
-        examen_id: exam.id,
         date_heure_debut: start.toISOString(),
         date_heure_fin: end.toISOString(),
         motif: finalMotif,
         statut: 'planifie',
+        // Link first one for backward compatibility
+        ...(examIds.length > 0 && { examen_id: examIds[0] }),
       });
+
+      // 3. Link all exams to the appointment
+      if (rdv && examIds.length > 0) {
+        await supabase
+          .from('examens')
+          .update({ rendez_vous_id: rdv.id })
+          .in('id', examIds);
+      }
+
+      return rdv;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
@@ -112,7 +125,7 @@ export const PatientAppointments = () => {
 
   const resetBooking = () => {
     setBookingStep(0);
-    setSelectedService(null);
+    setSelectedServices([]);
     setSelectedDate(null);
     setSelectedTime(null);
     setMotif('');
@@ -167,7 +180,16 @@ export const PatientAppointments = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <p className="text-sm font-bold text-slate-800">{appt.motif?.match(/\[(.*?)\]/)?.[1] || appt.examen?.service?.nom || t('consultation')}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {appt.examens?.map(ex => (
+                          <span key={ex.id} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-bold">
+                            {ex.service?.nom}
+                          </span>
+                        ))}
+                        {(!appt.examens || appt.examens.length === 0) && (
+                          <p className="text-sm font-bold text-slate-800">{appt.motif?.match(/\[(.*?)\]/)?.[1] || appt.examen?.service?.nom || t('consultation')}</p>
+                        )}
+                      </div>
                       <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold border', getStatusColor(status))}>
                         {getStatusLabel(status, t)}
                       </span>
@@ -272,14 +294,40 @@ export const PatientAppointments = () => {
             <div className="space-y-4">
               <h3 className="text-base font-extrabold text-slate-800">{t('booking_choose_service')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {services.map(service => (
-                  <button key={service.id} onClick={() => { setSelectedService(service); setBookingStep(1); }}
-                    className="text-left p-5 rounded-xl border-2 border-slate-100 hover:border-primary/30 transition-all group">
-                    <p className="text-sm font-bold text-slate-800 group-hover:text-primary">{service.nom}</p>
-                    {service.description && <p className="text-xs text-slate-500 mt-1 font-medium">{service.description}</p>}
-                  </button>
-                ))}
+                {services.map(service => {
+                  const isSelected = selectedServices.some(s => s.id === service.id);
+                  return (
+                    <button key={service.id} 
+                      onClick={() => {
+                        setSelectedServices(prev => 
+                          isSelected ? prev.filter(s => s.id !== service.id) : [...prev, service]
+                        );
+                      }}
+                      className={cn(
+                        "text-left p-5 rounded-xl border-2 transition-all flex items-center justify-between group",
+                        isSelected ? "border-primary bg-primary/5" : "border-slate-100 hover:border-primary/30"
+                      )}>
+                      <div>
+                        <p className={cn("text-sm font-bold transition-colors", isSelected ? "text-primary" : "text-slate-800 group-hover:text-primary")}>{service.nom}</p>
+                        {service.description && <p className="text-xs text-slate-500 mt-1 font-medium">{service.description}</p>}
+                      </div>
+                      <div className={cn(
+                        "h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all",
+                        isSelected ? "bg-primary border-primary" : "border-slate-200"
+                      )}>
+                        {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+              <button 
+                onClick={() => setBookingStep(1)} 
+                disabled={selectedServices.length === 0}
+                className="w-full py-3.5 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {t('next')} <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
           )}
 
@@ -364,10 +412,17 @@ export const PatientAppointments = () => {
             <div className="space-y-4">
               <h3 className="text-base font-extrabold text-slate-800">{t('booking_confirmation')}</h3>
               <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
-                <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_service')}</span><span className="font-bold text-slate-800">{selectedService?.nom}</span></div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500 font-medium">{t('booking_service')}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    {selectedServices.map(s => (
+                      <span key={s.id} className="font-bold text-slate-800">{s.nom}</span>
+                    ))}
+                  </div>
+                </div>
                 <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_date')}</span><span className="font-bold text-slate-800">{selectedDate && format(selectedDate, 'dd/MM/yyyy')}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_time')}</span><span className="font-bold text-slate-800">{selectedTime}</span></div>
-                {motif && <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_motif')}</span><span className="font-bold text-slate-800">{motif}</span></div>}
+                {motif && <div className="flex flex-col text-sm pt-2 border-t border-slate-200"><span className="text-slate-500 font-medium mb-1">{t('booking_motif')}</span><span className="font-bold text-slate-800 bg-white p-2 rounded border border-slate-200 italic">"{motif}"</span></div>}
               </div>
               <button onClick={() => createMutation.mutate()} disabled={createMutation.isPending} className="w-full py-3.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
                 {createMutation.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Check className="h-5 w-5" />}
