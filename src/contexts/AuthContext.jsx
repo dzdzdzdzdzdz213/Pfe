@@ -35,44 +35,44 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (error && error.code === 'PGRST116') {
-          // Autoprovision: check if user exists by email without auth_id mapped yet
-          const { data: legacyUser } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).single();
-          const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
-          const nameParts = fullName.split(' ');
-          const finalRole = legacyUser?.role || 'patient';
-          const finalNom = authUser.user_metadata?.nom || legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
-          const finalPrenom = authUser.user_metadata?.prenom || legacyUser?.prenom || nameParts[0];
-          const finalTelephone = authUser.user_metadata?.telephone || legacyUser?.telephone || null;
+        // Autoprovision: check if user exists by email without auth_id mapped yet
+        const { data: legacyUser } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).single();
+        const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
+        const nameParts = fullName.split(' ');
+        const finalRole = legacyUser?.role || 'patient';
+        const finalNom = authUser.user_metadata?.nom || legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
+        const finalPrenom = authUser.user_metadata?.prenom || legacyUser?.prenom || nameParts[0];
+        const finalTelephone = authUser.user_metadata?.telephone || legacyUser?.telephone || null;
 
-          if (legacyUser) {
-              const { data: updatedUtil } = await supabase.from('utilisateurs').update({
-                  auth_id: authUser.id,
-                  telephone: finalTelephone || legacyUser.telephone
-              }).eq('id', legacyUser.id).select().single();
-              
-              let roleToSet = finalRole.toLowerCase().trim();
-              if (roleToSet === 'administrateur') roleToSet = 'admin';
-              if (roleToSet === 'assistant') roleToSet = 'receptionniste';
+        if (legacyUser) {
+          const { data: updatedUtil } = await supabase.from('utilisateurs').update({
+            auth_id: authUser.id,
+            telephone: finalTelephone || legacyUser.telephone
+          }).eq('id', legacyUser.id).select().single();
 
-              // Ensure role-specific row exists
-              if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
-              if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
-              if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+          let roleToSet = finalRole.toLowerCase().trim();
+          if (roleToSet === 'administrateur') roleToSet = 'admin';
+          if (roleToSet === 'assistant') roleToSet = 'receptionniste';
 
-              return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
-          } else {
-              const { data: newUtil } = await supabase.from('utilisateurs').insert({
-                  auth_id: authUser.id,
-                  nom: finalNom, 
-                  prenom: finalPrenom, 
-                  email: authUser.email, 
-                  telephone: finalTelephone,
-                  role: 'patient',
-                  profil_complet: finalTelephone ? true : false
-              }).select().single();
-              if (newUtil) await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' });
-              return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
-          }
+          // Ensure role-specific row exists
+          if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+          if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+          if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+
+          return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
+        } else {
+          const { data: newUtil } = await supabase.from('utilisateurs').insert({
+            auth_id: authUser.id,
+            nom: finalNom,
+            prenom: finalPrenom,
+            email: authUser.email,
+            telephone: finalTelephone,
+            role: 'patient',
+            profil_complet: finalTelephone ? true : false
+          }).select().single();
+          if (newUtil) await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' });
+          return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
+        }
       }
 
       // Any other DB error (e.g. RLS infinite recursion) — don't hang, fail fast
@@ -168,7 +168,7 @@ export const AuthProvider = ({ children }) => {
       const authUser = session?.user || null;
       if (authUser) {
         const currentState = stateRef.current;
-        
+
         // Guard: If we already have the correct user/role, skip refetching 
         // to prevent UI flashes during TOKEN_REFRESHED or INITIAL_SESSION
         if (currentState.user?.id === authUser.id && currentState.role) {

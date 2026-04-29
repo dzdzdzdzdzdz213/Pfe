@@ -33,34 +33,45 @@ export const PatientProfile = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // ── Load user data from utilisateurs table ───────────────────────────
-  useEffect(() => {
-    if (utilisateur) {
-      setPersonalForm({
-        prenom: utilisateur.prenom || '',
-        nom: utilisateur.nom || '',
-        telephone: utilisateur.telephone || '',
-        age: utilisateur.age ? String(utilisateur.age) : '',
-        sexe: utilisateur.sexe || 'M',
-      });
-    }
-  }, [utilisateur]);
+  // ── Load user data directly from DB (ensures age always loads after refresh) ──
+  const loadProfileFromDB = React.useCallback(async () => {
+    if (!utilisateur?.id) return;
+    try {
+      const { data: util } = await supabase
+        .from('utilisateurs')
+        .select('*')
+        .eq('id', utilisateur.id)
+        .single();
 
-  // Also fetch sexe from patients table if patient role
-  useEffect(() => {
-    if (role === 'patient' && utilisateur?.id) {
-      supabase
-        .from('patients')
-        .select('sexe, date_naissance')
-        .eq('utilisateur_id', utilisateur.id)
-        .maybeSingle()
-        .then(({ data }) => {
-          if (data?.sexe) {
-            setPersonalForm(p => ({ ...p, sexe: data.sexe }));
-          }
+      if (util) {
+        setPersonalForm({
+          prenom: util.prenom || '',
+          nom: util.nom || '',
+          telephone: util.telephone || '',
+          age: util.age !== null && util.age !== undefined ? String(util.age) : '',
+          sexe: 'M',
         });
+      }
+
+      // Fetch sexe for patients
+      if (role === 'patient') {
+        const { data: patient } = await supabase
+          .from('patients')
+          .select('sexe')
+          .eq('utilisateur_id', utilisateur.id)
+          .maybeSingle();
+        if (patient?.sexe) {
+          setPersonalForm(p => ({ ...p, sexe: patient.sexe }));
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load profile from DB:', e);
     }
-  }, [role, utilisateur]);
+  }, [utilisateur?.id, role]);
+
+  useEffect(() => {
+    loadProfileFromDB();
+  }, [loadProfileFromDB]);
 
   // ── 1. Update personal info ──────────────────────────────────────────
   const handleSavePersonal = async () => {
@@ -88,6 +99,7 @@ export const PatientProfile = () => {
           .eq('utilisateur_id', utilisateur.id);
       }
 
+      await loadProfileFromDB();
       toast.success('Informations mises à jour avec succès !');
     } catch (err) {
       toast.error(err.message);
@@ -201,13 +213,13 @@ export const PatientProfile = () => {
             <span className={cn(
               'px-3 py-1 rounded-full text-xs font-bold border',
               role === 'admin' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-              role === 'radiologue' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-              role === 'receptionniste' ? 'bg-teal-50 text-teal-700 border-teal-200' :
-              'bg-slate-50 text-slate-600 border-slate-200'
+                role === 'radiologue' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                  role === 'receptionniste' ? 'bg-teal-50 text-teal-700 border-teal-200' :
+                    'bg-slate-50 text-slate-600 border-slate-200'
             )}>
               {role === 'admin' ? 'Administrateur' :
-               role === 'radiologue' ? 'Radiologue' :
-               role === 'receptionniste' ? 'Assistant(e)' : 'Patient(e)'}
+                role === 'radiologue' ? 'Radiologue' :
+                  role === 'receptionniste' ? 'Assistant(e)' : 'Patient(e)'}
             </span>
           </div>
         </div>

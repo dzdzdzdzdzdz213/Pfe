@@ -9,21 +9,20 @@ export const auditService = {
         utilisateur:utilisateurs!utilisateur_id(nom, prenom, email, role)
       `);
 
-    if (options.startDate && options.endDate) {
-      query = query.gte('date_action', options.startDate).lte('date_action', options.endDate);
+    if (options.startDate) {
+      query = query.gte('date_action', options.startDate + 'T00:00:00');
     }
-
-    if (options.role) {
-      query = query.eq('utilisateurs.role', options.role);
+    if (options.endDate) {
+      query = query.lte('date_action', options.endDate + 'T23:59:59');
     }
 
     if (options.action) {
       query = query.ilike('action', `%${options.action}%`);
     }
 
-    const { data, error } = await query.order('date_action', { ascending: false });
+    const { data, error } = await query.order('date_action', { ascending: false }).limit(500);
     if (error) throw error;
-    return data;
+    return data ?? [];
   },
 
   async createAuditLog(action, details, userId) {
