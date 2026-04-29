@@ -70,12 +70,50 @@ ALTER TABLE public.consentements DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs DISABLE ROW LEVEL SECURITY;
 
 -- 6. ADD MISSING COLUMNS TO images_radiologiques
---    (required for file upload and image viewer to work)
 ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS url_stockage text;
 ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS nom_fichier text;
 ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS type_image text;
 ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS description text;
 
--- Create the storage bucket for exam images (run separately if needed)
--- INSERT INTO storage.buckets (id, name, public) VALUES ('exam-images', 'exam-images', true)
--- ON CONFLICT (id) DO NOTHING;
+-- 7. SUPPORT MULTIPLE EXAMS PER RESERVATION
+ALTER TABLE public.examens ADD COLUMN IF NOT EXISTS rendez_vous_id uuid;
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'examens_rendez_vous_id_fkey') THEN
+    ALTER TABLE public.examens 
+      ADD CONSTRAINT examens_rendez_vous_id_fkey 
+      FOREIGN KEY (rendez_vous_id) REFERENCES public.rendez_vous(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- 8. STORAGE BUCKET FOR IMAGES
+-- Run this to ensure the bucket exists and is public
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('exam-images', 'exam-images', true)
+ON CONFLICT (id) DO UPDATE SET public = true;
+
+-- Enable public access policies for the bucket
+DO $$
+BEGIN
+    -- Policy for viewing
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Public Access' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING ( bucket_id = 'exam-images' );
+    END IF;
+    
+    -- Policy for uploading
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'Radiologue Upload' AND tablename = 'objects' AND schemaname = 'storage') THEN
+        CREATE POLICY "Radiologue Upload" ON storage.objects FOR INSERT WITH CHECK ( bucket_id = 'exam-images' );
+    END IF;
+END $$;
+
+-- 9. BACKFILL: Link existing exams to their appointments via rendez_vous_id
+UPDATE public.examens e
+SET rendez_vous_id = r.id
+FROM public.rendez_vous r
+WHERE r.examen_id = e.id AND e.rendez_vous_id IS NULL;
+
+-- 10. Disable RLS for standard workflow tables (re-verify)
+ALTER TABLE public.examens DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rendez_vous DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.images_radiologiques DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.services DISABLE ROW LEVEL SECURITY;

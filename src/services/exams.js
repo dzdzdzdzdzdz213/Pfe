@@ -23,7 +23,7 @@ export const examService = {
       .from('examens')
       .select(`
         *,
-        rendez_vous!examen_id(patient_id, patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom))),
+        rendez_vous:rendez_vous_id(patient_id, patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom))),
         radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
         service:services(*)
       `);
@@ -40,10 +40,10 @@ export const examService = {
     if (error) throw error;
 
     const results = data || [];
-    // Flatten rendez_vous.patient up to the top level for components that expect .patient
+    // Flatten rendez_vous.patient up to the top level
     return results.map(exam => ({
       ...exam,
-      patient: exam.rendez_vous?.[0]?.patient || null
+      patient: exam.rendez_vous?.patient || null
     }));
   },
 
@@ -59,7 +59,7 @@ export const examService = {
       .from('examens')
       .select(`
         *,
-        rendez_vous!examen_id(patient_id, patient:patients(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateurs(nom, prenom, telephone))),
+        rendez_vous:rendez_vous_id(patient_id, patient:patients(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateurs(nom, prenom, telephone))),
         radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom, specialite_principale)),
         service:services(*),
         images:images_radiologiques(*),
@@ -71,7 +71,7 @@ export const examService = {
 
     return {
       ...data,
-      patient: data.rendez_vous?.[0]?.patient || null
+      patient: data.rendez_vous?.patient || null
     };
   },
 

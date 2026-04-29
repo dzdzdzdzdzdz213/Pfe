@@ -37,7 +37,7 @@ export const appointmentService = {
         *,
         patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom, telephone)),
         assistant:receptionnistes(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
-        examen:examens(
+        examens:examens(
           id,
           service:services(*)
         )

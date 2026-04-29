@@ -185,7 +185,7 @@ export const PatientRecords = () => {
           date_heure_debut,
           motif,
           statut,
-          examens:examen_id(
+          examens:examens(
             id,
             date_realisation,
             statut,
