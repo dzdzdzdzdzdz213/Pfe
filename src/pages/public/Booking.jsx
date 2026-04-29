@@ -80,7 +80,6 @@ export const Booking = () => {
         }
       }
 
-      const serviceNames = formData.services.map(s => s.name).join(', ');
       const serviceTags = formData.services.map(s => `[${s.name}]`).join(' ');
       const motif = `${serviceTags} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
 
