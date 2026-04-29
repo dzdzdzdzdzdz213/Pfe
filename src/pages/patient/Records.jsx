@@ -190,7 +190,7 @@ export const PatientRecords = () => {
             statut,
             services:service_id(nom),
             comptes_rendus(id, description_detaillee, est_valide),
-            images_radiologiques(id, url_stockage, type_image),
+            images_radiologiques(id, resolution, type_support, format_fichier),
             documents_medicaux(id, chemin_fichier, statut, date_creation)
           )
         `)

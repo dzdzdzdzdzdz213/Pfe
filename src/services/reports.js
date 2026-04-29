@@ -54,9 +54,38 @@ export const reportService = {
   async createReport(reportData) {
     const { examen_id, ...reportFields } = reportData;
 
-    // First create or find the document_medical for this exam
+    // Find or create documents_medicaux for this exam
     let docId = null;
+    let dossierId = null;
+
     if (examen_id) {
+      // Find the patient's dossier_medical via rendez_vous
+      const { data: rdv } = await supabase
+        .from('rendez_vous')
+        .select('patient_id')
+        .eq('examen_id', examen_id)
+        .maybeSingle();
+
+      if (rdv?.patient_id) {
+        const { data: dossier } = await supabase
+          .from('dossiers_medicaux')
+          .select('id')
+          .eq('patient_id', rdv.patient_id)
+          .maybeSingle();
+
+        if (dossier) {
+          dossierId = dossier.id;
+        } else {
+          // Auto-create dossier if missing
+          const { data: newDossier } = await supabase
+            .from('dossiers_medicaux')
+            .insert({ patient_id: rdv.patient_id })
+            .select('id')
+            .single();
+          if (newDossier) dossierId = newDossier.id;
+        }
+      }
+
       const { data: existingDoc } = await supabase
         .from('documents_medicaux')
         .select('id')
@@ -65,10 +94,22 @@ export const reportService = {
 
       if (existingDoc) {
         docId = existingDoc.id;
+        // Update dossier_id if not yet set
+        if (dossierId) {
+          await supabase
+            .from('documents_medicaux')
+            .update({ dossier_id: dossierId })
+            .eq('id', docId);
+        }
       } else {
         const { data: newDoc, error: docError } = await supabase
           .from('documents_medicaux')
-          .insert({ examen_id, statut: 'valide', date_creation: new Date().toISOString().split('T')[0] })
+          .insert({
+            examen_id,
+            dossier_id: dossierId,
+            statut: 'valide',
+            date_creation: new Date().toISOString().split('T')[0]
+          })
           .select()
           .single();
         if (docError) throw docError;

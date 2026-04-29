@@ -237,18 +237,59 @@ export const ReportEditor = () => {
       
       // Save Ordonnance if content exists
       if (ordonnance.description.trim()) {
-        const { error: ordError } = await supabase
+        // Check if one already exists (no unique constraint = can't use ON CONFLICT)
+        const { data: existingOrd } = await supabase
           .from('ordonnances')
-          .upsert({
-            examen_id: id,
-            description: ordonnance.description,
-            nom_medecin_prescripteur: ordonnance.nom_medecin_prescripteur,
-          }, { onConflict: 'examen_id' });
-        
-        if (ordError) throw ordError;
+          .select('id')
+          .eq('examen_id', id)
+          .maybeSingle();
+
+        if (existingOrd) {
+          const { error: ordError } = await supabase
+            .from('ordonnances')
+            .update({
+              description: ordonnance.description,
+              nom_medecin_prescripteur: ordonnance.nom_medecin_prescripteur,
+            })
+            .eq('id', existingOrd.id);
+          if (ordError) throw ordError;
+        } else {
+          const { error: ordError } = await supabase
+            .from('ordonnances')
+            .insert({
+              examen_id: id,
+              description: ordonnance.description,
+              nom_medecin_prescripteur: ordonnance.nom_medecin_prescripteur,
+            });
+          if (ordError) throw ordError;
+        }
       }
 
-      if (isValidated) await examService.updateExamStatus(id, 'termine');
+      if (isValidated) {
+        await examService.updateExamStatus(id, 'termine');
+
+        // Notify patient that their results are ready
+        try {
+          const { data: rdv } = await supabase
+            .from('rendez_vous')
+            .select('patient_id, patient:patients(utilisateur_id)')
+            .eq('examen_id', id)
+            .maybeSingle();
+
+          const utilisateurId = rdv?.patient?.utilisateur_id;
+          if (utilisateurId) {
+            await supabase.from('notifications').insert({
+              utilisateur_id: utilisateurId,
+              type: 'resultat',
+              contenu: `Vos résultats d'examen sont disponibles. Consultez votre dossier médical.`,
+              lu: false,
+            });
+          }
+        } catch (notifErr) {
+          console.warn('Notification failed:', notifErr);
+        }
+      }
+
       return report;
     },
     onSuccess: () => {

@@ -101,6 +101,14 @@ export const patientService = {
       .single();
 
     if (patientError) throw patientError;
+
+    // Auto-create dossier_medical (the DB trigger handles it too, this is a safety net)
+    await supabase
+      .from('dossiers_medicaux')
+      .insert({ patient_id: patient.id })
+      .select('id')
+      .maybeSingle();
+
     return { user, patient };
   },
 
