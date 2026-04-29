@@ -6,6 +6,7 @@ import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { FileText, Image, Eye, Calendar, Stethoscope, Printer, CheckCircle, X } from 'lucide-react';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useRealTime } from '@/hooks/useRealTime';
 
 // ---------------------------------------------------------------------------
 // Hidden printable report for a single compte_rendu
@@ -190,7 +191,7 @@ export const PatientRecords = () => {
             statut,
             services:service_id(nom),
             comptes_rendus(id, description_detaillee, est_valide),
-            images_radiologiques(id, resolution, type_support, format_fichier),
+            images_radiologiques(id, resolution, type_support, format_fichier, url_stockage, type_image, description),
             documents_medicaux(id, chemin_fichier, statut, date_creation)
           )
         `)
@@ -201,6 +202,12 @@ export const PatientRecords = () => {
     },
     enabled: !!patientRecord?.id,
   });
+
+  // Real-time updates for patient records
+  useRealTime('rendez_vous', ['patient-exams-records', patientRecord?.id]);
+  useRealTime('examens', ['patient-exams-records', patientRecord?.id]);
+  useRealTime('comptes_rendus', ['patient-exams-records', patientRecord?.id]);
+  useRealTime('documents_medicaux', ['patient-exams-records', patientRecord?.id]);
 
   const handlePrint = (report, exam) => {
     setPrintTarget({ report, exam });

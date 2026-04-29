@@ -16,12 +16,34 @@ const useRadioImages = (examenId) =>
         .eq('examen_id', examenId);
       if (error) throw error;
       if (!images?.length) return [];
+
       const withUrls = await Promise.all(
         images.map(async (img) => {
-          const { data: signed } = await supabase.storage
-            .from('images_radiologiques')
-            .createSignedUrl(img.url_stockage, 3600);
-          return { ...img, signedUrl: signed?.signedUrl || null };
+          // If url_stockage is already a full URL (starts with http), use it directly
+          if (img.url_stockage?.startsWith('http')) {
+            return { ...img, signedUrl: img.url_stockage };
+          }
+          
+          // Otherwise, try to get a signed URL (expects a path)
+          try {
+            const { data: signed } = await supabase.storage
+              .from('exam-images')
+              .createSignedUrl(img.url_stockage, 3600);
+            
+            if (signed?.signedUrl) {
+              return { ...img, signedUrl: signed.signedUrl };
+            }
+
+            // Fallback to public URL if signed fails
+            const { data: publicData } = supabase.storage
+              .from('exam-images')
+              .getPublicUrl(img.url_stockage);
+            
+            return { ...img, signedUrl: publicData?.publicUrl || null };
+          } catch (err) {
+            console.error("Error fetching image URL:", err);
+            return { ...img, signedUrl: null };
+          }
         })
       );
       return withUrls;

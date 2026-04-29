@@ -211,7 +211,7 @@ export const ReportEditor = () => {
   }, [exam, editor, id, t]);
 
   const saveMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (validate = false) => {
       const content = editor?.getHTML();
       
       // Save Report
@@ -223,12 +223,12 @@ export const ReportEditor = () => {
       if (reportId) {
         report = await reportService.updateReport(reportId, {
           description_detaillee: content,
-          est_valide: isValidated,
+          est_valide: validate,
         });
       } else {
         report = await reportService.createReport({
           description_detaillee: content,
-          est_valide: isValidated,
+          est_valide: validate,
           radiologue_id: radioProfile.id,
           examen_id: id 
         });
@@ -265,7 +265,8 @@ export const ReportEditor = () => {
         }
       }
 
-      if (isValidated) {
+      if (validate) {
+        setIsValidated(true);
         await examService.updateExamStatus(id, 'termine');
 
         // Notify patient that their results are ready
@@ -292,11 +293,11 @@ export const ReportEditor = () => {
 
       return report;
     },
-    onSuccess: () => {
+    onSuccess: (_, validate) => {
       queryClient.invalidateQueries({ queryKey: ['exams'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
-      toast.success(isValidated ? t('report_validated') : t('report_saved'));
-      if (isValidated) navigate('/radiologue/examens');
+      toast.success(validate ? t('report_validated') : t('report_saved'));
+      if (validate) navigate('/radiologue/examens');
     },
     onError: (err) => toast.error(err.message),
   });
@@ -370,14 +371,14 @@ export const ReportEditor = () => {
             <Printer className="h-4 w-4" /> {t('report_print')}
           </button>
           <button
-            onClick={() => saveMutation.mutate()}
+            onClick={() => saveMutation.mutate(false)}
             disabled={saveMutation.isPending}
             className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition-colors"
           >
             {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} {t('report_draft')}
           </button>
           <button
-            onClick={() => { setIsValidated(true); saveMutation.mutate(); }}
+            onClick={() => saveMutation.mutate(true)}
             disabled={saveMutation.isPending}
             className="px-4 py-2.5 bg-emerald-600 text-white rounded-xl text-sm font-bold hover:bg-emerald-700 flex items-center gap-2 shadow-lg shadow-emerald-100 transition-colors"
           >
@@ -413,7 +414,7 @@ export const ReportEditor = () => {
               {radioProfile && (
                 <div className="flex items-center gap-2 text-slate-600">
                   <User className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="font-medium">Dr. {radioProfile.prenom} {radioProfile.nom}</span>
+              <span className="font-medium">Dr. {radioProfile?.utilisateurs?.prenom || radioProfile?.prenom} {radioProfile?.utilisateurs?.nom || radioProfile?.nom}</span>
                 </div>
               )}
             </div>

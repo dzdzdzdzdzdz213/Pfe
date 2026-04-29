@@ -68,3 +68,14 @@ ALTER TABLE public.images_radiologiques DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.rendez_vous DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.consentements DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs DISABLE ROW LEVEL SECURITY;
+
+-- 6. ADD MISSING COLUMNS TO images_radiologiques
+--    (required for file upload and image viewer to work)
+ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS url_stockage text;
+ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS nom_fichier text;
+ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS type_image text;
+ALTER TABLE public.images_radiologiques ADD COLUMN IF NOT EXISTS description text;
+
+-- Create the storage bucket for exam images (run separately if needed)
+-- INSERT INTO storage.buckets (id, name, public) VALUES ('exam-images', 'exam-images', true)
+-- ON CONFLICT (id) DO NOTHING;
