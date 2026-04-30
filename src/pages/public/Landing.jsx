@@ -46,9 +46,31 @@ export const Landing = () => {
               <ArrowRight className="w-5 h-5 ml-2" />
             </Link>
           </div>
-          <div className="flex-1 w-full relative mt-16 lg:mt-0">
-            <div className="aspect-[4/3] rounded-[2.5rem] bg-slate-50 border border-slate-100 p-8 shadow-sm flex items-center justify-center">
-              <ActivitySquare className="h-20 w-20 text-blue-200" />
+
+          {/* PARTIE PHOTO HERO - REMPLACÉE ICI */}
+          <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none relative mt-16 lg:mt-0">
+            <div className="aspect-[4/3] rounded-[3rem] relative overflow-hidden shadow-2xl group border-[6px] border-white">
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
+                style={{ backgroundImage: `url('/images/hero-medical.jpg')` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent" />
+              <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-white/50">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider">Technologie 2026</span>
+                </div>
+              </div>
+            </div>
+            {/* Badge de sécurité flottant */}
+            <div className="absolute -bottom-8 rtl:-right-8 ltr:-left-8 bg-white/95 backdrop-blur-xl p-5 rounded-3xl shadow-2xl border border-white/50 flex items-center gap-5 hidden md:flex z-20">
+              <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-primary border border-blue-100">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-sm font-extrabold text-slate-800">{t('resultats_securises')}</p>
+                <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">{t('espace_protege')}</p>
+              </div>
             </div>
           </div>
         </div>
