@@ -105,7 +105,7 @@ export const Landing = () => {
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8 }}
         id="services"
-        className="py-24 bg-[#f5f3ef] relative border-t border-slate-100"
+        className="py-24 bg-white relative border-t border-slate-100"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
@@ -168,6 +168,7 @@ export const Landing = () => {
       {/* Call to Action Promo */}
       {/* Call to Action Promo - Plus stylé et sans noir */}
       {/* Call to Action Promo - ICI LE CHANGEMENT SANS NOIR */}
+      {/* Call to Action Promo - BLEU CLAIR MÉDICAL */}
       <motion.section
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -175,25 +176,25 @@ export const Landing = () => {
         transition={{ duration: 0.8 }}
         className="py-24 relative overflow-hidden"
       >
-        {/* On force le bleu ici - plus de bg-slate-900 */}
-        <div className="absolute inset-0 bg-blue-600" />
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 opacity-90" />
+        {/* On force le bleu clair ici */}
+        <div className="absolute inset-0 bg-blue-500" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-500 opacity-90" />
 
-        {/* Cercles de lumière pour le style */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-400 rounded-full blur-[120px] opacity-20" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-20" />
+        {/* Cercles de lumière */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-cyan-300 rounded-full blur-[120px] opacity-30" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-white rounded-full blur-[120px] opacity-20" />
 
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-md">
             {t('sante_merite_meilleur')}
           </h2>
-          <p className="text-xl text-blue-100 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-white font-medium mb-12 max-w-2xl mx-auto leading-relaxed opacity-95">
             {t('acceder_comptes_rendus')}
           </p>
           <div className="flex justify-center">
             <Link
               to="/login"
-              className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-700 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 hover:bg-slate-50 transition-all duration-300 group"
+              className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-600 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 hover:shadow-blue-200 transition-all duration-300 group"
             >
               {t('acceder_espace_patient')}
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
