@@ -450,7 +450,7 @@ export const translations = {
     // ── Clinic Identity ───────────────────────────────────────────────────────
     clinic_name: 'Chemloul Radiologie',
     clinic_subtitle: 'Cabinet de Radiologie et d\'Imagerie Médicale',
-    clinic_address: 'Route Nationale, Sétif – Algérie',
+    clinic_address: "Bentelha, Alger – Algérie",
     clinic_phone: '+213 36 XXX XXX',
     print_date: 'Date d\'impression',
     print_report_title: 'COMPTE-RENDU D\'IMAGERIE MÉDICALE',
@@ -461,7 +461,7 @@ export const translations = {
     accueil: 'Accueil',
     nos_services: 'Nos Services',
     contact: 'Contact',
-    description_footer: 'Cabinet de radiologie de référence à Sétif, offrant des services d\'imagerie de haute précision avec une expertise médicale reconnue.',
+    description_footer: "Cabinet de radiologie de référence à Bentelha, Alger, offrant des services d'imagerie de haute précision avec une expertise médicale reconnue.",
     horaires: 'Horaires d\'Ouverture',
     dim_jeu: 'Dimanche - Jeudi',
     vendredi: 'Vendredi',
@@ -485,7 +485,7 @@ export const translations = {
     nos_specialites: 'Nos Spécialités',
     services_composant: 'Des services d\'imagerie complets',
     services_desc: 'Nous utilisons les dernières technologies pour vous offrir des diagnostics précis dans les meilleurs délais.',
-    
+
     // Services items (indices match Landing.jsx)
     service_1_title: 'Scanner (Tomodensitométrie)',
     service_1_desc: 'Technique d’imagerie utilisant les rayons X pour obtenir des images détaillées en coupes fines des organes internes pour un diagnostic précis.',
@@ -949,7 +949,7 @@ export const translations = {
     // ── Clinic Identity ───────────────────────────────────────────────────────
     clinic_name: 'عيادة شملول للأشعة',
     clinic_subtitle: 'عيادة التصوير الطبي والأشعة',
-    clinic_address: 'الطريق الوطني، سطيف – الجزائر',
+    clinic_address: "بن طلحة، الجزائر – الجزائر",
     clinic_phone: '+213 36 XXX XXX',
     print_date: 'تاريخ الطباعة',
     print_report_title: 'تقرير التصوير الطبي',
@@ -961,7 +961,7 @@ export const translations = {
     accueil: 'الرئيسية',
     nos_services: 'خدماتنا',
     contact: 'اتصل بنا',
-    description_footer: 'عيادة الأشعة المرجعية في سطيف، تقدم خدمات تصوير عالية الدقة بخبرة طبية معترف بها.',
+    description_footer: "عيادة الأشعة المرجعية في بن طلحة، الجزائر، تقدم خدمات تصوير عالية الدقة بخبرة طبية معترف بها.",
     horaires: 'أوقات العمل',
     dim_jeu: 'الأحد - الخميس',
     vendredi: 'الجمعة',
