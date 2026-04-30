@@ -8,14 +8,14 @@ export const Landing = () => {
   const { t, lang } = useLanguage();
 
   const services = [
-    { id: 1, icon: Scan },
-    { id: 2, icon: Bone },
-    { id: 3, icon: Waves },
-    { id: 4, icon: Activity },
-    { id: 5, icon: HeartPulse },
-    { id: 6, icon: Microscope },
-    { id: 7, icon: Syringe },
-    { id: 8, icon: ClipboardCheck },
+    { id: 1, icon: Scan, img: "/images/scanner.jpg", tag: "Haute précision" },
+    { id: 2, icon: Bone, img: "/images/radio.jpg", tag: "Diagnostic osseux" },
+    { id: 3, icon: Waves, img: "/images/echo.jpg", tag: "Temps réel" },
+    { id: 4, icon: Activity, img: "/images/doppler.jpg", tag: "Vasculaire" },
+    { id: 5, icon: HeartPulse, img: "/images/mammo.jpg", tag: "Dépistage" },
+    { id: 6, icon: Microscope, img: "/images/biopsie.jpg", tag: "Interventionnel" },
+    { id: 7, icon: Syringe, img: "/images/cytoponction.jpg", tag: "Cytologie" },
+    { id: 8, icon: ClipboardCheck, img: "/images/dmo.jpg", tag: "Ostéoporose" },
   ];
 
   return (
@@ -98,50 +98,66 @@ export const Landing = () => {
       </section>
 
       {/* Services Section */}
+      {/* Services Section avec Photos */}
       <motion.section
         initial={{ opacity: 0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 0.8 }}
         id="services"
-        className="py-24 bg-slate-50 relative border-t border-slate-100"
+        className="py-24 bg-[#f5f3ef] relative border-t border-slate-100"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <h2 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-3">{t('nos_specialites')}</h2>
-            <h3 className="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6">{t('services_composant')}</h3>
-            <p className={`text-lg text-slate-500 font-medium ${lang === 'ar' ? 'font-tajawal' : ''}`}>
-              {t('services_desc')}
-            </p>
+            <h3 className="text-4xl lg:text-5xl font-serif text-slate-900 mb-6 italic">Nos Services <span className="text-blue-600">d'Imagerie Médicale</span></h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {services.map((service) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
+            {services.map((service, index) => {
               const ServiceIcon = service.icon;
               return (
                 <div
                   key={service.id}
-                  className="flex flex-col bg-white rounded-[2rem] p-8 border border-slate-100 transition-all duration-300 group hover:-translate-y-2 hover:border-blue-200 hover:bg-blue-50/50 hover:shadow-xl hover:shadow-blue-500/10"
+                  className="relative h-[500px] overflow-hidden group cursor-pointer"
                 >
-                  <div className="h-14 w-14 bg-slate-50 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 transition-all duration-300">
-                    <ServiceIcon className="h-7 w-7 text-blue-600 group-hover:text-white" />
+                  {/* Photo de fond */}
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${service.img})` }}
+                  />
+
+                  {/* Overlay dégradé (Noir -> Bleu au survol) */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent opacity-90 transition-all duration-500 group-hover:from-blue-900 group-hover:via-blue-600/20" />
+
+                  {/* Tag en haut à droite */}
+                  <div className="absolute top-6 right-6 px-3 py-1 bg-blue-600/90 backdrop-blur-md rounded-full text-[10px] text-white font-bold uppercase tracking-widest opacity-0 -translate-y-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0">
+                    {service.tag}
                   </div>
 
-                  <h4 className={`text-xl font-extrabold text-slate-900 mb-3 leading-tight ${lang === 'ar' ? 'font-cairo' : ''}`}>
-                    {t(`service_${service.id}_title`)}
-                  </h4>
+                  {/* Icône */}
+                  <div className="absolute top-6 left-6 h-12 w-12 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:bg-blue-600">
+                    <ServiceIcon className="h-6 w-6 text-white" />
+                  </div>
 
-                  <p className={`text-sm text-slate-500 font-medium flex-grow mb-8 leading-relaxed ${lang === 'ar' ? 'font-tajawal text-slate-600' : ''}`}>
-                    {t(`service_${service.id}_desc`)}
-                  </p>
+                  {/* Textes et Bouton */}
+                  <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
+                    <p className="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mb-2 group-hover:text-blue-400">0{service.id} — Service</p>
+                    <h4 className={`text-2xl font-serif mb-2 leading-tight ${lang === 'ar' ? 'font-cairo' : ''}`}>
+                      {t(`service_${service.id}_title`)}
+                    </h4>
+                    <p className={`text-sm text-white/60 font-medium leading-relaxed max-h-0 opacity-0 overflow-hidden transition-all duration-500 group-hover:max-h-24 group-hover:opacity-100 group-hover:mb-6 ${lang === 'ar' ? 'font-tajawal' : ''}`}>
+                      {t(`service_${service.id}_desc`)}
+                    </p>
+                    <Link
+                      to="/book"
+                      className="inline-flex items-center justify-center w-fit px-6 py-3 bg-white text-slate-900 rounded-full text-xs font-black uppercase tracking-wider opacity-0 translate-y-4 transition-all duration-500 group-hover:opacity-100 group-hover:translate-y-0 hover:bg-blue-600 hover:text-white"
+                    >
+                      Prendre RDV
+                    </Link>
+                  </div>
 
-                  <Link
-                    to="/book"
-                    state={{ serviceId: service.id, serviceName: t(`service_${service.id}_title`) }}
-                    className="inline-flex items-center justify-center w-full px-5 py-3 bg-gradient-to-r from-blue-600 to-primary text-white text-sm font-bold rounded-xl shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 hover:scale-[1.02] transition-all"
-                  >
-                    {t('prendre_un_rendezvous')}
-                  </Link>
+                  <div className="absolute bottom-0 left-0 h-1 bg-blue-600 w-full scale-x-0 origin-left transition-transform duration-500 group-hover:scale-x-100" />
                 </div>
               );
             })}
