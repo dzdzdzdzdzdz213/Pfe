@@ -93,31 +93,37 @@ export const Landing = () => {
       </motion.section>
 
       {/* 3. CALL TO ACTION - BLEU CIEL TRÈS CLAIR */}
+      {/* 3. CALL TO ACTION - RETOUR AU BLEU NAVY D'ORIGINE */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         className="py-24 relative overflow-hidden"
       >
-        {/* On utilise un bleu beaucoup plus clair et lumineux */}
-        <div className="absolute inset-0 bg-sky-400" />
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 via-sky-400 to-blue-500 opacity-100" />
+        {/* On remet le bleu foncé premium (bg-blue-700 / indigo-900) */}
+        <div className="absolute inset-0 bg-blue-700" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-900 to-indigo-950 opacity-95" />
 
-        {/* Cercles de lumière pour l'éclat */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-[120px] opacity-30" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-cyan-200 rounded-full blur-[100px] opacity-20" />
+        {/* Effets de lumière subtils (plus de cyan flashy) */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-20" />
+        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full blur-[120px] opacity-10" />
 
         <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-md">
             {t('sante_merite_meilleur')}
           </h2>
-          <p className="text-xl text-white font-medium mb-12 opacity-100">
+          <p className="text-xl text-blue-100 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
             {t('acceder_comptes_rendus')}
           </p>
-          <Link to="/login" className="inline-flex items-center justify-center px-10 py-5 bg-white text-sky-600 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 transition-all">
-            {t('acceder_espace_patient')}
-            <ArrowRight className="ml-2 h-6 w-6" />
-          </Link>
+          <div className="flex justify-center">
+            <Link
+              to="/login"
+              className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-800 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 hover:bg-slate-50 transition-all duration-300 group"
+            >
+              {t('acceder_espace_patient')}
+              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
         </div>
       </motion.section>
     </div>
