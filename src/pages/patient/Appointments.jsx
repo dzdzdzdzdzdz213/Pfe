@@ -19,7 +19,7 @@ export const PatientAppointments = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('upcoming');
   const [bookingStep, setBookingStep] = useState(0);
-  const [selectedServices, setSelectedServices] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
   const [motif, setMotif] = useState('');
@@ -68,23 +68,21 @@ export const PatientAppointments = () => {
       start.setHours(parseInt(hours), parseInt(minutes), 0);
       const end = new Date(start.getTime() + 30 * 60000);
 
-      // 1. Create multiple exams
-      const examensData = selectedServices.map(service => ({
-        service_id: service.id,
-        statut: 'planifie',
-        date_realisation: start.toISOString(),
-      }));
-
-      const { data: createdExams, error: examError } = await supabase
+      // 1. Create one exam
+      const { data: createdExam, error: examError } = await supabase
         .from('examens')
-        .insert(examensData)
-        .select('id');
+        .insert({
+          service_id: selectedService.id,
+          statut: 'planifie',
+          date_realisation: start.toISOString(),
+        })
+        .select('id')
+        .single();
 
       if (examError) throw examError;
-      const examIds = createdExams.map(e => e.id);
+      const examId = createdExam.id;
 
-      const serviceTags = selectedServices.map(s => `[${s.nom}]`).join(' ');
-      const finalMotif = uploadedDocUrl ? `${serviceTags} ${motif} [DOC:${uploadedDocUrl}]` : `${serviceTags} ${motif}`;
+      const finalMotif = uploadedDocUrl ? `[${selectedService.nom}] ${motif} [DOC:${uploadedDocUrl}]` : `[${selectedService.nom}] ${motif}`;
 
       // 2. Create the appointment
       const rdv = await appointmentService.createAppointment({
@@ -93,16 +91,15 @@ export const PatientAppointments = () => {
         date_heure_fin: end.toISOString(),
         motif: finalMotif,
         statut: 'planifie',
-        // Link first one for backward compatibility
-        ...(examIds.length > 0 && { examen_id: examIds[0] }),
+        examen_id: examId,
       });
 
-      // 3. Link all exams to the appointment
-      if (rdv && examIds.length > 0) {
+      // 3. Link exam to the appointment
+      if (rdv && examId) {
         await supabase
           .from('examens')
           .update({ rendez_vous_id: rdv.id })
-          .in('id', examIds);
+          .eq('id', examId);
       }
 
       return rdv;
@@ -125,7 +122,7 @@ export const PatientAppointments = () => {
 
   const resetBooking = () => {
     setBookingStep(0);
-    setSelectedServices([]);
+    setSelectedService(null);
     setSelectedDate(null);
     setSelectedTime(null);
     setMotif('');
@@ -181,14 +178,9 @@ export const PatientAppointments = () => {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       <div className="flex flex-wrap gap-1">
-                        {appt.examens?.map(ex => (
-                          <span key={ex.id} className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-bold">
-                            {ex.service?.nom}
-                          </span>
-                        ))}
-                        {(!appt.examens || appt.examens.length === 0) && (
-                          <p className="text-sm font-bold text-slate-800">{appt.motif?.match(/\[(.*?)\]/)?.[1] || appt.examen?.service?.nom || t('consultation')}</p>
-                        )}
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded text-[10px] font-bold">
+                          {appt.examen?.service?.nom || appt.motif?.match(/\[(.*?)\]/)?.[1] || t('consultation')}
+                        </span>
                       </div>
                       <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold border', getStatusColor(status))}>
                         {getStatusLabel(status, t)}
@@ -295,13 +287,12 @@ export const PatientAppointments = () => {
               <h3 className="text-base font-extrabold text-slate-800">{t('booking_choose_service')}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {services.map(service => {
-                  const isSelected = selectedServices.some(s => s.id === service.id);
+                  const isSelected = selectedService?.id === service.id;
                   return (
                     <button key={service.id} 
                       onClick={() => {
-                        setSelectedServices(prev => 
-                          isSelected ? prev.filter(s => s.id !== service.id) : [...prev, service]
-                        );
+                        setSelectedService(service);
+                        setBookingStep(1);
                       }}
                       className={cn(
                         "text-left p-5 rounded-xl border-2 transition-all flex items-center justify-between group",
@@ -311,19 +302,14 @@ export const PatientAppointments = () => {
                         <p className={cn("text-sm font-bold transition-colors", isSelected ? "text-primary" : "text-slate-800 group-hover:text-primary")}>{service.nom}</p>
                         {service.description && <p className="text-xs text-slate-500 mt-1 font-medium">{service.description}</p>}
                       </div>
-                      <div className={cn(
-                        "h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all",
-                        isSelected ? "bg-primary border-primary" : "border-slate-200"
-                      )}>
-                        {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
-                      </div>
+                      {isSelected && <Check className="h-5 w-5 text-primary" />}
                     </button>
                   );
                 })}
               </div>
               <button 
                 onClick={() => setBookingStep(1)} 
-                disabled={selectedServices.length === 0}
+                disabled={!selectedService}
                 className="w-full py-3.5 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {t('next')} <ChevronRight className="h-4 w-4" />
@@ -414,11 +400,7 @@ export const PatientAppointments = () => {
               <div className="p-5 bg-slate-50 rounded-xl border border-slate-100 space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500 font-medium">{t('booking_service')}</span>
-                  <div className="flex flex-col items-end gap-1">
-                    {selectedServices.map(s => (
-                      <span key={s.id} className="font-bold text-slate-800">{s.nom}</span>
-                    ))}
-                  </div>
+                  <span className="font-bold text-slate-800">{selectedService?.nom}</span>
                 </div>
                 <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_date')}</span><span className="font-bold text-slate-800">{selectedDate && format(selectedDate, 'dd/MM/yyyy')}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-slate-500 font-medium">{t('booking_time')}</span><span className="font-bold text-slate-800">{selectedTime}</span></div>

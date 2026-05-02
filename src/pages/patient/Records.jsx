@@ -272,7 +272,7 @@ export const PatientRecords = () => {
           [...Array(3)].map((_, i) => <div key={i} className="h-28 bg-slate-50 rounded-2xl animate-pulse" />)
         ) : exams.length > 0 ? (
           exams.map(rv => {
-            const exam = rv.examens;
+            const exam = Array.isArray(rv.examens) ? rv.examens[0] : rv.examens;
             const validatedReports = exam?.comptes_rendus?.filter(cr => cr.est_valide) || [];
             const hasImages = exam?.images_radiologiques?.length > 0;
 

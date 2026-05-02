@@ -16,7 +16,7 @@ export const Booking = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [takenSlots, setTakenSlots] = useState([]); // État pour stocker les heures déjà prises
   const [formData, setFormData] = useState({
-    services: initialService ? [{ id: initialService, name: initialServiceName }] : [],
+    service: initialService ? { id: initialService, name: initialServiceName } : null,
     date: '',
     time: '',
     nom: '',
@@ -108,8 +108,8 @@ export const Booking = () => {
         }
       }
 
-      const serviceTags = formData.services.map(s => `[${s.name}]`).join(' ');
-      const motif = `${serviceTags} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
+      const serviceTag = formData.service ? `[${formData.service.name}]` : '';
+      const motif = `${serviceTag} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
 
       const bookingPromise = supabase
         .from('rendez_vous')
@@ -198,17 +198,13 @@ export const Booking = () => {
                   {servicesList.map((srv) => {
                     const SrvIcon = srv.icon;
                     const serviceTitle = t(`service_${srv.id}_title`);
-                    const isSelected = formData.services.some(s => s.id === srv.id);
+                    const isSelected = formData.service?.id === srv.id;
                     return (
                       <button
                         key={srv.id}
                         onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            services: isSelected 
-                              ? prev.services.filter(s => s.id !== srv.id)
-                              : [...prev.services, { id: srv.id, name: serviceTitle }]
-                          }));
+                          setFormData(prev => ({ ...prev, service: { id: srv.id, name: serviceTitle } }));
+                          setStep(2);
                         }}
                         className={`
                           p-5 rounded-2xl text-left border-2 transition-all duration-200 group flex flex-col items-start
@@ -220,9 +216,7 @@ export const Booking = () => {
                       >
                         <div className="w-full flex justify-between items-start mb-3">
                           <SrvIcon className={`w-7 h-7 ${isSelected ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`} />
-                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-primary border-primary' : 'border-slate-200'}`}>
-                            {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
-                          </div>
+                          {isSelected && <CheckCircle2 className="w-5 h-5 text-primary" />}
                         </div>
                         <h3 className="font-bold text-slate-800 text-sm mb-1">{serviceTitle}</h3>
                         <p className="text-[10px] font-medium text-slate-500 leading-snug line-clamp-2">{t(`service_${srv.id}_desc`)}</p>
@@ -233,7 +227,7 @@ export const Booking = () => {
                 <div className="pt-6 flex justify-end">
                   <button
                     onClick={handleNext}
-                    disabled={formData.services.length === 0}
+                    disabled={!formData.service}
                     className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
                     {t('next')} <ArrowRight className="w-4 h-4 ml-2" />
@@ -436,7 +430,7 @@ export const Booking = () => {
                 <h3 className="text-3xl font-black text-slate-800 mb-2">{t('booking_sent')}</h3>
                 <p className="text-slate-500 font-medium max-w-sm mx-auto mb-8">
                   {t('booking_success_desc')
-                    .replace('{service}', formData.services.map(s => s.name).join(', '))
+                    .replace('{service}', formData.service?.name || '')
                     .replace('{date}', formData.date)
                     .replace('{time}', formData.time)
                     .replace('{phone}', formData.telephone)}

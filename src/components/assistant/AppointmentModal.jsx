@@ -25,7 +25,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   // Form state
   const [formData, setFormData] = useState({
     patient_id: appointment?.patient_id || '',
-    service_ids: appointment?.examens ? (Array.isArray(appointment.examens) ? appointment.examens.map(e => e.service_id) : [appointment.examen_id]) : [],
+    service_id: appointment?.examen?.service_id || appointment?.examen_id || '',
     date_heure_debut: appointment?.date_heure_debut || (selectedSlot ? selectedSlot.start.toISOString() : ''),
     date_heure_fin: appointment?.date_heure_fin || (selectedSlot ? selectedSlot.end.toISOString() : ''),
     motif: appointment?.motif || '',
@@ -124,21 +124,19 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     }
 
     try {
-      // 1. Create examen first so we can link the consentement
-      // 1. Create multiple examens
-      const examensData = formData.service_ids.map(sid => ({
-        service_id: sid,
-        statut: 'planifie',
-        date_realisation: formData.date_heure_debut,
-      }));
-
-      const { data: createdExams, error: exEr } = await supabase
+      // 1. Create one examen
+      const { data: createdExam, error: exEr } = await supabase
         .from('examens')
-        .insert(examensData)
-        .select('id');
+        .insert({
+          service_id: formData.service_id,
+          statut: 'planifie',
+          date_realisation: formData.date_heure_debut,
+        })
+        .select('id')
+        .single();
 
       if (exEr) throw exEr;
-      const examIds = createdExams.map(e => e.id);
+      const examId = createdExam.id;
 
       // 2. Create rendez_vous
       const { data: recepData } = await supabase
@@ -155,27 +153,23 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
         date_heure_fin: formData.date_heure_fin,
         motif: formData.motif,
         statut: formData.statut,
-        // We link the first exam to the legacy field for backward compatibility
-        ...(examIds.length > 0 && { examen_id: examIds[0] }),
+        examen_id: examId,
       };
       
       const rdv = await appointmentService.createAppointment(rdvData);
 
-      // Link ALL exams to the created rdv
-      if (rdv && examIds.length > 0) {
+      // Link exam to the created rdv
+      if (rdv && examId) {
         await supabase
           .from('examens')
           .update({ rendez_vous_id: rdv.id })
-          .in('id', examIds);
+          .eq('id', examId);
       }
 
-      // 3. Create consentement if invasive (for each invasive exam)
-      if (isInvasive && examIds.length > 0) {
-        // For simplicity, we just create one for the first exam or all?
-        // Let's do it for all exams linked to this rdv if they are invasive
-        // For now, just link to the first one as before
+      // 3. Create consentement if invasive
+      if (isInvasive && examId) {
         await consentementService.createConsentement({
-          examen_id: examIds[0],
+          examen_id: examId,
           patient_id: formData.patient_id,
           type_acte_invasif: typeActeInvasif,
           signature_requise: true,
@@ -341,18 +335,11 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               </h3>
               <div className="space-y-2">
                 {services.map(service => {
-                  const isSelected = formData.service_ids.includes(service.id);
+                  const isSelected = formData.service_id === service.id;
                   return (
                     <button
                       key={service.id}
-                      onClick={() => {
-                        setFormData(prev => ({
-                          ...prev,
-                          service_ids: isSelected 
-                            ? prev.service_ids.filter(id => id !== service.id)
-                            : [...prev.service_ids, service.id]
-                        }));
-                      }}
+                      onClick={() => setFormData(prev => ({ ...prev, service_id: service.id }))}
                       className={cn(
                         "w-full text-left p-4 rounded-xl transition-all flex items-center justify-between",
                         isSelected 
@@ -364,12 +351,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                         <p className="text-sm font-bold text-slate-800">{service.nom}</p>
                         {service.description && <p className="text-xs text-slate-500 mt-0.5 font-medium">{service.description}</p>}
                       </div>
-                      <div className={cn(
-                        "h-6 w-6 rounded-full flex items-center justify-center border-2 transition-all",
-                        isSelected ? "bg-primary border-primary" : "border-slate-200"
-                      )}>
-                        {isSelected && <Check className="h-3.5 w-3.5 text-white" />}
-                      </div>
+                      {isSelected && <Check className="h-5 w-5 text-primary" />}
                     </button>
                   );
                 })}
@@ -549,19 +531,9 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('modal_summary')}</p>
                 <p className="text-sm font-bold text-slate-800">{t('summary_patient')}: {selectedPatient?.utilisateur?.prenom} {selectedPatient?.utilisateur?.nom}</p>
-                <div className="text-sm text-slate-600 font-medium">
-                  {t('summary_service')}: 
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {formData.service_ids.map(sid => {
-                      const s = services.find(x => x.id === sid);
-                      return (
-                        <span key={sid} className="px-2 py-0.5 bg-white border border-slate-200 rounded text-[11px] font-bold text-primary">
-                          {s?.nom}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
+                <p className="text-sm text-slate-600 font-medium">
+                  {t('summary_service')}: <span className="text-primary font-bold">{services.find(s => s.id === formData.service_id)?.nom || '-'}</span>
+                </p>
                 <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.date_heure_debut ? format(new Date(formData.date_heure_debut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
               </div>
             </div>
@@ -590,7 +562,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step < totalSteps ? (
             <button
               onClick={() => setStep(s => s + 1)}
-              disabled={(step === 1 && !formData.patient_id) || (step === 2 && formData.service_ids.length === 0)}
+              disabled={(step === 1 && !formData.patient_id) || (step === 2 && !formData.service_id)}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
             >
               {t('next')} <ChevronRight className="h-4 w-4" />
