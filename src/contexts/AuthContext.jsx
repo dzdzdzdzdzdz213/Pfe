@@ -266,20 +266,44 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Proceed with Auth signup
-    const { data, error } = await safeExecute(() => supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          full_name: `${userData.prenom} ${userData.nom}`,
-          prenom: userData.prenom,
-          nom: userData.nom,
-          telephone: userData.telephone,
-          age: userData.age,
-          manual_signup: true
+    let data, error;
+    try {
+      const res = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: `${userData.prenom} ${userData.nom}`,
+            prenom: userData.prenom,
+            nom: userData.nom,
+            telephone: userData.telephone,
+            age: userData.age,
+            manual_signup: true
+          }
         }
+      });
+      data = res.data;
+      error = res.error;
+    } catch (err) {
+      error = err;
+    }
+
+    // If we hit a lock error during signUp, the user was likely created! 
+    // We just need to sign them in to get the session.
+    if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('already registered'))) {
+      console.warn("[REGISTER] Recovering from Auth crash/duplicate, attempting login...");
+      const loginRes = await supabase.auth.signInWithPassword({
+        email: userData.email,
+        password: userData.password
+      });
+      
+      if (!loginRes.error && loginRes.data?.session) {
+        data = loginRes.data;
+        error = null;
+      } else if (error.message?.includes('already registered')) {
+        throw new Error("Cet email est déjà utilisé par un autre compte.");
       }
-    }));
+    }
 
     if (error) {
       console.error("[REGISTER] Auth error:", error);
