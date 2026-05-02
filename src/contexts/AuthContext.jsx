@@ -174,6 +174,13 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!isMounted) return;
 
+      // CRITICAL: If we are currently in the middle of a manual registration,
+      // skip the automatic listener to prevent race conditions and double-inserts.
+      if (isRegistering.current) {
+        console.log("[AuthListener] Skipping because manual registration is in progress.");
+        return;
+      }
+
       // INITIAL_SESSION is already handled by initialize() above — skip to avoid race condition
       if (event === 'INITIAL_SESSION') return;
 
@@ -244,13 +251,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    if (isRegistering.current) {
-      console.warn("[REGISTER] Already in progress, skipping duplicate call.");
-      return;
-    }
+    if (isRegistering.current) return;
     
     isRegistering.current = true;
     try {
+      console.log("[REGISTER] Starting manual sign-up flow...");
       const { data, error } = await supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
@@ -273,12 +278,50 @@ export const AuthProvider = ({ children }) => {
         throw error;
       }
 
-      // The onAuthStateChange listener (which triggers fetchUserRole) will 
-      // automatically handle creating the utilisateurs and patients rows!
+      // If we have a session immediately, we MUST provision the profile 
+      // BEFORE returning, so the navigate() in the UI doesn't hit a 404/Redirect loop.
+      if (data?.session && data?.user) {
+        console.log("[REGISTER] Auth success, manually provisioning DB rows...");
+        
+        // 1. Create/Update Utilisateur
+        const { data: util, error: utilError } = await supabase.from('utilisateurs').upsert({
+          auth_id: data.user.id,
+          nom: userData.nom,
+          prenom: userData.prenom,
+          email: userData.email,
+          telephone: userData.telephone,
+          age: userData.age,
+          role: 'patient',
+          profil_complet: true
+        }, { onConflict: 'auth_id' }).select().single();
+
+        if (utilError) throw utilError;
+
+        // 2. Create Patient row
+        const { data: existingPat } = await supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle();
+        if (!existingPat) {
+          await supabase.from('patients').insert({ utilisateur_id: util.id });
+        }
+
+        // 3. Manually update the state so the app knows we are ready!
+        setState(prev => ({
+          ...prev,
+          user: data.user,
+          session: data.session,
+          utilisateur: util,
+          role: 'patient',
+          profileComplete: true,
+          loading: false,
+          roleLoading: false
+        }));
+        
+        console.log("[REGISTER] Manual provisioning complete.");
+      }
+
       return { ...data, requiresEmailConfirmation: !data?.session };
     } finally {
-      // Small delay before unlocking to ensure everything settles
-      setTimeout(() => { isRegistering.current = false; }, 1000);
+      // Keep isRegistering true for a moment to let state propagate
+      setTimeout(() => { isRegistering.current = false; }, 500);
     }
   };
 
