@@ -83,8 +83,12 @@ export const AuthProvider = ({ children }) => {
           }
           
           if (newUtil) {
-            const { error: patErr } = await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' }).select();
-            if (patErr) toast.error("Erreur création patient: " + patErr.message);
+            // Check if patient row already exists (safer than upsert if unique constraint is missing)
+            const { data: existingPat } = await supabase.from('patients').select('id').eq('utilisateur_id', newUtil.id).maybeSingle();
+            if (!existingPat) {
+              const { error: patErr } = await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
+              if (patErr) toast.error("Erreur création patient: " + patErr.message);
+            }
           }
           return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
         }
