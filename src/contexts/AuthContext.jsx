@@ -236,6 +236,43 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    // 1. Check if email is already used
+    const { data: existingEmail } = await supabase
+      .from('utilisateurs')
+      .select('id')
+      .eq('email', userData.email)
+      .maybeSingle();
+    
+    if (existingEmail) {
+      throw new Error("Cet email est déjà utilisé par un autre compte.");
+    }
+
+    // 2. Check if phone is already used
+    if (userData.telephone) {
+      const { data: existingPhone } = await supabase
+        .from('utilisateurs')
+        .select('id')
+        .eq('telephone', userData.telephone)
+        .maybeSingle();
+      
+      if (existingPhone) {
+        throw new Error("Ce numéro de téléphone est déjà utilisé.");
+      }
+    }
+
+    // 3. Check if name is already used (case-insensitive)
+    const { data: existingName } = await supabase
+      .from('utilisateurs')
+      .select('id')
+      .ilike('nom', userData.nom)
+      .ilike('prenom', userData.prenom)
+      .maybeSingle();
+
+    if (existingName) {
+      throw new Error("Un compte avec ce nom et prénom existe déjà.");
+    }
+
+    // Proceed with Auth signup
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
