@@ -96,9 +96,9 @@ export const Login = () => {
           setEmailConfirmationSent(true);
           setIsSubmitting(false);
         } else {
-          // Session is live — navigate directly to patient dashboard
-          toast.success('Compte créé avec succès ! Bienvenue 👋');
-          navigate('/patient/dashboard', { replace: true });
+          // Session is live — keep spinner active and let useEffect redirect naturally
+          // once the database finishes creating the profile and assigning the role.
+          toast.success('Compte créé avec succès ! Préparation de votre espace...');
         }
       } else {
         await login(data.email, data.password);
