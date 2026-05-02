@@ -14,6 +14,7 @@ export const Booking = () => {
 
   const [step, setStep] = useState(initialService ? 2 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [takenSlots, setTakenSlots] = useState([]); // État pour stocker les heures déjà prises
   const [formData, setFormData] = useState({
     services: initialService ? [{ id: initialService, name: initialServiceName }] : [],
     date: '',
@@ -40,6 +41,30 @@ export const Booking = () => {
 
   const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
 
+  // --- EFFET POUR RÉCUPÉRER LES HEURES DÉJÀ RÉSERVÉES ---
+  useEffect(() => {
+    const fetchTakenSlots = async () => {
+      if (!formData.date) return;
+
+      const { data, error } = await supabase
+        .from('rendez_vous')
+        .select('date_heure_debut')
+        .gte('date_heure_debut', `${formData.date}T00:00:00`)
+        .lte('date_heure_debut', `${formData.date}T23:59:59`);
+
+      if (!error && data) {
+        // On extrait l'heure (HH:mm) de chaque rendez-vous trouvé
+        const hours = data.map(rdv => {
+          const d = new Date(rdv.date_heure_debut);
+          return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace('h', ':');
+        });
+        setTakenSlots(hours);
+      }
+    };
+
+    fetchTakenSlots();
+  }, [formData.date]);
+
   const handleNext = () => setStep((s) => Math.min(s + 1, 4));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
 
@@ -51,6 +76,9 @@ export const Booking = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // Double sécurité pour l'âge avant envoi
+    if (parseInt(formData.age) > 120) return;
+
     setIsSubmitting(true);
     try {
       const startDate = new Date(`${formData.date}T${formData.time}`);
@@ -232,7 +260,7 @@ export const Booking = () => {
                   <input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value, time: '' })}
                     min={new Date().toISOString().split('T')[0]}
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
                   />
@@ -242,20 +270,27 @@ export const Booking = () => {
                   <div className="animate-in fade-in slide-in-from-bottom-2">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3">{t('booking_time')}</label>
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
-                      {timeSlots.map((time) => (
-                        <button
-                          key={time}
-                          onClick={() => setFormData({ ...formData, time })}
-                          className={`
-                            py-3 rounded-xl text-sm font-bold border transition-all
-                            ${formData.time === time 
-                              ? 'bg-primary text-white border-primary shadow-md shadow-blue-200' 
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-primary/50 hover:bg-blue-50'}
-                          `}
-                        >
-                          {time}
-                        </button>
-                      ))}
+                      {timeSlots.map((time) => {
+                        const isTaken = takenSlots.includes(time); // Vérifie si l'heure est en base
+                        return (
+                          <button
+                            key={time}
+                            disabled={isTaken}
+                            onClick={() => setFormData({ ...formData, time })}
+                            className={`
+                              py-3 rounded-xl text-sm font-bold border transition-all
+                              ${isTaken
+                                ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed' // STYLE ROUGE : Indisponible
+                                : formData.time === time
+                                  ? 'bg-primary text-white border-primary shadow-md shadow-blue-200'
+                                  : 'bg-white text-slate-600 border-slate-200 hover:border-primary/50 hover:bg-blue-50'}
+                            `}
+                          >
+                            {time}
+                            {isTaken && <span className="block text-[8px] mt-0.5">COMPLET</span>}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -330,8 +365,14 @@ export const Booking = () => {
                       type="number"
                       required
                       min="0"
+                      max="120" // SÉCURITÉ : Limite l'âge à 120 ans
                       value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === '' || (parseInt(val) >= 0 && parseInt(val) <= 120)) {
+                          setFormData({ ...formData, age: val });
+                        }
+                      }}
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
                     />
                   </div>

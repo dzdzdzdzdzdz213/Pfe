@@ -20,12 +20,26 @@ export const Login = () => {
   });
 
   const registerSchema = z.object({
-    nom: z.string().min(2, "Le nom est requis"),
-    prenom: z.string().min(2, "Le prénom est requis"),
-    telephone: z.string().min(8, "Le numéro est requis"),
-    age: z.string().min(1, "L'âge est requis"),
+    nom: z.string()
+      .min(2, "Le nom est trop court")
+      .regex(/^[a-zA-ZÀ-ÿ\s-]+$/, "Le nom ne doit contenir que des lettres"),
+    prenom: z.string()
+      .min(2, "Le prénom est trop court")
+      .regex(/^[a-zA-ZÀ-ÿ\s-]+$/, "Le prénom ne doit contenir que des lettres"),
+    telephone: z.string()
+      .length(10, "Le numéro doit faire exactement 10 chiffres")
+      .regex(/^(05|06|07)[0-9]{8}$/, "Doit commencer par 05, 06 ou 07"),
+    age: z.string()
+      .refine((val) => {
+        const a = parseInt(val);
+        return a >= 0 && a <= 120;
+      }, { message: "L'âge doit être entre 0 et 120 ans" }),
     email: z.string().email({ message: t('error_invalid_email') }),
-    password: z.string().min(6, { message: t('error_password_short') }),
+    password: z.string()
+      .min(8, "Le mot de passe doit faire au moins 8 caractères")
+      .regex(/[A-Z]/, "Il faut au moins une lettre majuscule")
+      .regex(/[0-9]/, "Il faut au moins un chiffre")
+      .regex(/[a-z]/, "Il faut au moins une lettre minuscule"),
   });
 
   const [isSignUp, setIsSignUp] = useState(false);
