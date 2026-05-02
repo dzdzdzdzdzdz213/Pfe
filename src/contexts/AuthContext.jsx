@@ -39,10 +39,9 @@ export const AuthProvider = ({ children }) => {
       if (error && error.code === 'PGRST116') {
         // Autoprovision: check if user exists by email without auth_id mapped yet
         const { data: legacyUser, error: legErr } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).maybeSingle();
-        if (legErr && legErr.code !== 'PGRST116') {
+        if (legErr && legErr.code !== 'PGRST116' && !legErr.message?.includes('Lock')) {
           toast.error("Erreur de recherche d'utilisateur: " + legErr.message);
         }
-        
         const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
         const nameParts = fullName.split(' ');
         const finalRole = legacyUser?.role || 'patient';
@@ -91,10 +90,12 @@ export const AuthProvider = ({ children }) => {
       }
 
       // Any other DB error (e.g. RLS infinite recursion) — don't hang, fail fast
-      if (error) {
+      if (error && !error.message?.includes('Lock')) {
         console.error('DB error fetching utilisateur:', error.message, error.code);
         toast.error('Erreur DB fetch role: ' + error.message);
         return { role: null, profileComplete: false, utilisateur: null };
+      } else if (error && error.message?.includes('Lock')) {
+        console.warn('Supabase JS Auth Lock error caught and ignored in fetchUserRole');
       }
 
       let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
