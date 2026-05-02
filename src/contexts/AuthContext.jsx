@@ -288,10 +288,29 @@ export const AuthProvider = ({ children }) => {
       error = err;
     }
 
-    // If we hit a lock error during signUp, the user was likely created! 
-    // We just need to sign them in to get the session.
-    if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('already registered'))) {
-      console.warn("[REGISTER] Recovering from Auth crash/duplicate, attempting login...");
+    // CRITICAL RECOVERY: If gotrue-js local storage is permanently locked/corrupted
+    if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('Abort'))) {
+      console.error("[REGISTER] FATAL LOCK ERROR DETECTED. Clearing local storage to recover...");
+      
+      // Clear the corrupted supabase lock from local storage
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.includes('sb-') && key.includes('auth-token')) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to clear local storage", e);
+      }
+
+      throw new Error("Une erreur de synchronisation a eu lieu. La page va se rafraîchir. Veuillez réessayer.");
+    }
+
+    // Check for duplicate
+    if (error?.message?.includes('already registered')) {
+      // It might be a real duplicate, or it might be a ghost from a previous crash.
+      // Try to log in just in case they created it 10 seconds ago but the UI crashed.
       const loginRes = await supabase.auth.signInWithPassword({
         email: userData.email,
         password: userData.password
@@ -300,7 +319,7 @@ export const AuthProvider = ({ children }) => {
       if (!loginRes.error && loginRes.data?.session) {
         data = loginRes.data;
         error = null;
-      } else if (error.message?.includes('already registered')) {
+      } else {
         throw new Error("Cet email est déjà utilisé par un autre compte.");
       }
     }

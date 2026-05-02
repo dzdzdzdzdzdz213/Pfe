@@ -108,6 +108,13 @@ export const Login = () => {
     } catch (error) {
       console.error(error);
       toast.error(error.message || t('login_failed'));
+      
+      // Auto-recover from fatal lock error
+      if (error.message?.includes('Une erreur de synchronisation')) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      }
     } finally {
       setIsSubmitting(false);
     }
