@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }) => {
             prenom: finalPrenom,
             email: authUser.email,
             telephone: finalTelephone,
+            age: authUser.user_metadata?.age || null,
             role: 'patient',
             profil_complet: finalTelephone ? true : false
           }).select().single();
