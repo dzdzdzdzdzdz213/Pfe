@@ -288,8 +288,8 @@ export const AuthProvider = ({ children }) => {
     
     isRegistering.current = true;
     try {
-      console.log("[REGISTER] Starting manual sign-up flow...");
-      const { data, error } = await safeCall(() => supabase.auth.signUp({
+      console.log("[REGISTER] Attempting account creation for:", userData.email);
+      let { data, error } = await safeCall(() => supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
@@ -304,29 +304,27 @@ export const AuthProvider = ({ children }) => {
         }
       }));
 
-      if (error) {
-        // Handle React 18 Double-Fire: if user was created 1ms ago by a duplicate request
-        if (error.message?.includes('already registered')) {
-          console.warn("[REGISTER] Duplicate sign-up detected, attempting automatic login recovery...");
-          const { data: loginData, error: loginErr } = await safeCall(() => supabase.auth.signInWithPassword({
-            email: userData.email,
-            password: userData.password
-          }));
-          
-          if (!loginErr && loginData?.session) {
-            // Successfully recovered — proceed as if sign-up was the one that succeeded
-            return { ...loginData, requiresEmailConfirmation: false };
-          }
-          
+      // RECOVERY: Handle React 18 double-fire race condition
+      if (error && error.message?.includes('already registered')) {
+        console.warn("[REGISTER] Double-fire detected, attempting recovery login...");
+        const loginRes = await safeCall(() => supabase.auth.signInWithPassword({
+          email: userData.email,
+          password: userData.password
+        }));
+        
+        if (!loginRes.error && loginRes.data?.session) {
+          data = loginRes.data;
+          error = null;
+        } else {
           throw new Error("Cet email est déjà utilisé par un autre compte.");
         }
-        throw error;
       }
 
-      // If we have a session immediately, we MUST provision the profile 
-      // BEFORE returning, so the navigate() in the UI doesn't hit a 404/Redirect loop.
+      if (error) throw error;
+
+      // PROVISIONING: Always create DB rows if we have a session
       if (data?.session && data?.user) {
-        console.log("[REGISTER] Auth success, manually provisioning DB rows...");
+        console.log("[REGISTER] Provisioning profile for:", data.user.id);
         
         // 1. Create/Update Utilisateur
         const { data: util, error: utilError } = await safeCall(() => supabase.from('utilisateurs').upsert({
@@ -340,7 +338,10 @@ export const AuthProvider = ({ children }) => {
           profil_complet: true
         }, { onConflict: 'auth_id' }).select().single());
 
-        if (utilError) throw utilError;
+        if (utilError) {
+          console.error("[REGISTER] DB Error:", utilError);
+          throw utilError;
+        }
 
         // 2. Create Patient row
         const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle());
@@ -348,7 +349,7 @@ export const AuthProvider = ({ children }) => {
           await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
         }
 
-        // 3. Manually update the state so the app knows we are ready!
+        // 3. Force state update so UI responds immediately
         setState(prev => ({
           ...prev,
           user: data.user,
@@ -360,13 +361,13 @@ export const AuthProvider = ({ children }) => {
           roleLoading: false
         }));
         
-        console.log("[REGISTER] Manual provisioning complete.");
+        console.log("[REGISTER] Registration & Provisioning complete.");
       }
 
       return { ...data, requiresEmailConfirmation: !data?.session };
     } finally {
-      // Keep isRegistering true for a moment to let state propagate
-      setTimeout(() => { isRegistering.current = false; }, 500);
+      // Maintain lock for a moment to let React state settle
+      setTimeout(() => { isRegistering.current = false; }, 1000);
     }
   };
 
