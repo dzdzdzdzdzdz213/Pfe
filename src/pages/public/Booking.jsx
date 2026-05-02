@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Waves, HeartPulse, Microscope, Syringe, ClipboardCheck, Loader2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
