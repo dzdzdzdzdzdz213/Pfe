@@ -262,12 +262,6 @@ export const AuthProvider = ({ children }) => {
       if (existsPhone) throw new Error("Ce numéro de téléphone est déjà utilisé.");
     }
 
-    // 3. Pre-check: Name
-    const { data: existsName } = await safeCheck(
-      supabase.from('utilisateurs').select('id').ilike('nom', userData.nom).ilike('prenom', userData.prenom).maybeSingle()
-    );
-    if (existsName) throw new Error("Un compte avec ce nom et prénom existe déjà.");
-
     // 4. Final SignUp
     let data, error;
     try {
