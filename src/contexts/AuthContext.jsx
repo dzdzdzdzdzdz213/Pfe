@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { toast } from 'sonner';
+
 
 export const AuthContext = createContext();
 
@@ -36,7 +38,11 @@ export const AuthProvider = ({ children }) => {
 
       if (error && error.code === 'PGRST116') {
         // Autoprovision: check if user exists by email without auth_id mapped yet
-        const { data: legacyUser } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).single();
+        const { data: legacyUser, error: legErr } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).maybeSingle();
+        if (legErr && legErr.code !== 'PGRST116') {
+          toast.error("Erreur de recherche d'utilisateur: " + legErr.message);
+        }
+        
         const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
         const nameParts = fullName.split(' ');
         const finalRole = legacyUser?.role || 'patient';
@@ -55,13 +61,13 @@ export const AuthProvider = ({ children }) => {
           if (roleToSet === 'assistant') roleToSet = 'receptionniste';
 
           // Ensure role-specific row exists
-          if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
-          if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
-          if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' });
+          if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
+          if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
+          if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
 
           return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
         } else {
-          const { data: newUtil } = await supabase.from('utilisateurs').insert({
+          const { data: newUtil, error: insErr } = await supabase.from('utilisateurs').insert({
             auth_id: authUser.id,
             nom: finalNom,
             prenom: finalPrenom,
@@ -70,7 +76,16 @@ export const AuthProvider = ({ children }) => {
             role: 'patient',
             profil_complet: finalTelephone ? true : false
           }).select().single();
-          if (newUtil) await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' });
+          
+          if (insErr) {
+            toast.error("Erreur de création du profil (utilisateurs): " + insErr.message);
+            return { role: null, profileComplete: false, utilisateur: null };
+          }
+          
+          if (newUtil) {
+            const { error: patErr } = await supabase.from('patients').upsert({ utilisateur_id: newUtil.id }, { onConflict: 'utilisateur_id' }).select();
+            if (patErr) toast.error("Erreur création patient: " + patErr.message);
+          }
           return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
         }
       }
@@ -78,6 +93,7 @@ export const AuthProvider = ({ children }) => {
       // Any other DB error (e.g. RLS infinite recursion) — don't hang, fail fast
       if (error) {
         console.error('DB error fetching utilisateur:', error.message, error.code);
+        toast.error('Erreur DB fetch role: ' + error.message);
         return { role: null, profileComplete: false, utilisateur: null };
       }
 
@@ -88,8 +104,10 @@ export const AuthProvider = ({ children }) => {
     } catch (err) {
       if (err.message === 'DB_TIMEOUT') {
         console.error('fetchUserRole timed out — check RLS policies on utilisateurs table');
+        toast.error('Délai d\'attente dépassé pour la base de données. Vérifiez RLS.');
       } else {
         console.error('Unexpected error fetching utilisateur:', err.message);
+        toast.error('Erreur inattendue: ' + err.message);
       }
       return { role: null, profileComplete: false, utilisateur: null };
     }

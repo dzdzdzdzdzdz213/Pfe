@@ -66,14 +66,16 @@ export const Login = () => {
   }, [user, role, navigate, location]);
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const errCode = params.get('error_code');
+    // Supabase can return OAuth errors in the search query OR the hash fragment
+    const params = new URLSearchParams(location.search || location.hash.replace('#', '?'));
+    const errCode = params.get('error_code') || params.get('error');
     const errDesc = params.get('error_description');
     if (errCode) {
       toast.error(errDesc?.replace(/\+/g, ' ') || 'Erreur de connexion Google. Veuillez réessayer.');
+      // Clean up the URL
       window.history.replaceState({}, '', '/login');
     }
-  }, [location.search]);
+  }, [location.search, location.hash]);
 
   const {
     register,
