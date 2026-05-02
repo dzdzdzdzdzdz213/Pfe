@@ -396,7 +396,7 @@ const RadiologuePatientSearchContent = () => {
         rendez_vous(
            id,
            date_heure_debut,
-           examens:examen_id(
+           examens(
              id, 
              date_realisation, 
              statut,

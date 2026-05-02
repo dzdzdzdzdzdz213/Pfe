@@ -182,7 +182,7 @@ export const PatientHistory = () => {
         .from('rendez_vous')
         .select(`
           id, date_heure_debut, motif, statut,
-          examens:examen_id(
+          examens(
             id, date_realisation, statut, observations_cliniques,
             services:service_id(nom),
             comptes_rendus(id, description_detaillee, est_valide),
