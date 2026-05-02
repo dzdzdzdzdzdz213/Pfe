@@ -91,7 +91,6 @@ export const PatientAppointments = () => {
         date_heure_fin: end.toISOString(),
         motif: finalMotif,
         statut: 'planifie',
-        examen_id: examId,
       });
 
       // 3. Link exam to the appointment

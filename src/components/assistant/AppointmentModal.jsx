@@ -153,7 +153,6 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
         date_heure_fin: formData.date_heure_fin,
         motif: formData.motif,
         statut: formData.statut,
-        examen_id: examId,
       };
       
       const rdv = await appointmentService.createAppointment(rdvData);
