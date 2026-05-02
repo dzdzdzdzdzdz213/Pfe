@@ -19,6 +19,32 @@ export const AuthProvider = ({ children }) => {
 
   const isRegistering = React.useRef(false);
 
+  // Helper to handle the "Lock broken" / "AbortError" race condition in Supabase
+  const safeCall = async (operation) => {
+    let lastError;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const result = await operation();
+        // Check if the result itself has a lock error (some methods return {error})
+        if (result?.error && (result.error.message?.includes('Lock') || result.error.name === 'AbortError')) {
+          console.warn(`[SafeCall] Lock error detected in result (attempt ${i+1}), retrying...`);
+          await new Promise(r => setTimeout(r, 300));
+          continue;
+        }
+        return result;
+      } catch (err) {
+        if (err.message?.includes('Lock') || err.name === 'AbortError') {
+          console.warn(`[SafeCall] Lock exception caught (attempt ${i+1}), retrying...`);
+          lastError = err;
+          await new Promise(r => setTimeout(r, 300));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastError;
+  };
+
   const fetchUserRole = useCallback(async (authUser) => {
     console.log("[fetchUserRole] Checking role for:", authUser.email, authUser.id);
     try {
@@ -26,11 +52,12 @@ export const AuthProvider = ({ children }) => {
       let data = null;
       let error = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
-        const result = await supabase
+        const result = await safeCall(() => supabase
           .from('utilisateurs')
           .select('*')
           .eq('auth_id', authUser.id)
-          .maybeSingle();
+          .maybeSingle()
+        );
         data = result.data;
         error = result.error;
         
@@ -38,7 +65,7 @@ export const AuthProvider = ({ children }) => {
           console.log("[fetchUserRole] Found user record on attempt", attempt);
           break;
         }
-        if (error && !error.message?.includes('Lock')) {
+        if (error) {
           console.error("[fetchUserRole] Query error:", error);
           break;
         }
@@ -48,10 +75,8 @@ export const AuthProvider = ({ children }) => {
 
       if (error && error.code === 'PGRST116') {
         // Autoprovision: check if user exists by email without auth_id mapped yet
-        const { data: legacyUser, error: legErr } = await supabase.from('utilisateurs').select('*').eq('email', authUser.email).maybeSingle();
-        if (legErr && legErr.code !== 'PGRST116' && !legErr.message?.includes('Lock')) {
-          toast.error("Erreur de recherche d'utilisateur: " + legErr.message);
-        }
+        const { data: legacyUser } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('email', authUser.email).maybeSingle());
+        
         const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
         const nameParts = fullName.split(' ');
         const finalRole = legacyUser?.role || 'patient';
@@ -60,24 +85,24 @@ export const AuthProvider = ({ children }) => {
         const finalTelephone = authUser.user_metadata?.telephone || legacyUser?.telephone || null;
 
         if (legacyUser) {
-          const { data: updatedUtil } = await supabase.from('utilisateurs').update({
+          const { data: updatedUtil } = await safeCall(() => supabase.from('utilisateurs').update({
             auth_id: authUser.id,
             telephone: finalTelephone || legacyUser.telephone
-          }).eq('id', legacyUser.id).select().single();
+          }).eq('id', legacyUser.id).select().single());
 
           let roleToSet = finalRole.toLowerCase().trim();
           if (roleToSet === 'administrateur') roleToSet = 'admin';
           if (roleToSet === 'assistant') roleToSet = 'receptionniste';
 
           // Ensure role-specific row exists
-          if (roleToSet === 'patient') await supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
-          if (roleToSet === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
-          if (roleToSet === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select();
+          if (roleToSet === 'patient') await safeCall(() => supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
+          if (roleToSet === 'radiologue') await safeCall(() => supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
+          if (roleToSet === 'receptionniste') await safeCall(() => supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
 
           return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
         } else {
           // Use UPSERT instead of INSERT to be resilient against triggers or race conditions
-          const { data: newUtil, error: insErr } = await supabase.from('utilisateurs').upsert({
+          const { data: newUtil, error: insErr } = await safeCall(() => supabase.from('utilisateurs').upsert({
             auth_id: authUser.id,
             nom: finalNom,
             prenom: finalPrenom,
@@ -86,7 +111,7 @@ export const AuthProvider = ({ children }) => {
             age: authUser.user_metadata?.age || null,
             role: 'patient',
             profil_complet: finalTelephone ? true : false
-          }, { onConflict: 'auth_id' }).select().single();
+          }, { onConflict: 'auth_id' }).select().single());
           
           if (insErr) {
             toast.error("Erreur de synchronisation du profil: " + insErr.message);
@@ -95,9 +120,9 @@ export const AuthProvider = ({ children }) => {
           
           if (newUtil) {
             // Check if patient row already exists
-            const { data: existingPat } = await supabase.from('patients').select('id').eq('utilisateur_id', newUtil.id).maybeSingle();
+            const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', newUtil.id).maybeSingle());
             if (!existingPat) {
-              await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
+              await safeCall(() => supabase.from('patients').insert({ utilisateur_id: newUtil.id }));
             }
           }
           return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
@@ -264,7 +289,7 @@ export const AuthProvider = ({ children }) => {
     isRegistering.current = true;
     try {
       console.log("[REGISTER] Starting manual sign-up flow...");
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await safeCall(() => supabase.auth.signUp({
         email: userData.email,
         password: userData.password,
         options: {
@@ -277,7 +302,7 @@ export const AuthProvider = ({ children }) => {
             manual_signup: true
           }
         }
-      });
+      }));
 
       if (error) {
         if (error.message?.includes('already registered')) {
@@ -292,7 +317,7 @@ export const AuthProvider = ({ children }) => {
         console.log("[REGISTER] Auth success, manually provisioning DB rows...");
         
         // 1. Create/Update Utilisateur
-        const { data: util, error: utilError } = await supabase.from('utilisateurs').upsert({
+        const { data: util, error: utilError } = await safeCall(() => supabase.from('utilisateurs').upsert({
           auth_id: data.user.id,
           nom: userData.nom,
           prenom: userData.prenom,
@@ -301,14 +326,14 @@ export const AuthProvider = ({ children }) => {
           age: userData.age,
           role: 'patient',
           profil_complet: true
-        }, { onConflict: 'auth_id' }).select().single();
+        }, { onConflict: 'auth_id' }).select().single());
 
         if (utilError) throw utilError;
 
         // 2. Create Patient row
-        const { data: existingPat } = await supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle();
+        const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle());
         if (!existingPat) {
-          await supabase.from('patients').insert({ utilisateur_id: util.id });
+          await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
         }
 
         // 3. Manually update the state so the app knows we are ready!
