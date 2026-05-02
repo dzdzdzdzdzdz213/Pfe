@@ -305,7 +305,19 @@ export const AuthProvider = ({ children }) => {
       }));
 
       if (error) {
+        // Handle React 18 Double-Fire: if user was created 1ms ago by a duplicate request
         if (error.message?.includes('already registered')) {
+          console.warn("[REGISTER] Duplicate sign-up detected, attempting automatic login recovery...");
+          const { data: loginData, error: loginErr } = await safeCall(() => supabase.auth.signInWithPassword({
+            email: userData.email,
+            password: userData.password
+          }));
+          
+          if (!loginErr && loginData?.session) {
+            // Successfully recovered — proceed as if sign-up was the one that succeeded
+            return { ...loginData, requiresEmailConfirmation: false };
+          }
+          
           throw new Error("Cet email est déjà utilisé par un autre compte.");
         }
         throw error;
