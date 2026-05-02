@@ -20,22 +20,30 @@ export const AuthProvider = ({ children }) => {
   const isRegistering = React.useRef(false);
 
   const fetchUserRole = useCallback(async (authUser) => {
+    console.log("[fetchUserRole] Checking role for:", authUser.email, authUser.id);
     try {
       // Retry up to 3 times to handle timing gap between trigger and query
       let data = null;
       let error = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
         const result = await supabase
           .from('utilisateurs')
           .select('*')
           .eq('auth_id', authUser.id)
-          .single();
+          .maybeSingle();
         data = result.data;
         error = result.error;
-        // If found or non-404 error, stop retrying
-        if (!error || error.code !== 'PGRST116') break;
-        // Wait 700ms before retrying
-        await new Promise(r => setTimeout(r, 700));
+        
+        if (data) {
+          console.log("[fetchUserRole] Found user record on attempt", attempt);
+          break;
+        }
+        if (error && !error.message?.includes('Lock')) {
+          console.error("[fetchUserRole] Query error:", error);
+          break;
+        }
+        console.log("[fetchUserRole] User record not found yet, retrying...", attempt);
+        await new Promise(r => setTimeout(r, 800));
       }
 
       if (error && error.code === 'PGRST116') {

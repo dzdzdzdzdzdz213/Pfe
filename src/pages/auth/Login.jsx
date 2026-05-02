@@ -102,8 +102,10 @@ export const Login = () => {
         }
       } else {
         await login(data.email, data.password);
-        toast.success(t('login_success'));
-        // Auth listener handles redirect for login
+        toast.success(t('login_success') + " Préparation de votre espace...");
+        // Do NOT set isSubmitting(false) here. 
+        // Let the useEffect handle the redirect when role is ready.
+        return; 
       }
     } catch (error) {
       console.error(error);
