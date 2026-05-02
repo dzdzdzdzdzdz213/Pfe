@@ -236,16 +236,28 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    console.log("[REGISTER] Starting pre-checks...");
+    
+    // Helper to race promises against a timeout
+    const withTimeout = (promise, ms, stepName) => {
+      let timeoutId;
+      const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`Timeout at step: ${stepName}`)), ms);
+      });
+      return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+    };
+
     // 1. Check if email is already used
-    const { data: existingEmail } = await supabase
-      .from('utilisateurs')
-      .select('id')
-      .eq('email', userData.email)
-      .maybeSingle();
+    const { data: existingEmail } = await withTimeout(
+      supabase.from('utilisateurs').select('id').eq('email', userData.email).maybeSingle(),
+      5000, 'Check Email'
+    );
     
     if (existingEmail) {
       throw new Error("Cet email est déjà utilisé par un autre compte.");
     }
+
+    console.log("[REGISTER] Email check passed.");
 
     // 2. Check if phone is already used
     if (userData.telephone) {
@@ -272,32 +284,40 @@ export const AuthProvider = ({ children }) => {
       throw new Error("Un compte avec ce nom et prénom existe déjà.");
     }
 
-    // Proceed with Auth signup
-    const { data, error } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          full_name: `${userData.prenom} ${userData.nom}`,
-          prenom: userData.prenom,
-          nom: userData.nom,
-          telephone: userData.telephone,
-          age: userData.age,
-          manual_signup: true
-        }
-      }
-    });
+    console.log("[REGISTER] Name check passed. Proceeding to Auth signup...");
 
-    if (error) throw error;
+    // Proceed with Auth signup
+    const { data, error } = await withTimeout(
+      supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: `${userData.prenom} ${userData.nom}`,
+            prenom: userData.prenom,
+            nom: userData.nom,
+            telephone: userData.telephone,
+            age: userData.age,
+            manual_signup: true
+          }
+        }
+      }),
+      10000, 'Auth SignUp'
+    );
+
+    if (error) {
+      console.error("[REGISTER] Auth error:", error);
+      throw error;
+    }
+
+    console.log("[REGISTER] Auth signup successful. Data:", data);
 
     // If session is immediately available, directly provision the profile
-    // This guarantees the utilisateurs row exists before we navigate
-    // (the trigger may have a tiny delay)
     if (data.session && data.user) {
+      console.log("[REGISTER] Live session found, creating DB rows...");
       // 1. Upsert utilisateurs row
-      const { data: util, error: utilError } = await supabase
-        .from('utilisateurs')
-        .upsert({
+      const { data: util, error: utilError } = await withTimeout(
+        supabase.from('utilisateurs').upsert({
           auth_id: data.user.id,
           nom: userData.nom,
           prenom: userData.prenom,
@@ -307,24 +327,33 @@ export const AuthProvider = ({ children }) => {
           profil_complet: true
         }, { onConflict: 'auth_id' })
         .select('id')
-        .single();
+        .single(),
+        5000, 'Upsert Utilisateur'
+      );
 
       if (utilError) {
         console.error("DB Utilisateur Upsert Error:", utilError);
         throw utilError;
       }
 
+      console.log("[REGISTER] Utilisateur row created. Upserting patient row...");
+
       // 2. Create patient row if not exists
       if (util?.id) {
-        const { data: existing } = await supabase
-          .from('patients')
-          .select('id')
-          .eq('utilisateur_id', util.id)
-          .maybeSingle();
+        const { data: existing } = await withTimeout(
+          supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle(),
+          5000, 'Check Patient'
+        );
         if (!existing) {
-          await supabase.from('patients').insert({ utilisateur_id: util.id });
+          await withTimeout(
+            supabase.from('patients').insert({ utilisateur_id: util.id }),
+            5000, 'Insert Patient'
+          );
         }
       }
+      console.log("[REGISTER] Full registration flow complete.");
+    } else {
+      console.log("[REGISTER] No live session. Email confirmation may be required.");
     }
 
     return { ...data, requiresEmailConfirmation: !data.session };
