@@ -239,8 +239,34 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     console.log("[REGISTER] Starting simplified registration...");
 
-    // Proceed with Auth signup (this natively checks for duplicate emails)
-    const { data, error } = await supabase.auth.signUp({
+    // Helper for safe retries against lock errors
+    const safeExecute = async (operation) => {
+      let lastError;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const { data, error } = await operation();
+          if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('Abort'))) {
+            console.warn(`[REGISTER] Lock/Abort error caught on attempt ${attempt}, retrying...`);
+            lastError = error;
+            await new Promise(r => setTimeout(r, 400));
+            continue;
+          }
+          return { data, error };
+        } catch (err) {
+          if (err.message?.includes('Lock') || err.name === 'AbortError' || err.message?.includes('Abort')) {
+            console.warn(`[REGISTER] Exception Lock/Abort caught on attempt ${attempt}, retrying...`);
+            lastError = err;
+            await new Promise(r => setTimeout(r, 400));
+            continue;
+          }
+          return { data: null, error: err };
+        }
+      }
+      return { data: null, error: lastError };
+    };
+
+    // Proceed with Auth signup
+    const { data, error } = await safeExecute(() => supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
       options: {
@@ -253,7 +279,7 @@ export const AuthProvider = ({ children }) => {
           manual_signup: true
         }
       }
-    });
+    }));
 
     if (error) {
       console.error("[REGISTER] Auth error:", error);
@@ -262,12 +288,11 @@ export const AuthProvider = ({ children }) => {
 
     console.log("[REGISTER] Auth signup successful. Data:", data);
 
-    // If session is immediately available, directly provision the profile
-    if (data.session && data.user) {
+    if (data?.session && data?.user) {
       console.log("[REGISTER] Live session found, creating DB rows...");
       
       // 1. Upsert utilisateurs row
-      const { data: util, error: utilError } = await supabase
+      const { data: util, error: utilError } = await safeExecute(() => supabase
         .from('utilisateurs')
         .upsert({
           auth_id: data.user.id,
@@ -279,7 +304,8 @@ export const AuthProvider = ({ children }) => {
           profil_complet: true
         }, { onConflict: 'auth_id' })
         .select('id')
-        .single();
+        .single()
+      );
 
       if (utilError) {
         console.error("DB Utilisateur Upsert Error:", utilError);
@@ -290,14 +316,15 @@ export const AuthProvider = ({ children }) => {
 
       // 2. Create patient row if not exists
       if (util?.id) {
-        const { data: existing } = await supabase
+        const { data: existing } = await safeExecute(() => supabase
           .from('patients')
           .select('id')
           .eq('utilisateur_id', util.id)
-          .maybeSingle();
+          .maybeSingle()
+        );
           
         if (!existing) {
-          await supabase.from('patients').insert({ utilisateur_id: util.id });
+          await safeExecute(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
         }
       }
       console.log("[REGISTER] Full registration flow complete.");
@@ -305,7 +332,7 @@ export const AuthProvider = ({ children }) => {
       console.log("[REGISTER] No live session. Email confirmation may be required.");
     }
 
-    return { ...data, requiresEmailConfirmation: !data.session };
+    return { ...data, requiresEmailConfirmation: !data?.session };
   };
 
   const loginWithGoogle = async () => {
