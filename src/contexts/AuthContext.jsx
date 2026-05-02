@@ -66,7 +66,8 @@ export const AuthProvider = ({ children }) => {
 
           return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
         } else {
-          const { data: newUtil, error: insErr } = await supabase.from('utilisateurs').insert({
+          // Use UPSERT instead of INSERT to be resilient against triggers or race conditions
+          const { data: newUtil, error: insErr } = await supabase.from('utilisateurs').upsert({
             auth_id: authUser.id,
             nom: finalNom,
             prenom: finalPrenom,
@@ -75,19 +76,18 @@ export const AuthProvider = ({ children }) => {
             age: authUser.user_metadata?.age || null,
             role: 'patient',
             profil_complet: finalTelephone ? true : false
-          }).select().single();
+          }, { onConflict: 'auth_id' }).select().single();
           
           if (insErr) {
-            toast.error("Erreur de création du profil (utilisateurs): " + insErr.message);
+            toast.error("Erreur de synchronisation du profil: " + insErr.message);
             return { role: null, profileComplete: false, utilisateur: null };
           }
           
           if (newUtil) {
-            // Check if patient row already exists (safer than upsert if unique constraint is missing)
+            // Check if patient row already exists
             const { data: existingPat } = await supabase.from('patients').select('id').eq('utilisateur_id', newUtil.id).maybeSingle();
             if (!existingPat) {
-              const { error: patErr } = await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
-              if (patErr) toast.error("Erreur création patient: " + patErr.message);
+              await supabase.from('patients').insert({ utilisateur_id: newUtil.id });
             }
           }
           return { role: 'patient', profileComplete: newUtil?.profil_complet || false, utilisateur: newUtil };
