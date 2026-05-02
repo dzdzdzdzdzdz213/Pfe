@@ -237,144 +237,30 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    console.log("[REGISTER] Starting simplified registration...");
-
-    // Helper for safe retries against lock errors
-    const safeExecute = async (operation) => {
-      let lastError;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          const { data, error } = await operation();
-          if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('Abort'))) {
-            console.warn(`[REGISTER] Lock/Abort error caught on attempt ${attempt}, retrying...`);
-            lastError = error;
-            await new Promise(r => setTimeout(r, 400));
-            continue;
-          }
-          return { data, error };
-        } catch (err) {
-          if (err.message?.includes('Lock') || err.name === 'AbortError' || err.message?.includes('Abort')) {
-            console.warn(`[REGISTER] Exception Lock/Abort caught on attempt ${attempt}, retrying...`);
-            lastError = err;
-            await new Promise(r => setTimeout(r, 400));
-            continue;
-          }
-          return { data: null, error: err };
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          full_name: `${userData.prenom} ${userData.nom}`,
+          prenom: userData.prenom,
+          nom: userData.nom,
+          telephone: userData.telephone,
+          age: userData.age,
+          manual_signup: true
         }
       }
-      return { data: null, error: lastError };
-    };
-
-    // Proceed with Auth signup
-    let data, error;
-    try {
-      const res = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: `${userData.prenom} ${userData.nom}`,
-            prenom: userData.prenom,
-            nom: userData.nom,
-            telephone: userData.telephone,
-            age: userData.age,
-            manual_signup: true
-          }
-        }
-      });
-      data = res.data;
-      error = res.error;
-    } catch (err) {
-      error = err;
-    }
-
-    // CRITICAL RECOVERY: If gotrue-js local storage is permanently locked/corrupted
-    if (error && (error.message?.includes('Lock') || error.name === 'AbortError' || error.message?.includes('Abort'))) {
-      console.error("[REGISTER] FATAL LOCK ERROR DETECTED. Clearing local storage to recover...");
-      
-      // Clear the corrupted supabase lock from local storage
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.includes('sb-') && key.includes('auth-token')) {
-            localStorage.removeItem(key);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to clear local storage", e);
-      }
-
-      throw new Error("Une erreur de synchronisation a eu lieu. La page va se rafraîchir. Veuillez réessayer.");
-    }
-
-    // Check for duplicate
-    if (error?.message?.includes('already registered')) {
-      // It might be a real duplicate, or it might be a ghost from a previous crash.
-      // Try to log in just in case they created it 10 seconds ago but the UI crashed.
-      const loginRes = await supabase.auth.signInWithPassword({
-        email: userData.email,
-        password: userData.password
-      });
-      
-      if (!loginRes.error && loginRes.data?.session) {
-        data = loginRes.data;
-        error = null;
-      } else {
-        throw new Error("Cet email est déjà utilisé par un autre compte.");
-      }
-    }
+    });
 
     if (error) {
-      console.error("[REGISTER] Auth error:", error);
+      if (error.message?.includes('already registered')) {
+        throw new Error("Cet email est déjà utilisé par un autre compte.");
+      }
       throw error;
     }
 
-    console.log("[REGISTER] Auth signup successful. Data:", data);
-
-    if (data?.session && data?.user) {
-      console.log("[REGISTER] Live session found, creating DB rows...");
-      
-      // 1. Upsert utilisateurs row
-      const { data: util, error: utilError } = await safeExecute(() => supabase
-        .from('utilisateurs')
-        .upsert({
-          auth_id: data.user.id,
-          nom: userData.nom,
-          prenom: userData.prenom,
-          email: userData.email,
-          telephone: userData.telephone,
-          role: 'patient',
-          profil_complet: true
-        }, { onConflict: 'auth_id' })
-        .select('id')
-        .single()
-      );
-
-      if (utilError) {
-        console.error("DB Utilisateur Upsert Error:", utilError);
-        throw utilError;
-      }
-
-      console.log("[REGISTER] Utilisateur row created. Upserting patient row...");
-
-      // 2. Create patient row if not exists
-      if (util?.id) {
-        const { data: existing } = await safeExecute(() => supabase
-          .from('patients')
-          .select('id')
-          .eq('utilisateur_id', util.id)
-          .maybeSingle()
-        );
-          
-        if (!existing) {
-          await safeExecute(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
-        }
-      }
-      console.log("[REGISTER] Full registration flow complete.");
-    } else {
-      console.log("[REGISTER] No live session. Email confirmation may be required.");
-    }
-
+    // The onAuthStateChange listener (which triggers fetchUserRole) will 
+    // automatically handle creating the utilisateurs and patients rows!
     return { ...data, requiresEmailConfirmation: !data?.session };
   };
 
