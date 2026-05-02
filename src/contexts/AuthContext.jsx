@@ -242,77 +242,31 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    // Helper for safe retries against lock errors during checks
-    const safeCheck = async (query) => {
-      try {
-        const { data, error } = await query;
-        if (error && (error.message?.includes('Lock') || error.name === 'AbortError')) return { data: null, error: null }; // Treat lock as "not found" for pre-checks
-        return { data, error };
-      } catch (e) {
-        return { data: null, error: null };
-      }
-    };
-
-    // 1. Pre-check: Email (already in utilisateurs)
-    const { data: existsEmail } = await safeCheck(
-      supabase.from('utilisateurs').select('id').eq('email', userData.email).maybeSingle()
-    );
-    if (existsEmail) throw new Error("Cet email est déjà utilisé par un autre compte.");
-
-    // 2. Pre-check: Phone
-    if (userData.telephone) {
-      const { data: existsPhone } = await safeCheck(
-        supabase.from('utilisateurs').select('id').eq('telephone', userData.telephone).maybeSingle()
-      );
-      if (existsPhone) throw new Error("Ce numéro de téléphone est déjà utilisé.");
-    }
-
-    // 4. Final SignUp
-    let data, error;
-    try {
-      const res = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          data: {
-            full_name: `${userData.prenom} ${userData.nom}`,
-            prenom: userData.prenom,
-            nom: userData.nom,
-            telephone: userData.telephone,
-            age: userData.age,
-            manual_signup: true
-          }
+    // Proceed with Auth signup
+    const { data, error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          full_name: `${userData.prenom} ${userData.nom}`,
+          prenom: userData.prenom,
+          nom: userData.nom,
+          telephone: userData.telephone,
+          age: userData.age,
+          manual_signup: true
         }
-      });
-      data = res.data;
-      error = res.error;
-    } catch (err) {
-      error = err;
-    }
-
-    // Handle React 18 Double-Fire / Duplicate
-    if (error && (error.message?.includes('already registered') || error.name === 'AbortError' || error.message?.includes('Lock'))) {
-      console.warn("[REGISTER] Race condition or duplicate detected, attempting session recovery...");
-      try {
-        const loginRes = await supabase.auth.signInWithPassword({
-          email: userData.email,
-          password: userData.password
-        });
-        if (!loginRes.error && loginRes.data?.session) {
-          data = loginRes.data;
-          error = null;
-        } else if (error.message?.includes('already registered')) {
-          throw new Error("Cet email est déjà utilisé par un autre compte.");
-        }
-      } catch (loginErr) {
-        // If login also fails, just throw the original error
-        if (error.message?.includes('already registered')) throw new Error("Cet email est déjà utilisé par un autre compte.");
-        throw error;
       }
+    });
+
+    if (error) {
+      if (error.message?.includes('already registered')) {
+        throw new Error("Cet email est déjà utilisé par un autre compte.");
+      }
+      throw error;
     }
 
-    if (error) throw error;
-
+    // The onAuthStateChange listener (which triggers fetchUserRole) will 
+    // automatically handle creating the utilisateurs and patients rows!
     return { ...data, requiresEmailConfirmation: !data?.session };
   };
 
