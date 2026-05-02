@@ -17,6 +17,8 @@ export const AuthProvider = ({ children }) => {
     authInitialized: false
   });
 
+  const isRegistering = React.useRef(false);
+
   const fetchUserRole = useCallback(async (authUser) => {
     try {
       // Retry up to 3 times to handle timing gap between trigger and query
@@ -242,45 +244,42 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    // Proceed with Auth signup
-    const { data, error } = await supabase.auth.signUp({
-      email: userData.email,
-      password: userData.password,
-      options: {
-        data: {
-          full_name: `${userData.prenom} ${userData.nom}`,
-          prenom: userData.prenom,
-          nom: userData.nom,
-          telephone: userData.telephone,
-          age: userData.age,
-          manual_signup: true
-        }
-      }
-    });
-
-    if (error) {
-      // Handle React 18 Double-Fire: if user was created 1ms ago by a duplicate request
-      if (error.message?.includes('already registered')) {
-        try {
-          const loginRes = await supabase.auth.signInWithPassword({
-            email: userData.email,
-            password: userData.password
-          });
-          
-          if (!loginRes.error && loginRes.data?.session) {
-            return { ...loginRes.data, requiresEmailConfirmation: false };
-          }
-        } catch (loginErr) {
-          // ignore login error and throw original already registered error
-        }
-        throw new Error("Cet email est déjà utilisé par un autre compte.");
-      }
-      throw error;
+    if (isRegistering.current) {
+      console.warn("[REGISTER] Already in progress, skipping duplicate call.");
+      return;
     }
+    
+    isRegistering.current = true;
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: `${userData.prenom} ${userData.nom}`,
+            prenom: userData.prenom,
+            nom: userData.nom,
+            telephone: userData.telephone,
+            age: userData.age,
+            manual_signup: true
+          }
+        }
+      });
 
-    // The onAuthStateChange listener (which triggers fetchUserRole) will 
-    // automatically handle creating the utilisateurs and patients rows!
-    return { ...data, requiresEmailConfirmation: !data?.session };
+      if (error) {
+        if (error.message?.includes('already registered')) {
+          throw new Error("Cet email est déjà utilisé par un autre compte.");
+        }
+        throw error;
+      }
+
+      // The onAuthStateChange listener (which triggers fetchUserRole) will 
+      // automatically handle creating the utilisateurs and patients rows!
+      return { ...data, requiresEmailConfirmation: !data?.session };
+    } finally {
+      // Small delay before unlocking to ensure everything settles
+      setTimeout(() => { isRegistering.current = false; }, 1000);
+    }
   };
 
   const loginWithGoogle = async () => {
