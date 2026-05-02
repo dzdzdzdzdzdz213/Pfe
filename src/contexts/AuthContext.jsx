@@ -259,7 +259,20 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
+      // Handle React 18 Double-Fire: if user was created 1ms ago by a duplicate request
       if (error.message?.includes('already registered')) {
+        try {
+          const loginRes = await supabase.auth.signInWithPassword({
+            email: userData.email,
+            password: userData.password
+          });
+          
+          if (!loginRes.error && loginRes.data?.session) {
+            return { ...loginRes.data, requiresEmailConfirmation: false };
+          }
+        } catch (loginErr) {
+          // ignore login error and throw original already registered error
+        }
         throw new Error("Cet email est déjà utilisé par un autre compte.");
       }
       throw error;
