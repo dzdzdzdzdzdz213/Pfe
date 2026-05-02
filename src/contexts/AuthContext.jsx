@@ -295,7 +295,7 @@ export const AuthProvider = ({ children }) => {
     // (the trigger may have a tiny delay)
     if (data.session && data.user) {
       // 1. Upsert utilisateurs row
-      const { data: util } = await supabase
+      const { data: util, error: utilError } = await supabase
         .from('utilisateurs')
         .upsert({
           auth_id: data.user.id,
@@ -308,6 +308,11 @@ export const AuthProvider = ({ children }) => {
         }, { onConflict: 'auth_id' })
         .select('id')
         .single();
+
+      if (utilError) {
+        console.error("DB Utilisateur Upsert Error:", utilError);
+        throw utilError;
+      }
 
       // 2. Create patient row if not exists
       if (util?.id) {

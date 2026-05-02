@@ -108,6 +108,7 @@ export const Login = () => {
     } catch (error) {
       console.error(error);
       toast.error(error.message || t('login_failed'));
+    } finally {
       setIsSubmitting(false);
     }
   }, [login, registerUser, navigate, t, isSignUp]);
