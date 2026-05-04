@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, ShieldCheck, ArrowRight, ActivitySquare, HeartPulse, Scan, Bone, Waves, Microscope, Syringe, ClipboardCheck } from 'lucide-react';
+import { Activity, ShieldCheck, ArrowRight, HeartPulse, Scan, Bone, Waves, Microscope, Syringe, ClipboardCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -21,7 +21,7 @@ export const Landing = () => {
   return (
     <div className={`flex flex-col w-full bg-white ${lang === 'ar' ? 'font-cairo' : ''}`}>
 
-      {/* 1. HERO SECTION - BLANC PUR */}
+      {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden bg-white pt-24 pb-32">
         <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[800px] h-[800px] rounded-full bg-blue-50 blur-3xl opacity-50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 block lg:flex items-center gap-12 lg:gap-20">
@@ -47,7 +47,6 @@ export const Landing = () => {
             </Link>
           </div>
 
-          {/* PARTIE PHOTO HERO - REMPLACÉE ICI */}
           <div className="flex-1 w-full max-w-lg mx-auto lg:max-w-none relative mt-16 lg:mt-0">
             <div className="aspect-[4/3] rounded-[3rem] relative overflow-hidden shadow-2xl group border-[6px] border-white">
               <div
@@ -62,21 +61,11 @@ export const Landing = () => {
                 </div>
               </div>
             </div>
-            {/* Badge de sécurité flottant */}
-            <div className="absolute -bottom-8 rtl:-right-8 ltr:-left-8 bg-white/95 backdrop-blur-xl p-5 rounded-3xl shadow-2xl border border-white/50 flex items-center gap-5 hidden md:flex z-20">
-              <div className="h-14 w-14 rounded-2xl bg-blue-50 flex items-center justify-center text-primary border border-blue-100">
-                <ShieldCheck className="h-7 w-7" />
-              </div>
-              <div>
-                <p className="text-sm font-extrabold text-slate-800">{t('resultats_securises')}</p>
-                <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md inline-block mt-1">{t('espace_protege')}</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
 
-      {/* 2. SERVICES SECTION - BLANC PUR (Même thème que le Hero) */}
+      {/* 2. SERVICES SECTION - STYLE HARMONISÉ */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -86,8 +75,14 @@ export const Landing = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <h2 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-3">{t('nos_specialites')}</h2>
-            <h3 className="text-4xl lg:text-5xl font-serif text-slate-900 italic">Nos Services <span className="text-blue-600">d'Imagerie</span></h3>
+            {/* Sous-titre traduit sans tirets */}
+            <h2 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4">
+              {t('specialites')}
+            </h2>
+            {/* Titre principal HARMONISÉ (font-extrabold et sans italique) */}
+            <h3 className="text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight">
+              {t('services_imagerie')}
+            </h3>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1">
@@ -103,9 +98,9 @@ export const Landing = () => {
                   </div>
 
                   <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
-                    <h4 className="text-2xl font-serif mb-2">{t(`service_${service.id}_title`)}</h4>
+                    <h4 className="text-2xl font-bold mb-2">{t(`service_${service.id}_title`)}</h4>
                     <p className="text-sm text-white/70 font-medium leading-relaxed max-h-0 opacity-0 overflow-hidden transition-all duration-500 group-hover:max-h-24 group-hover:opacity-100 group-hover:mb-6">{t(`service_${service.id}_desc`)}</p>
-                    <Link to="/book" className="inline-flex items-center justify-center w-fit px-6 py-3 bg-white text-blue-600 rounded-full text-xs font-black uppercase opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all">Prendre RDV</Link>
+                    <Link to="/book" className="inline-flex items-center justify-center w-fit px-6 py-3 bg-white text-blue-600 rounded-full text-xs font-black uppercase opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all">{t('prendre_rdv')}</Link>
                   </div>
                 </div>
               );
@@ -114,38 +109,22 @@ export const Landing = () => {
         </div>
       </motion.section>
 
-      {/* 3. CALL TO ACTION - BLEU CIEL TRÈS CLAIR */}
-      {/* 3. CALL TO ACTION - RETOUR AU BLEU NAVY D'ORIGINE */}
+      {/* 3. CALL TO ACTION */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         className="py-24 relative overflow-hidden"
       >
-        {/* On remet le bleu foncé premium (bg-blue-700 / indigo-900) */}
         <div className="absolute inset-0 bg-blue-700" />
         <div className="absolute inset-0 bg-gradient-to-br from-blue-800 via-blue-900 to-indigo-950 opacity-95" />
-
-        {/* Effets de lumière subtils (plus de cyan flashy) */}
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-400 rounded-full blur-[120px] opacity-20" />
-        <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500 rounded-full blur-[120px] opacity-10" />
-
-        <div className="max-w-4xl mx-auto px-4 relative z-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6 drop-shadow-md">
+        <div className="max-w-4xl mx-auto px-4 relative z-10 text-center text-white">
+          <h2 className="text-4xl md:text-5xl font-extrabold mb-6">
             {t('sante_merite_meilleur')}
           </h2>
-          <p className="text-xl text-blue-100 font-medium mb-12 max-w-2xl mx-auto leading-relaxed">
-            {t('acceder_comptes_rendus')}
-          </p>
-          <div className="flex justify-center">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-800 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 hover:bg-slate-50 transition-all duration-300 group"
-            >
-              {t('acceder_espace_patient')}
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
+          <Link to="/login" className="inline-flex items-center justify-center px-10 py-5 bg-white text-blue-800 rounded-2xl font-black text-lg shadow-2xl hover:scale-105 transition-all">
+            {t('acceder_espace_patient')}
+          </Link>
         </div>
       </motion.section>
     </div>

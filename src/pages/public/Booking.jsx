@@ -12,8 +12,15 @@ export const Booking = () => {
   const initialService = location.state?.serviceId || '';
   const initialServiceName = location.state?.serviceName || '';
 
+  // --- CONFIGURATION DES LIMITES DE DATE ---
   const now = new Date();
   const today = now.toISOString().split('T')[0];
+
+  // Calcul de la date maximale (Aujourd'hui + 3 mois)
+  const maxDateObj = new Date();
+  maxDateObj.setMonth(maxDateObj.getMonth() + 3);
+  const maxDate = maxDateObj.toISOString().split('T')[0];
+
   const currentTime = now.getHours() * 60 + now.getMinutes();
 
   const [step, setStep] = useState(initialService ? 2 : 1);
@@ -43,7 +50,6 @@ export const Booking = () => {
 
   const isPhoneValid = /^(05|06|07)[0-9]{8}$/.test(formData.telephone);
 
-  // Fonction pour nettoyer les noms (autorise seulement lettres, espaces et tirets)
   const handleNameChange = (field, value) => {
     const cleanValue = value.replace(/[^a-zA-ZÀ-ÿ\s-]/g, '');
     setFormData({ ...formData, [field]: cleanValue });
@@ -121,7 +127,6 @@ export const Booking = () => {
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-10 shadow-xl border border-slate-100 min-h-[400px]">
           <AnimatePresence mode="wait">
 
-            {/* STEP 1 & 2 IDENTIQUES AU CODE PRÉCÉDENT (SÉCURISÉS) */}
             {step === 1 && (
               <motion.div key="step1" variants={variants} initial="enter" animate="center" exit="exit" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {servicesList.map((srv) => (
@@ -135,7 +140,19 @@ export const Booking = () => {
 
             {step === 2 && (
               <motion.div key="step2" variants={variants} initial="enter" animate="center" exit="exit" className="space-y-6">
-                <input type="date" value={formData.date} min={today} onChange={(e) => { const s = e.target.value; setFormData({ ...formData, date: s < today ? today : s, time: '' }); }} className="w-full p-4 bg-slate-50 border rounded-2xl outline-none" />
+                <input
+                  type="date"
+                  value={formData.date}
+                  min={today}
+                  max={maxDate} // LIMITATION À 3 MOIS
+                  onChange={(e) => {
+                    const s = e.target.value;
+                    if (s < today) setFormData({ ...formData, date: today, time: '' });
+                    else if (s > maxDate) setFormData({ ...formData, date: maxDate, time: '' });
+                    else setFormData({ ...formData, date: s, time: '' });
+                  }}
+                  className="w-full p-4 bg-slate-50 border rounded-2xl outline-none"
+                />
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                   {timeSlots.map((time) => {
                     const [h, m] = time.split(':').map(Number);
@@ -161,7 +178,6 @@ export const Booking = () => {
             {step === 3 && (
               <motion.form key="step3" variants={variants} initial="enter" animate="center" exit="exit" onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  {/* MODIF : NETTOYAGE DES CHIFFRES DANS LES NOMS */}
                   <input type="text" required placeholder={t('last_name')} value={formData.nom} onChange={(e) => handleNameChange('nom', e.target.value)} className="p-4 bg-slate-50 border rounded-xl" />
                   <input type="text" required placeholder={t('first_name')} value={formData.prenom} onChange={(e) => handleNameChange('prenom', e.target.value)} className="p-4 bg-slate-50 border rounded-xl" />
                 </div>
@@ -182,7 +198,6 @@ export const Booking = () => {
               </motion.form>
             )}
 
-            {/* STEP 4: SUCCESS */}
             {step === 4 && (
               <motion.div key="step4" variants={variants} initial="enter" animate="center" className="text-center py-8">
                 <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />

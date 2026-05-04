@@ -1,12 +1,5 @@
 /**
  * @fileoverview Translation strings for Chemloul Radiologie Management Platform.
- *
- * Usage:
- *   const { t } = useLanguage();
- *   t('dashboard')  // returns "Tableau de Bord" or "لوحة القيادة"
- *
- * Keys are dot-notation-free identifiers (underscored) for simplicity.
- * Add new keys to BOTH 'fr' and 'ar' objects simultaneously.
  */
 
 /** @type {Record<'fr'|'ar', Record<string, string>>} */
@@ -483,6 +476,8 @@ export const translations = {
     resultats_securises: 'Résultats Sécurisés',
     espace_protege: 'Espace protégé',
     nos_specialites: 'Nos Spécialités',
+    specialites: 'Nos Spécialités', // Ajouté pour Landing.jsx
+    services_imagerie: "Nos Services d'Imagerie", // Ajouté pour Landing.jsx
     services_composant: 'Des services d\'imagerie complets',
     services_desc: 'Nous utilisons les dernières technologies pour vous offrir des diagnostics précis dans les meilleurs délais.',
 
@@ -983,6 +978,8 @@ export const translations = {
     resultats_securises: 'نتائج مؤمنة',
     espace_protege: 'فضاء محمي',
     nos_specialites: 'تخصصاتنا',
+    specialites: 'تخصصاتنا', // Ajouté pour Landing.jsx
+    services_imagerie: "خدمات التصوير الطبي لدينا", // Ajouté pour Landing.jsx
     services_composant: 'خدمات تصوير شاملة',
     services_desc: 'نحن نستخدم أحدث التقنيات لنقدم لك تشخيصات دقيقة في أقصر الآجال.',
 
