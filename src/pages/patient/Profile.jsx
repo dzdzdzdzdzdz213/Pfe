@@ -74,6 +74,7 @@ export const PatientProfile = () => {
   }, [loadProfileFromDB]);
 
   // ── 1. Update personal info ──────────────────────────────────────────
+  const handleSavePersonal = async () => {
     const validateAlgerianPhone = (phone) => {
       if (!phone) return true;
       const cleaned = phone.replace(/\s/g, '');
