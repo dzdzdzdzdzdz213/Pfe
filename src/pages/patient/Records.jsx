@@ -57,33 +57,54 @@ const PrintableReport = ({ exam, report, patientName, t, lang }) => (
 // ---------------------------------------------------------------------------
 // Report Viewer Modal
 // ---------------------------------------------------------------------------
-const ReportModal = ({ report, exam, _patientName, onClose, t }) => (
-  <>
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-    <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
-        <div>
-          <h2 className="text-base font-extrabold text-slate-900">{t('print_report_title')}</h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">{exam?.service?.nom || exam?.services?.nom} — {formatDate(exam?.date_realisation)}</p>
+const ReportModal = ({ report, exam, patientName, onClose, t, lang }) => {
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-2xl max-h-[90vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 leading-tight">{t('print_report_title')}</h2>
+            <p className="text-xs text-slate-500 font-bold mt-0.5 uppercase tracking-wider">
+              {exam?.service?.nom || exam?.services?.nom} — {formatDate(exam?.date_realisation)}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={handlePrint}
+              className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-black hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
+            >
+              <Printer className="h-4 w-4" /> {t('records_pdf') || 'PDF'}
+            </button>
+            <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors"><X className="h-5 w-5" /></button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          {report?.est_valide && (
-            <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold">
-              <CheckCircle className="h-3.5 w-3.5" /> {t('validate')}
-            </span>
-          )}
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 transition-colors"><X className="h-4 w-4" /></button>
+        <div className="flex-1 overflow-y-auto p-8 bg-white">
+          {/* Professional Header for Preview */}
+          <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('role_patient')}</p>
+              <p className="text-sm font-bold text-slate-800">{patientName}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{t('booking_service')}</p>
+              <p className="text-sm font-bold text-slate-800">{exam?.service?.nom || exam?.services?.nom}</p>
+            </div>
+          </div>
+
+          <div
+            className="prose prose-sm max-w-none text-slate-700 leading-relaxed"
+            dangerouslySetInnerHTML={{ __html: report?.description_detaillee || `<p class="text-slate-400 italic font-medium">${t('no_content_available')}</p>` }}
+          />
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-6">
-        <div
-          className="prose prose-sm max-w-none text-slate-700"
-          dangerouslySetInnerHTML={{ __html: report?.description_detaillee || `<p class="text-slate-400 italic">${t('no_content_available')}</p>` }}
-        />
-      </div>
-    </div>
-  </>
-);
+    </>
+  );
+};
 
 // ---------------------------------------------------------------------------
 // Standalone Documents (Linked to dossier but no exam)
@@ -328,16 +349,30 @@ export const PatientRecords = () => {
                           <div key={doc.id} className="flex items-center gap-2 p-3 bg-blue-50/30 border border-blue-100 rounded-xl">
                             <FileText className="h-4 w-4 text-blue-500 flex-shrink-0" />
                             <span className="text-xs font-bold text-slate-600 flex-1 truncate">Document Médical — {formatDate(doc.date_creation)}</span>
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={doc.chemin_fichier}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
-                              >
-                                <Eye className="h-3.5 w-3.5" /> {t('view')}
-                              </a>
-                            </div>
+                             <div className="flex items-center gap-2">
+                               {doc.type === 'compte_rendu' ? (
+                                 <button
+                                   onClick={() => {
+                                     // Find the associated text report in the cr array if it exists
+                                     const cr = exam.comptes_rendus?.find(r => r.document_medical_id === doc.id) || 
+                                                exam.comptes_rendus?.[0]; // Fallback to first if link is old
+                                     setActiveReport({ report: cr, exam });
+                                   }}
+                                   className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
+                                 >
+                                   <Eye className="h-3.5 w-3.5" /> {t('view')}
+                                 </button>
+                               ) : (
+                                 <a
+                                   href={doc.chemin_fichier}
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
+                                 >
+                                   <Eye className="h-3.5 w-3.5" /> {t('view')}
+                                 </a>
+                               )}
+                             </div>
                           </div>
                         ))}
                       </div>
@@ -376,6 +411,7 @@ export const PatientRecords = () => {
           patientName={patientName}
           onClose={() => setActiveReport(null)}
           t={t}
+          lang={lang}
         />
       )}
 
