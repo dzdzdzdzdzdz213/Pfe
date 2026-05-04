@@ -147,6 +147,8 @@ const AppRoutes = () => {
         }>
           <Route path="dashboard" element={<AdminDashboardSafe />} />
           <Route path="users" element={<AdminUsersSafe />} />
+          <Route path="calendar" element={<AssistantCalendarSafe />} />
+          <Route path="patients" element={<AssistantPatientsSafe />} />
           <Route path="audit-logs" element={<AdminAuditLogsSafe />} />
           <Route path="stats" element={<AdminStatsSafe />} />
           <Route path="settings" element={<AdminSettingsSafe />} />
