@@ -95,23 +95,35 @@ export const AuthProvider = ({ children }) => {
           if (roleToSet === 'assistant') roleToSet = 'receptionniste';
 
           // Ensure role-specific row exists
-          if (roleToSet === 'patient') await safeCall(() => supabase.from('patients').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
-          if (roleToSet === 'radiologue') await safeCall(() => supabase.from('radiologues').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
-          if (roleToSet === 'receptionniste') await safeCall(() => supabase.from('receptionnistes').upsert({ utilisateur_id: updatedUtil.id }, { onConflict: 'utilisateur_id' }).select());
+          if (roleToSet === 'patient') { const { data: ep } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!ep) await safeCall(() => supabase.from('patients').insert({ utilisateur_id: updatedUtil.id })); }
+          if (roleToSet === 'radiologue') { const { data: er } = await safeCall(() => supabase.from('radiologues').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!er) await safeCall(() => supabase.from('radiologues').insert({ utilisateur_id: updatedUtil.id })); }
+          if (roleToSet === 'receptionniste') { const { data: ere } = await safeCall(() => supabase.from('receptionnistes').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!ere) await safeCall(() => supabase.from('receptionnistes').insert({ utilisateur_id: updatedUtil.id })); }
 
           return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
         } else {
-          // Use UPSERT instead of INSERT to be resilient against triggers or race conditions
-          const { data: newUtil, error: insErr } = await safeCall(() => supabase.from('utilisateurs').upsert({
-            auth_id: authUser.id,
-            nom: finalNom,
-            prenom: finalPrenom,
-            email: authUser.email,
-            telephone: finalTelephone,
-            age: authUser.user_metadata?.age || null,
-            role: 'patient',
-            profil_complet: finalTelephone ? true : false
-          }, { onConflict: 'auth_id' }).select().single());
+          // Use safe check-then-update/insert instead of upsert to avoid missing unique constraint errors
+          let newUtil = null;
+          let insErr = null;
+          try {
+            const { data: checkUtil } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('auth_id', authUser.id).maybeSingle());
+            const payload = {
+              auth_id: authUser.id,
+              nom: finalNom,
+              prenom: finalPrenom,
+              email: authUser.email,
+              telephone: finalTelephone,
+              age: authUser.user_metadata?.age || null,
+              role: 'patient',
+              profil_complet: finalTelephone ? true : false
+            };
+            if (checkUtil) {
+              const { data: updated, error } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', checkUtil.id).select().single());
+              newUtil = updated; insErr = error;
+            } else {
+              const { data: inserted, error } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
+              newUtil = inserted; insErr = error;
+            }
+          } catch(e) { insErr = e; }
           
           if (insErr) {
             toast.error("Erreur de synchronisation du profil: " + insErr.message);
@@ -176,9 +188,9 @@ export const AuthProvider = ({ children }) => {
 
           // NEW: Double check role-specific rows exist on every init
           if (utilisateur?.id) {
-            if (role === 'patient') await supabase.from('patients').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
-            if (role === 'radiologue') await supabase.from('radiologues').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
-            if (role === 'receptionniste') await supabase.from('receptionnistes').upsert({ utilisateur_id: utilisateur.id }, { onConflict: 'utilisateur_id' });
+            if (role === 'patient') { const { data: ep } = await supabase.from('patients').select('id').eq('utilisateur_id', utilisateur.id).maybeSingle(); if (!ep) await supabase.from('patients').insert({ utilisateur_id: utilisateur.id }); }
+            if (role === 'radiologue') { const { data: er } = await supabase.from('radiologues').select('id').eq('utilisateur_id', utilisateur.id).maybeSingle(); if (!er) await supabase.from('radiologues').insert({ utilisateur_id: utilisateur.id }); }
+            if (role === 'receptionniste') { const { data: ere } = await supabase.from('receptionnistes').select('id').eq('utilisateur_id', utilisateur.id).maybeSingle(); if (!ere) await supabase.from('receptionnistes').insert({ utilisateur_id: utilisateur.id }); }
           }
         }
 
@@ -326,17 +338,29 @@ export const AuthProvider = ({ children }) => {
       if (data?.session && data?.user) {
         console.log("[REGISTER] Provisioning profile for:", data.user.id);
         
-        // 1. Create/Update Utilisateur
-        const { data: util, error: utilError } = await safeCall(() => supabase.from('utilisateurs').upsert({
-          auth_id: data.user.id,
-          nom: userData.nom,
-          prenom: userData.prenom,
-          email: userData.email,
-          telephone: userData.telephone,
-          age: userData.age,
-          role: 'patient',
-          profil_complet: true
-        }, { onConflict: 'auth_id' }).select().single());
+        // 1. Create/Update Utilisateur using select then insert/update to avoid onConflict errors
+        let util = null;
+        let utilError = null;
+        try {
+          const { data: checkUtil } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('auth_id', data.user.id).maybeSingle());
+          const payload = {
+            auth_id: data.user.id,
+            nom: userData.nom,
+            prenom: userData.prenom,
+            email: userData.email,
+            telephone: userData.telephone,
+            age: userData.age,
+            role: 'patient',
+            profil_complet: true
+          };
+          if (checkUtil) {
+            const { data: updated, error } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', checkUtil.id).select().single());
+            util = updated; utilError = error;
+          } else {
+            const { data: inserted, error } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
+            util = inserted; utilError = error;
+          }
+        } catch(e) { utilError = e; }
 
         if (utilError) {
           console.error("[REGISTER] DB Error:", utilError);
