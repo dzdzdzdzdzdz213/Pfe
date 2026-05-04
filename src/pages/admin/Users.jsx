@@ -84,9 +84,34 @@ export const AdminUsers = () => {
     setShowDialog(true);
   };
 
+  const validateAlgerianPhone = (phone) => {
+    if (!phone) return true; // optional field
+    const cleaned = phone.replace(/\s/g, '');
+    return /^(05|06|07)\d{8}$/.test(cleaned);
+  };
+
+  const formatAlgerianPhone = (value) => {
+    // Only allow digits
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    // Format as 0X XX XX XX XX
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)} ${digits.slice(2)}`;
+    if (digits.length <= 6) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4)}`;
+    if (digits.length <= 8) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6)}`;
+    return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6,8)} ${digits.slice(8)}`;
+  };
+
   const handleSubmit = () => {
     if (!formData.nom || !formData.prenom || !formData.email) {
       toast.error(t('error_missing_fields'));
+      return;
+    }
+    if (/\d/.test(formData.nom) || /\d/.test(formData.prenom)) {
+      toast.error('Les noms ne peuvent pas contenir de chiffres.');
+      return;
+    }
+    if (formData.telephone && !validateAlgerianPhone(formData.telephone)) {
+      toast.error('Numéro invalide. Format algérien requis : 05/06/07 XX XX XX XX');
       return;
     }
     if (editUser) {
@@ -175,11 +200,27 @@ export const AdminUsers = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('first_name')} *</label>
-                  <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.prenom} onChange={e => setFormData(p => ({ ...p, prenom: e.target.value }))} />
+                  <input
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
+                    value={formData.prenom}
+                    placeholder="Ex: Ahmed"
+                    onChange={e => {
+                      const val = e.target.value.replace(/[0-9]/g, '');
+                      setFormData(p => ({ ...p, prenom: val }));
+                    }}
+                  />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('last_name')} *</label>
-                  <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.nom} onChange={e => setFormData(p => ({ ...p, nom: e.target.value }))} />
+                  <input
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
+                    value={formData.nom}
+                    placeholder="Ex: Benali"
+                    onChange={e => {
+                      const val = e.target.value.replace(/[0-9]/g, '');
+                      setFormData(p => ({ ...p, nom: val }));
+                    }}
+                  />
                 </div>
               </div>
               <div>
@@ -187,8 +228,17 @@ export const AdminUsers = () => {
                 <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} disabled={!!editUser} />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_label')}</label>
-                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.telephone} onChange={e => setFormData(p => ({ ...p, telephone: e.target.value }))} />
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_label')} <span className="text-slate-400 font-normal normal-case">(05/06/07 XX XX XX XX)</span></label>
+                <input
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
+                  value={formData.telephone}
+                  placeholder="06 12 34 56 78"
+                  maxLength={14}
+                  onChange={e => {
+                    const formatted = formatAlgerianPhone(e.target.value);
+                    setFormData(p => ({ ...p, telephone: formatted }));
+                  }}
+                />
               </div>
               {/* Role field always visible in both create and edit */}
               <div>

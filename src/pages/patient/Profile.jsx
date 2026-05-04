@@ -74,9 +74,20 @@ export const PatientProfile = () => {
   }, [loadProfileFromDB]);
 
   // ── 1. Update personal info ──────────────────────────────────────────
-  const handleSavePersonal = async () => {
+    const validateAlgerianPhone = (phone) => {
+      if (!phone) return true;
+      const cleaned = phone.replace(/\s/g, '');
+      return /^(05|06|07)\d{8}$/.test(cleaned);
+    };
+
     if (!personalForm.nom || !personalForm.prenom) {
       return toast.error('Le nom et le prénom sont requis.');
+    }
+    if (/\d/.test(personalForm.nom) || /\d/.test(personalForm.prenom)) {
+      return toast.error('Les noms ne peuvent pas contenir de chiffres.');
+    }
+    if (personalForm.telephone && !validateAlgerianPhone(personalForm.telephone)) {
+      return toast.error('Format de téléphone invalide (05/06/07 XX XX XX XX)');
     }
     setPersonalLoading(true);
     try {
@@ -255,18 +266,45 @@ export const PatientProfile = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={LABEL}>Prénom</label>
-              <input className={INPUT} value={personalForm.prenom}
-                onChange={e => setPersonalForm(p => ({ ...p, prenom: e.target.value }))} />
+              <input
+                className={INPUT}
+                value={personalForm.prenom}
+                placeholder="Ex: Ahmed"
+                onChange={e => {
+                  const val = e.target.value.replace(/[0-9]/g, '');
+                  setPersonalForm(p => ({ ...p, prenom: val }));
+                }}
+              />
             </div>
             <div>
               <label className={LABEL}>Nom</label>
-              <input className={INPUT} value={personalForm.nom}
-                onChange={e => setPersonalForm(p => ({ ...p, nom: e.target.value }))} />
+              <input
+                className={INPUT}
+                value={personalForm.nom}
+                placeholder="Ex: Benali"
+                onChange={e => {
+                  const val = e.target.value.replace(/[0-9]/g, '');
+                  setPersonalForm(p => ({ ...p, nom: val }));
+                }}
+              />
             </div>
             <div>
-              <label className={LABEL}>Téléphone</label>
-              <input className={INPUT} value={personalForm.telephone} placeholder="+213 XX XX XX XX"
-                onChange={e => setPersonalForm(p => ({ ...p, telephone: e.target.value }))} />
+              <label className={LABEL}>Téléphone <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span></label>
+              <input
+                className={INPUT}
+                value={personalForm.telephone}
+                placeholder="06 12 34 56 78"
+                maxLength={14}
+                onChange={e => {
+                  const digits = e.target.value.replace(/\D/g, '').slice(0, 10);
+                  let formatted = digits;
+                  if (digits.length > 2) formatted = `${digits.slice(0, 2)} ${digits.slice(2)}`;
+                  if (digits.length > 4) formatted = `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4)}`;
+                  if (digits.length > 6) formatted = `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6)}`;
+                  if (digits.length > 8) formatted = `${digits.slice(0, 2)} ${digits.slice(2, 4)} ${digits.slice(4, 6)} ${digits.slice(6, 8)} ${digits.slice(8)}`;
+                  setPersonalForm(p => ({ ...p, telephone: formatted }));
+                }}
+              />
             </div>
             <div>
               <label className={LABEL}>Âge</label>

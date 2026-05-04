@@ -87,6 +87,15 @@ export const Login = () => {
       window.history.replaceState({}, '', '/login');
     }
   }, [location.search, location.hash]);
+  const formatAlgerianPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)} ${digits.slice(2)}`;
+    if (digits.length <= 6) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4)}`;
+    if (digits.length <= 8) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6)}`;
+    return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6,8)} ${digits.slice(8)}`;
+  };
+
   const onSubmit = useCallback(async (data) => {
     setIsSubmitting(true);
     try {
@@ -228,14 +237,17 @@ export const Login = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Téléphone</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5 flex items-center justify-between">
+                      Téléphone
+                      <span className="text-[9px] lowercase text-slate-400 font-normal">06 12 34 56 78</span>
+                    </label>
                     <input
                       type="text"
-                      placeholder="0555 55 55 55"
-                      maxLength={10}
+                      placeholder="06 12 34 56 78"
+                      maxLength={14}
                       className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 ${errors.telephone ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
                       {...register('telephone')}
-                      onChange={(e) => setValue('telephone', e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) => setValue('telephone', formatAlgerianPhone(e.target.value))}
                       disabled={isSubmitting}
                     />
                     {errors.telephone && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.telephone.message}</p>}

@@ -20,11 +20,36 @@ export const Onboarding = () => {
     date_naissance: role === 'patient' ? z.string().min(1, "La date de naissance est requise") : z.string().optional(),
   });
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     resolver: zodResolver(schema),
+    defaultValues: {
+      nom: '',
+      prenom: '',
+      telephone: '',
+      sexe: 'M',
+      date_naissance: ''
+    }
   });
 
+  const formatAlgerianPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)} ${digits.slice(2)}`;
+    if (digits.length <= 6) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4)}`;
+    if (digits.length <= 8) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6)}`;
+    return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6,8)} ${digits.slice(8)}`;
+  };
+
+  const validateAlgerianPhone = (phone) => {
+    const cleaned = phone.replace(/\s/g, '');
+    return /^(05|06|07)\d{8}$/.test(cleaned);
+  };
+
   const onSubmit = async (data) => {
+    if (!validateAlgerianPhone(data.telephone)) {
+      toast.error('Format de téléphone invalide (05/06/07 XX XX XX XX)');
+      return;
+    }
     setIsSubmitting(true);
     try {
       // Fix: use auth_id to identify the current user in utilisateurs
@@ -97,6 +122,10 @@ export const Onboarding = () => {
                 <input
                   {...register('prenom')}
                   placeholder="Votre prénom"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[0-9]/g, '');
+                    setValue('prenom', val);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
                 />
                 {errors.prenom && <p className="text-xs text-red-500 font-semibold mt-1">{errors.prenom.message}</p>}
@@ -107,6 +136,10 @@ export const Onboarding = () => {
                 <input
                   {...register('nom')}
                   placeholder="Votre nom"
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[0-9]/g, '');
+                    setValue('nom', val);
+                  }}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm"
                 />
                 {errors.nom && <p className="text-xs text-red-500 font-semibold mt-1">{errors.nom.message}</p>}
@@ -116,11 +149,16 @@ export const Onboarding = () => {
             <FadeInItem className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
                 <Phone className="h-3 w-3 mr-1.5 text-primary" />
-                Téléphone
+                Téléphone <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span>
               </label>
               <input
                 {...register('telephone')}
-                placeholder="+213 XX XX XX XX"
+                placeholder="06 12 34 56 78"
+                maxLength={14}
+                onChange={(e) => {
+                  const formatted = formatAlgerianPhone(e.target.value);
+                  setValue('telephone', formatted);
+                }}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm flex-1"
               />
               {errors.telephone && <p className="text-xs text-red-500 font-semibold mt-1">{errors.telephone.message}</p>}

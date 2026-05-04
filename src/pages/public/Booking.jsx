@@ -60,6 +60,15 @@ export const Booking = () => {
     setFormData({ ...formData, [field]: cleanValue });
   };
 
+  const formatAlgerianPhone = (value) => {
+    const digits = value.replace(/\D/g, '').slice(0, 10);
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 4) return `${digits.slice(0,2)} ${digits.slice(2)}`;
+    if (digits.length <= 6) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4)}`;
+    if (digits.length <= 8) return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6)}`;
+    return `${digits.slice(0,2)} ${digits.slice(2,4)} ${digits.slice(4,6)} ${digits.slice(6,8)} ${digits.slice(8)}`;
+  };
+
   // --- EFFET POUR RÉCUPÉRER LES HEURES DÉJÀ RÉSERVÉES ---
   useEffect(() => {
     const fetchTakenSlots = async () => {
@@ -270,17 +279,20 @@ export const Booking = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('phone')}</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2 flex items-center justify-between">
+                      {t('phone')}
+                      <span className="text-[9px] lowercase text-slate-400 font-normal">06 12 34 56 78</span>
+                    </label>
                     <input
                       type="tel"
                       required
-                      maxLength={10}
-                      placeholder="05 / 06 / 07 ..."
+                      maxLength={14}
+                      placeholder="06 12 34 56 78"
                       value={formData.telephone}
-                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value.replace(/\D/g, '').substring(0, 10) })}
+                      onChange={(e) => setFormData({ ...formData, telephone: formatAlgerianPhone(e.target.value) })}
                       className={`w-full p-4 bg-slate-50 border rounded-xl outline-none ${formData.telephone.length > 0 && !isPhoneValid ? 'border-red-400' : 'border-slate-200'}`}
                     />
-                    {formData.telephone.length > 0 && !isPhoneValid && <p className="text-[10px] text-red-500 font-bold ml-2 italic">Numéro non valide (10 chiffres)</p>}
+                    {formData.telephone.length > 0 && !isPhoneValid && <p className="text-[10px] text-red-500 font-bold ml-2 italic">Numéro non valide (05/06/07 XX XX XX XX)</p>}
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('age')}</label>
