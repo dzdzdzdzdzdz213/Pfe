@@ -318,19 +318,28 @@ export const AuthProvider = ({ children }) => {
         }
       }));
 
-      // RECOVERY: Handle React 18 double-fire race condition
+      // RECOVERY: Handle "already registered" - could be React double-fire OR stuck unconfirmed account
       if (error && error.message?.includes('already registered')) {
-        console.warn("[REGISTER] Double-fire detected, attempting recovery login...");
+        console.warn("[REGISTER] Already registered, attempting recovery login...");
         const loginRes = await safeCall(() => supabase.auth.signInWithPassword({
           email: userData.email,
           password: userData.password
         }));
         
         if (!loginRes.error && loginRes.data?.session) {
+          // Account exists and password matches — treat as login
           data = loginRes.data;
           error = null;
+        } else if (loginRes.error?.message?.includes('Email not confirmed')) {
+          // Account exists but email not confirmed — resend confirmation
+          await supabase.auth.resend({ type: 'signup', email: userData.email });
+          throw new Error("Un email de confirmation a été renvoyé. Vérifiez votre boîte mail et confirmez votre compte.");
+        } else if (loginRes.error?.message?.includes('Invalid login credentials')) {
+          // Email taken by another account with a different password
+          throw new Error("Cet email est déjà utilisé. Essayez de vous connecter ou utilisez un autre email.");
         } else {
-          throw new Error("Cet email est déjà utilisé par un autre compte.");
+          // Unknown error - try to proceed anyway since auth user was created
+          error = null;
         }
       }
 
