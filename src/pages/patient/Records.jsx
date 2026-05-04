@@ -8,10 +8,29 @@ import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRealTime } from '@/hooks/useRealTime';
 import html2pdf from 'html2pdf.js';
+import { toast } from 'sonner';
 
-// ---------------------------------------------------------------------------
-// Hidden printable report for a single compte_rendu
-// ---------------------------------------------------------------------------
+const handleFileDownload = async (url, filename) => {
+  const toastId = toast.loading('Téléchargement en cours...');
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename || 'document.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+    toast.success('Téléchargement terminé', { id: toastId });
+  } catch (error) {
+    console.error('Download error:', error);
+    toast.error('Erreur lors du téléchargement', { id: toastId });
+    // Fallback: open in new tab
+    window.open(url, '_blank');
+  }
+};
 const PrintableReport = ({ exam, report, patientName, t, lang }) => (
   <div id="print-patient-report" className="hidden">
     <style>{`
@@ -185,15 +204,12 @@ const StandaloneDocuments = ({ dossierId, t, onViewReport }) => {
                     {t('view') || 'Voir'}
                   </button>
                 ) : (
-                  <a
-                    href={doc.chemin_fichier + (doc.chemin_fichier.includes('?') ? '&' : '?') + 'download='}
-                    download
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => handleFileDownload(doc.chemin_fichier, `Document_${new Date(doc.date_creation).toLocaleDateString()}.pdf`)}
                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
                   >
                     {t('view') || 'Télécharger'}
-                  </a>
+                  </button>
                 )}
               </div>
             );
@@ -408,15 +424,12 @@ export const PatientRecords = () => {
                                    <Eye className="h-3.5 w-3.5" /> {t('view')}
                                  </button>
                                ) : (
-                                 <a
-                                   href={doc.chemin_fichier + (doc.chemin_fichier.includes('?') ? '&' : '?') + 'download='}
-                                   download
-                                   target="_blank"
-                                   rel="noopener noreferrer"
+                                 <button
+                                   onClick={() => handleFileDownload(doc.chemin_fichier, `Document_${exam?.service?.nom || 'Examen'}.pdf`)}
                                    className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
                                  >
                                    <Eye className="h-3.5 w-3.5" /> {t('view') || 'Télécharger'}
-                                 </a>
+                                 </button>
                                )}
                              </div>
                           </div>
