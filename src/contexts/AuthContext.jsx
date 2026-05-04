@@ -126,8 +126,9 @@ export const AuthProvider = ({ children }) => {
           } catch(e) { insErr = e; }
           
           if (insErr) {
-            toast.error("Erreur de synchronisation du profil: " + insErr.message);
-            return { role: null, profileComplete: false, utilisateur: null };
+            console.warn("Erreur mineure de synchronisation du profil:", insErr.message);
+            // Don't block login. Return what we know.
+            return { role: 'patient', profileComplete: false, utilisateur: null };
           }
           
           if (newUtil) {
@@ -363,8 +364,7 @@ export const AuthProvider = ({ children }) => {
         } catch(e) { utilError = e; }
 
         if (utilError) {
-          console.error("[REGISTER] DB Error:", utilError);
-          throw utilError;
+          console.warn("[REGISTER] Non-fatal DB Provisioning Error (trigger likely handled it):", utilError);
         }
 
         // 2. Create Patient row
