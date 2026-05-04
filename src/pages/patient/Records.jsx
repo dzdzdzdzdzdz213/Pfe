@@ -7,6 +7,7 @@ import { FileText, Image, Eye, Calendar, Stethoscope, Printer, CheckCircle, X } 
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRealTime } from '@/hooks/useRealTime';
+import html2pdf from 'html2pdf.js';
 
 // ---------------------------------------------------------------------------
 // Hidden printable report for a single compte_rendu
@@ -75,15 +76,25 @@ const ReportModal = ({ report, exam, patientName, onClose, t, lang }) => {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={handlePrint}
+              onClick={() => {
+                const element = document.getElementById('report-modal-content');
+                const opt = {
+                  margin: 10,
+                  filename: `Compte_Rendu_${exam?.service?.nom || 'Examen'}.pdf`,
+                  image: { type: 'jpeg', quality: 0.98 },
+                  html2canvas: { scale: 2 },
+                  jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+                html2pdf().set(opt).from(element).save();
+              }}
               className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-black hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
             >
-              <Printer className="h-4 w-4" /> {t('records_pdf') || 'PDF'}
+              <Printer className="h-4 w-4" /> {t('report_download') || 'Télécharger PDF'}
             </button>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors"><X className="h-5 w-5" /></button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-8 bg-white">
+        <div className="flex-1 overflow-y-auto p-8 bg-white" id="report-modal-content">
           {/* Professional Header for Preview */}
           <div className="mb-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 grid grid-cols-2 gap-4">
             <div>
@@ -175,12 +186,13 @@ const StandaloneDocuments = ({ dossierId, t, onViewReport }) => {
                   </button>
                 ) : (
                   <a
-                    href={doc.chemin_fichier}
+                    href={doc.chemin_fichier + (doc.chemin_fichier.includes('?') ? '&' : '?') + 'download='}
+                    download
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
                   >
-                    {t('view') || 'Voir'}
+                    {t('view') || 'Télécharger'}
                   </a>
                 )}
               </div>
@@ -397,12 +409,13 @@ export const PatientRecords = () => {
                                  </button>
                                ) : (
                                  <a
-                                   href={doc.chemin_fichier}
+                                   href={doc.chemin_fichier + (doc.chemin_fichier.includes('?') ? '&' : '?') + 'download='}
+                                   download
                                    target="_blank"
                                    rel="noopener noreferrer"
                                    className="px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors flex items-center gap-1.5"
                                  >
-                                   <Eye className="h-3.5 w-3.5" /> {t('view')}
+                                   <Eye className="h-3.5 w-3.5" /> {t('view') || 'Télécharger'}
                                  </a>
                                )}
                              </div>
