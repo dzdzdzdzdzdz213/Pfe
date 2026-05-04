@@ -306,6 +306,7 @@ export const AuthProvider = ({ children }) => {
         email: userData.email,
         password: userData.password,
         options: {
+          emailRedirectTo: window.location.origin + '/login',
           data: {
             full_name: `${userData.prenom} ${userData.nom}`,
             prenom: userData.prenom,
@@ -335,70 +336,89 @@ export const AuthProvider = ({ children }) => {
 
       if (error) throw error;
 
-      // PROVISIONING: Always create DB rows if we have a session
-      if (data?.session && data?.user) {
-        console.log("[REGISTER] Provisioning profile for:", data.user.id);
-        
-        // 1. Create/Update Utilisateur using select then insert/update to avoid onConflict errors
+      // data.user always exists even without email confirmation
+      // data.session is null when email confirmation is required
+      const authUser = data?.user;
+
+      if (authUser) {
+        console.log("[REGISTER] Provisioning profile for:", authUser.id);
+
+        // Wait a moment for the DB trigger to create the row
+        await new Promise(r => setTimeout(r, 600));
+
+        // 1. Check if trigger already created the utilisateur row
         let util = null;
-        let utilError = null;
         try {
-          const { data: checkUtil } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('auth_id', data.user.id).maybeSingle());
+          const { data: existingUtil } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('auth_id', authUser.id).maybeSingle());
+          
           const payload = {
-            auth_id: data.user.id,
+            auth_id: authUser.id,
             nom: userData.nom,
             prenom: userData.prenom,
             email: userData.email,
-            telephone: userData.telephone,
-            age: userData.age,
+            telephone: userData.telephone || null,
+            age: userData.age || null,
             role: 'patient',
             profil_complet: true
           };
-          if (checkUtil) {
-            const { data: updated, error } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', checkUtil.id).select().single());
-            util = updated; utilError = error;
+
+          if (existingUtil) {
+            // Update with the full name from the form (trigger may have used email as nom)
+            const { data: updated } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', existingUtil.id).select().single());
+            util = updated || existingUtil;
           } else {
-            const { data: inserted, error } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
-            util = inserted; utilError = error;
+            // Trigger didn't run yet, insert manually
+            const { data: inserted } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
+            util = inserted;
           }
-        } catch(e) { utilError = e; }
-
-        if (utilError) {
-          console.warn("[REGISTER] Non-fatal DB Provisioning Error (trigger likely handled it):", utilError);
+        } catch(e) {
+          console.warn("[REGISTER] Utilisateur provisioning warning:", e.message);
         }
 
-        // 2. Create Patient row
-        const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle());
-        if (!existingPat) {
-          await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
+        // 2. Ensure patient row exists
+        if (util?.id) {
+          try {
+            const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle());
+            if (!existingPat) {
+              await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
+            }
+          } catch(e) {
+            console.warn("[REGISTER] Patient row warning:", e.message);
+          }
         }
 
-        // 3. Force state update so UI responds immediately
-        setState(prev => ({
-          ...prev,
-          user: data.user,
-          session: data.session,
-          utilisateur: util,
-          role: 'patient',
-          profileComplete: true,
-          loading: false,
-          roleLoading: false
-        }));
+        // 3. If we have a live session, update state immediately for instant redirect
+        if (data?.session) {
+          setState(prev => ({
+            ...prev,
+            user: authUser,
+            session: data.session,
+            utilisateur: util,
+            role: 'patient',
+            profileComplete: true,
+            loading: false,
+            roleLoading: false
+          }));
+        }
         
         console.log("[REGISTER] Registration & Provisioning complete.");
       }
 
       return { ...data, requiresEmailConfirmation: !data?.session };
     } finally {
-      // Maintain lock for a moment to let React state settle
       setTimeout(() => { isRegistering.current = false; }, 1000);
     }
   };
 
   const loginWithGoogle = async () => {
+    const redirectTo = window.location.origin + '/login';
+    console.log("[GOOGLE] Redirecting to:", redirectTo);
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + '/login' }
+      options: {
+        redirectTo,
+        queryParams: { access_type: 'offline', prompt: 'consent' }
+      }
     });
     if (error) throw error;
     return data;
