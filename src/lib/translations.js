@@ -1,12 +1,5 @@
 /**
  * @fileoverview Translation strings for Chemloul Radiologie Management Platform.
- *
- * Usage:
- *   const { t } = useLanguage();
- *   t('dashboard')  // returns "Tableau de Bord" or "لوحة القيادة"
- *
- * Keys are dot-notation-free identifiers (underscored) for simplicity.
- * Add new keys to BOTH 'fr' and 'ar' objects simultaneously.
  */
 
 /** @type {Record<'fr'|'ar', Record<string, string>>} */
@@ -450,7 +443,7 @@ export const translations = {
     // ── Clinic Identity ───────────────────────────────────────────────────────
     clinic_name: 'Chemloul Radiologie',
     clinic_subtitle: 'Cabinet de Radiologie et d\'Imagerie Médicale',
-    clinic_address: 'Route Nationale, Bentalha – Algérie',
+    clinic_address: "Bentelha, Alger – Algérie",
     clinic_phone: '+213 36 XXX XXX',
     print_date: 'Date d\'impression',
     print_report_title: 'COMPTE-RENDU D\'IMAGERIE MÉDICALE',
@@ -461,7 +454,7 @@ export const translations = {
     accueil: 'Accueil',
     nos_services: 'Nos Services',
     contact: 'Contact',
-    description_footer: 'Cabinet de radiologie de référence à Bentalha, offrant des services d\'imagerie de haute précision avec une expertise médicale reconnue.',
+    description_footer: "Cabinet de radiologie de référence à Bentelha, Alger, offrant des services d'imagerie de haute précision avec une expertise médicale reconnue.",
     horaires: 'Horaires d\'Ouverture',
     dim_jeu: 'Dimanche - Jeudi',
     vendredi: 'Vendredi',
@@ -483,9 +476,11 @@ export const translations = {
     resultats_securises: 'Résultats Sécurisés',
     espace_protege: 'Espace protégé',
     nos_specialites: 'Nos Spécialités',
+    specialites: 'Nos Spécialités', // Ajouté pour Landing.jsx
+    services_imagerie: "Nos Services d'Imagerie", // Ajouté pour Landing.jsx
     services_composant: 'Des services d\'imagerie complets',
     services_desc: 'Nous utilisons les dernières technologies pour vous offrir des diagnostics précis dans les meilleurs délais.',
-    
+
     // Services items (indices match Landing.jsx)
     service_1_title: 'Scanner (Tomodensitométrie)',
     service_1_desc: 'Technique d’imagerie utilisant les rayons X pour obtenir des images détaillées en coupes fines des organes internes pour un diagnostic précis.',
@@ -949,7 +944,7 @@ export const translations = {
     // ── Clinic Identity ───────────────────────────────────────────────────────
     clinic_name: 'عيادة شملول للأشعة',
     clinic_subtitle: 'عيادة التصوير الطبي والأشعة',
-    clinic_address: 'الطريق الوطني، بن طلحة – الجزائر',
+    clinic_address: "بن طلحة، الجزائر – الجزائر",
     clinic_phone: '+213 36 XXX XXX',
     print_date: 'تاريخ الطباعة',
     print_report_title: 'تقرير التصوير الطبي',
@@ -961,7 +956,7 @@ export const translations = {
     accueil: 'الرئيسية',
     nos_services: 'خدماتنا',
     contact: 'اتصل بنا',
-    description_footer: 'عيادة الأشعة المرجعية في بن طلحة، تقدم خدمات تصوير عالية الدقة بخبرة طبية معترف بها.',
+    description_footer: "عيادة الأشعة المرجعية في بن طلحة، الجزائر، تقدم خدمات تصوير عالية الدقة بخبرة طبية معترف بها.",
     horaires: 'أوقات العمل',
     dim_jeu: 'الأحد - الخميس',
     vendredi: 'الجمعة',
@@ -983,6 +978,8 @@ export const translations = {
     resultats_securises: 'نتائج مؤمنة',
     espace_protege: 'فضاء محمي',
     nos_specialites: 'تخصصاتنا',
+    specialites: 'تخصصاتنا', // Ajouté pour Landing.jsx
+    services_imagerie: "خدمات التصوير الطبي لدينا", // Ajouté pour Landing.jsx
     services_composant: 'خدمات تصوير شاملة',
     services_desc: 'نحن نستخدم أحدث التقنيات لنقدم لك تشخيصات دقيقة في أقصر الآجال.',
 

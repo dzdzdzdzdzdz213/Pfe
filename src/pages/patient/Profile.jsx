@@ -179,7 +179,7 @@ export const PatientProfile = () => {
     { id: 'danger', label: 'Compte', icon: Trash2 },
   ];
 
-  const sexeLabel = { M: 'Masculin', F: 'Féminin', Autre: 'Autre' };
+  const sexeLabel = { M: 'Masculin', F: 'Féminin' };
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -280,7 +280,6 @@ export const PatientProfile = () => {
                   onChange={e => setPersonalForm(p => ({ ...p, sexe: e.target.value }))}>
                   <option value="M">Masculin</option>
                   <option value="F">Féminin</option>
-                  <option value="Autre">Autre</option>
                 </select>
               </div>
             )}

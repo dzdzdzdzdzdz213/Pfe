@@ -5,41 +5,60 @@ import { useLocation } from 'react-router-dom';
 import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
+import { FileUpload } from '@/components/common/FileUpload';
+import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
+import { fr, arSA } from 'date-fns/locale';
 
 export const Booking = () => {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
+  const dateLocale = lang === 'ar' ? arSA : fr;
   const location = useLocation();
   const initialService = location.state?.serviceId || '';
   const initialServiceName = location.state?.serviceName || '';
 
+  // --- CONFIGURATION DES LIMITES DE DATE ---
+  const now = new Date();
+  const todayStr = format(now, 'yyyy-MM-dd');
+  const todayMidnight = startOfDay(now);
+
+  // Calcul de la date maximale (Aujourd'hui + 7 jours)
+  const maxDateObj = new Date();
+  maxDateObj.setDate(maxDateObj.getDate() + 7);
+  const maxDate = maxDateObj.toISOString().split('T')[0];
+
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+
   const [step, setStep] = useState(initialService ? 2 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [takenSlots, setTakenSlots] = useState([]); // État pour stocker les heures déjà prises
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+
   const [formData, setFormData] = useState({
     service: initialService ? { id: initialService, name: initialServiceName } : null,
-    date: '',
+    date: todayStr,
     time: '',
     nom: '',
     prenom: '',
     telephone: '',
     age: '',
     gender: 'M',
-    document: null,
+    documentUrl: '',
     notes: ''
   });
 
   const servicesList = [
-    { id: 1, icon: Scan },
-    { id: 2, icon: Bone },
-    { id: 3, icon: Waves },
-    { id: 4, icon: Activity },
-    { id: 5, icon: HeartPulse },
-    { id: 6, icon: Microscope },
-    { id: 7, icon: Syringe },
-    { id: 8, icon: ClipboardCheck },
+    { id: 1, icon: Scan }, { id: 2, icon: Bone }, { id: 3, icon: Waves }, { id: 4, icon: Activity },
+    { id: 5, icon: HeartPulse }, { id: 6, icon: Microscope }, { id: 7, icon: Syringe }, { id: 8, icon: ClipboardCheck },
   ];
 
   const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
+
+  const isPhoneValid = /^(05|06|07)[0-9]{8}$/.test(formData.telephone);
+
+  const handleNameChange = (field, value) => {
+    const cleanValue = value.replace(/[^a-zA-ZÀ-ÿ\s-]/g, '');
+    setFormData({ ...formData, [field]: cleanValue });
+  };
 
   // --- EFFET POUR RÉCUPÉRER LES HEURES DÉJÀ RÉSERVÉES ---
   useEffect(() => {
@@ -56,7 +75,7 @@ export const Booking = () => {
         // On extrait l'heure (HH:mm) de chaque rendez-vous trouvé
         const hours = data.map(rdv => {
           const d = new Date(rdv.date_heure_debut);
-          return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace('h', ':');
+          return format(d, 'HH:mm');
         });
         setTakenSlots(hours);
       }
@@ -67,51 +86,23 @@ export const Booking = () => {
 
   const handleNext = () => setStep((s) => Math.min(s + 1, 4));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
-
-  const withTimeout = (promise, ms) =>
-    Promise.race([
-      promise,
-      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))
-    ]);
+  const monthDays = eachDayOfInterval({ start: startOfMonth(calendarMonth), end: endOfMonth(calendarMonth) });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Double sécurité pour l'âge avant envoi
-    if (parseInt(formData.age) > 120) return;
+    // Double sécurité pour l'âge et tél avant envoi
+    if (parseInt(formData.age) > 120 || !isPhoneValid) return;
 
     setIsSubmitting(true);
     try {
       const startDate = new Date(`${formData.date}T${formData.time}`);
       const endDate = new Date(startDate.getTime() + 30 * 60000);
-
-      // Upload document if attached
-      let documentInfo = '';
-      if (formData.document) {
-        try {
-          const file = formData.document;
-          const ext = file.name.split('.').pop();
-          const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-          const path = `public/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('documents')
-            .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
-            
-          if (!uploadError) {
-            const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
-            documentInfo = ` [DOC:${urlData.publicUrl}]`;
-          } else {
-            console.error('Upload Error:', uploadError);
-          }
-        } catch (e) { 
-          console.error('File upload failed:', e);
-        }
-      }
+      let documentInfo = formData.documentUrl ? ` [DOC:${formData.documentUrl}]` : '';
 
       const serviceTag = formData.service ? `[${formData.service.name}]` : '';
       const motif = `${serviceTag} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
 
-      const bookingPromise = supabase
+      await supabase
         .from('rendez_vous')
         .insert({
           date_heure_debut: startDate.toISOString(),
@@ -120,70 +111,34 @@ export const Booking = () => {
           statut: 'planifie',
         });
 
-      await withTimeout(bookingPromise, 6000);
       setStep(4);
-    } catch (err) {
-      console.warn('Booking process finished (may have timed out or RLS blocked):', err.message);
-      setStep(4);
-    } finally {
-      setIsSubmitting(false);
-    }
+    } catch (err) { setStep(4); } finally { setIsSubmitting(false); }
   };
 
   const variants = {
-    enter: (direction) => ({
-      x: direction > 0 ? 50 : -50,
-      opacity: 0,
-      filter: 'blur(4px)'
-    }),
-    center: {
-      zIndex: 1,
-      x: 0,
-      opacity: 1,
-      filter: 'blur(0px)'
-    },
-    exit: (direction) => ({
-      zIndex: 0,
-      x: direction < 0 ? 50 : -50,
-      opacity: 0,
-      filter: 'blur(4px)'
-    })
+    enter: (direction) => ({ x: direction > 0 ? 50 : -50, opacity: 0, filter: 'blur(4px)' }),
+    center: { zIndex: 1, x: 0, opacity: 1, filter: 'blur(0px)' },
+    exit: (direction) => ({ zIndex: 0, x: direction < 0 ? 50 : -50, opacity: 0, filter: 'blur(4px)' })
   };
 
   return (
     <PageTransition className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-50/50 via-white to-slate-50">
       <div className="max-w-2xl mx-auto">
-        
-        {/* Progress Header */}
-        <div className="mb-8">
+        <div className="mb-8 text-center">
           <div className="flex justify-between items-center mb-4">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center flex-1 last:flex-none">
-                <div className={`
-                  flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm transition-all duration-300
-                  ${step >= i ? 'bg-primary text-white shadow-lg shadow-blue-200' : 'bg-slate-100 text-slate-400'}
-                `}>
-                  {i}
-                </div>
-                {i < 3 && (
-                  <div className={`flex-1 h-1 mx-2 rounded-full transition-all duration-300 ${step > i ? 'bg-primary' : 'bg-slate-100'}`} />
-                )}
+                <div className={`flex items-center justify-center w-10 h-10 rounded-2xl font-bold transition-all ${step >= i ? 'bg-primary text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}>{i}</div>
+                {i < 3 && <div className={`flex-1 h-1 mx-2 rounded-full ${step > i ? 'bg-primary' : 'bg-slate-100'}`} />}
               </div>
             ))}
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-800 text-center tracking-tight">
-            {step === 1 && t('booking_choose_service')}
-            {step === 2 && t('booking_choose_date')}
-            {step === 3 && t('booking_details')}
-            {step === 4 && t('booking_confirm_success')}
-          </h2>
+          <h2 className="text-2xl font-black text-slate-800 tracking-tight">{step === 1 ? t('booking_choose_service') : step === 2 ? t('booking_choose_date') : step === 3 ? t('booking_details') : t('booking_confirm_success')}</h2>
         </div>
 
-        {/* Form Wizard */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-6 sm:p-10 shadow-xl border border-slate-100 overflow-hidden relative min-h-[400px]">
-          <AnimatePresence mode="wait" custom={1}>
-            
-            {/* STEP 1: SERVICE */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-10 shadow-xl border border-slate-100 min-h-[400px]">
+          <AnimatePresence mode="wait">
+
             {step === 1 && (
               <motion.div
                 key="step1"
@@ -208,8 +163,8 @@ export const Booking = () => {
                         }}
                         className={`
                           p-5 rounded-2xl text-left border-2 transition-all duration-200 group flex flex-col items-start
-                          ${isSelected 
-                            ? 'border-primary bg-blue-50/50 shadow-[0_4px_15px_rgba(37,99,235,0.15)]' 
+                          ${isSelected
+                            ? 'border-primary bg-blue-50/50 shadow-[0_4px_15px_rgba(37,99,235,0.15)]'
                             : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm'
                           }
                         `}
@@ -221,17 +176,8 @@ export const Booking = () => {
                         <h3 className="font-bold text-slate-800 text-sm mb-1">{serviceTitle}</h3>
                         <p className="text-[10px] font-medium text-slate-500 leading-snug line-clamp-2">{t(`service_${srv.id}_desc`)}</p>
                       </button>
-                    )
+                    );
                   })}
-                </div>
-                <div className="pt-6 flex justify-end">
-                  <button
-                    onClick={handleNext}
-                    disabled={!formData.service}
-                    className="px-8 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {t('next')} <ArrowRight className="w-4 h-4 ml-2" />
-                  </button>
                 </div>
               </motion.div>
             )}
@@ -254,41 +200,52 @@ export const Booking = () => {
                   <input
                     type="date"
                     value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value, time: '' })}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={todayStr}
+                    max={maxDate} // LIMITATION À 7 JOURS
+                    onChange={(e) => {
+                      const s = e.target.value;
+                      if (s < todayStr) setFormData({ ...formData, date: todayStr, time: '' });
+                      else if (s > maxDate) setFormData({ ...formData, date: maxDate, time: '' });
+                      else setFormData({ ...formData, date: s, time: '' });
+                    }}
                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
                   />
                 </div>
-                
+
                 {formData.date && (
                   <div className="animate-in fade-in slide-in-from-bottom-2">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-3">{t('booking_time')}</label>
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {timeSlots.map((time) => {
+                        const [h, m] = time.split(':').map(Number);
+                        const slotMinutes = h * 60 + m;
+                        const isPastTime = formData.date === todayStr && slotMinutes < currentTime;
                         const isTaken = takenSlots.includes(time); // Vérifie si l'heure est en base
+                        const isDisabled = isPastTime || isTaken;
+
                         return (
                           <button
                             key={time}
-                            disabled={isTaken}
+                            disabled={isDisabled}
                             onClick={() => setFormData({ ...formData, time })}
                             className={`
                               py-3 rounded-xl text-sm font-bold border transition-all
-                              ${isTaken
-                                ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed' // STYLE ROUGE : Indisponible
+                              ${isDisabled
+                                ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed opacity-50' // STYLE ROUGE : Indisponible
                                 : formData.time === time
                                   ? 'bg-primary text-white border-primary shadow-md shadow-blue-200'
                                   : 'bg-white text-slate-600 border-slate-200 hover:border-primary/50 hover:bg-blue-50'}
                             `}
                           >
                             {time}
-                            {isTaken && <span className="block text-[8px] mt-0.5">COMPLET</span>}
+                            {isDisabled && <span className="block text-[8px] mt-0.5">{isTaken ? 'COMPLET' : 'PASSÉ'}</span>}
                           </button>
                         );
                       })}
                     </div>
                   </div>
                 )}
-                
+
                 <div className="pt-6 flex justify-between">
                   <button onClick={handlePrev} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors flex items-center">
                     <ArrowLeft className="w-4 h-4 mr-2" /> {t('back')}
@@ -306,52 +263,24 @@ export const Booking = () => {
 
             {/* STEP 3: PATIENT DETAILS */}
             {step === 3 && (
-              <motion.form
-                key="step3"
-                variants={variants}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={{ duration: 0.3 }}
-                onSubmit={handleSubmit}
-                className="space-y-4"
-              >
+              <motion.form key="step3" variants={variants} initial="enter" animate="center" exit="exit" onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('last_name')}</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.nom}
-                      onChange={(e) => setFormData({ ...formData, nom: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('first_name')}</label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.prenom}
-                      onChange={(e) => setFormData({ ...formData, prenom: e.target.value })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
-                    />
-                  </div>
+                  <input type="text" required placeholder={t('last_name')} value={formData.nom} onChange={(e) => handleNameChange('nom', e.target.value)} className="p-4 bg-slate-50 border rounded-xl" />
+                  <input type="text" required placeholder={t('first_name')} value={formData.prenom} onChange={(e) => handleNameChange('prenom', e.target.value)} className="p-4 bg-slate-50 border rounded-xl" />
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('phone')}</label>
                     <input
                       type="tel"
                       required
-                      pattern="[0-9]{10}"
-                      title="Veuillez entrer un numéro de téléphone valide à 10 chiffres (ex: 0558222317)"
-                      placeholder="Ex: 05 58 22 23 17"
+                      maxLength={10}
+                      placeholder="05 / 06 / 07 ..."
                       value={formData.telephone}
-                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value.replace(/[^0-9]/g, '') })}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
+                      onChange={(e) => setFormData({ ...formData, telephone: e.target.value.replace(/\D/g, '').substring(0, 10) })}
+                      className={`w-full p-4 bg-slate-50 border rounded-xl outline-none ${formData.telephone.length > 0 && !isPhoneValid ? 'border-red-400' : 'border-slate-200'}`}
                     />
+                    {formData.telephone.length > 0 && !isPhoneValid && <p className="text-[10px] text-red-500 font-bold ml-2 italic">Numéro non valide (10 chiffres)</p>}
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('age')}</label>
@@ -371,50 +300,28 @@ export const Booking = () => {
                     />
                   </div>
                 </div>
-
-                <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('booking_motif_label')}</label>
-                  <textarea
-                    rows={2}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder={t('booking_motif_placeholder')}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700 resize-none"
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Ordonnance médicale</label>
+                  <FileUpload 
+                    bucket="documents" 
+                    folder="public" 
+                    onUploadComplete={(files) => {
+                      if (files.length > 0) {
+                        setFormData({ ...formData, documentUrl: files[0].url });
+                      }
+                    }}
                   />
                 </div>
-
-                <div className="pt-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('booking_prescription')}</label>
-                  <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
-                    <div className="flex flex-col items-center justify-center pt-2 pb-3">
-                      <p className="text-sm text-slate-500 font-medium"><span className="font-bold text-primary">{t('upload_click')}</span> {t('upload_drag')}</p>
-                      <p className="text-xs text-slate-400 mt-1">{formData.document ? formData.document.name : t('upload_any_type')}</p>
-                    </div>
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      onChange={(e) => setFormData({ ...formData, document: e.target.files[0] })}
-                    />
-                  </label>
-                </div>
-
-                <div className="pt-6 flex justify-between">
-                  <button type="button" onClick={handlePrev} disabled={isSubmitting} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors flex items-center">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> {t('back')}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center group"
-                  >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <CheckCircle2 className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />}
-                    {t('booking_confirm_btn')}
+                <textarea rows={2} placeholder={t('booking_motif_placeholder')} value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full p-4 bg-slate-50 border rounded-xl resize-none" />
+                <div className="flex justify-between pt-4">
+                  <button type="button" onClick={handlePrev} className="px-6 py-3 font-bold text-slate-500">{t('back')}</button>
+                  <button type="submit" disabled={isSubmitting || !isPhoneValid || !formData.age || !formData.nom || !formData.prenom} className="px-8 py-3 bg-emerald-500 text-white rounded-xl font-bold flex items-center shadow-lg disabled:opacity-50 hover:bg-emerald-600 transition-colors">
+                    {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <CheckCircle2 className="mr-2" />} {t('booking_confirm_btn')}
                   </button>
                 </div>
               </motion.form>
             )}
 
-            {/* STEP 4: SUCCESS */}
             {step === 4 && (
               <motion.div
                 key="step4"
@@ -440,10 +347,8 @@ export const Booking = () => {
                 </a>
               </motion.div>
             )}
-
           </AnimatePresence>
         </div>
-
       </div>
     </PageTransition>
   );

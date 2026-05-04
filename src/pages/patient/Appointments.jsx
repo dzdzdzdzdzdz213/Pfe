@@ -129,8 +129,12 @@ export const PatientAppointments = () => {
     setCalendarMonth(new Date());
   };
 
-  const monthDays = eachDayOfInterval({ start: startOfMonth(calendarMonth), end: endOfMonth(calendarMonth) });
   const today = new Date();
+  const todayStr = format(today, 'yyyy-MM-dd');
+  
+  const maxDateObj = new Date();
+  maxDateObj.setDate(maxDateObj.getDate() + 7);
+  const maxDateStr = format(maxDateObj, 'yyyy-MM-dd');
 
   return (
     <div className="space-y-6">
@@ -320,32 +324,20 @@ export const PatientAppointments = () => {
           {bookingStep === 1 && (
             <div className="space-y-4">
               <h3 className="text-base font-extrabold text-slate-800">{t('booking_choose_date')}</h3>
-              <div className="flex items-center justify-between mb-4">
-                <button onClick={() => setCalendarMonth(d => addDays(startOfMonth(d), -1))} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50"><ChevronLeft className="h-5 w-5" /></button>
-                <span className="text-sm font-bold text-slate-800 capitalize">{format(calendarMonth, 'MMMM yyyy', { locale: dateLocale })}</span>
-                <button onClick={() => setCalendarMonth(d => addDays(endOfMonth(d), 1))} className="p-2 rounded-xl border border-slate-200 hover:bg-slate-50"><ChevronRight className="h-5 w-5" /></button>
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {[t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat'), t('sun')].map(d => (
-                  <span key={d} className="text-center text-[10px] font-bold text-slate-400 uppercase">{d}</span>
-                ))}
-                {monthDays.map(day => {
-                  const isPast = isBefore(day, today) && !isSameDay(day, today);
-                  const isSunday = day.getDay() === 0;
-                  const isSelected = selectedDate && isSameDay(day, selectedDate);
-                  return (
-                    <button key={day.toISOString()} disabled={isPast || isSunday}
-                      onClick={() => { setSelectedDate(day); setBookingStep(2); }}
-                      className={cn('h-10 rounded-xl text-sm font-bold transition-all',
-                        isSelected ? 'bg-primary text-white shadow-lg shadow-blue-200' :
-                        isPast || isSunday ? 'text-slate-300 cursor-not-allowed' :
-                        isSameDay(day, today) ? 'bg-primary/10 text-primary border border-primary/20' :
-                        'text-slate-700 hover:bg-slate-50')}>
-                      {day.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
+              <input
+                type="date"
+                value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                min={todayStr}
+                max={maxDateStr}
+                onChange={(e) => {
+                  const s = e.target.value;
+                  if (!s) return;
+                  const [y, m, d] = s.split('-');
+                  setSelectedDate(new Date(y, m - 1, d));
+                  setBookingStep(2);
+                }}
+                className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all font-medium text-slate-700"
+              />
             </div>
           )}
 
@@ -355,13 +347,20 @@ export const PatientAppointments = () => {
               <h3 className="text-base font-extrabold text-slate-800">{t('booking_choose_time')}</h3>
               <p className="text-xs text-slate-500 font-medium">{selectedDate && format(selectedDate, 'EEEE d MMMM yyyy', { locale: dateLocale })}</p>
               <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
-                {TIME_SLOTS.map(time => (
-                  <button key={time} onClick={() => { setSelectedTime(time); setBookingStep(3); }}
-                    className={cn('py-3 rounded-xl text-sm font-bold transition-all border',
+                {TIME_SLOTS.map(time => {
+                  const [h, m] = time.split(':').map(Number);
+                  const isPastTime = selectedDate && isSameDay(selectedDate, today) && (h * 60 + m < today.getHours() * 60 + today.getMinutes());
+                  const isDisabled = isPastTime;
+                  return (
+                  <button key={time} disabled={isDisabled} onClick={() => { setSelectedTime(time); setBookingStep(3); }}
+                    className={cn('py-3 rounded-xl text-sm font-bold transition-all border flex flex-col items-center justify-center',
+                      isDisabled ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed opacity-50' :
                       selectedTime === time ? 'bg-primary text-white border-primary shadow-lg shadow-blue-200' : 'bg-white border-slate-200 text-slate-700 hover:border-primary/30')}>
-                    {time}
+                    <span>{time}</span>
+                    {isDisabled && <span className="block text-[8px] mt-0.5">PASSÉ</span>}
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

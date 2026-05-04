@@ -204,18 +204,7 @@ export const AdminUsers = () => {
                   <option value="patient">{t('role_patient')}</option>
                 </select>
               </div>
-              {!editUser && formData.role === 'radiologue' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('matricule_sante')}</label>
-                    <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.matricule_sante} onChange={e => setFormData(p => ({ ...p, matricule_sante: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('specialty')}</label>
-                    <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.specialite_principale} onChange={e => setFormData(p => ({ ...p, specialite_principale: e.target.value }))} />
-                  </div>
-                </div>
-              )}
+
               {!editUser && (
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('temp_password')}</label>

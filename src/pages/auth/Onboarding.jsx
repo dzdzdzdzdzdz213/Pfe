@@ -16,7 +16,7 @@ export const Onboarding = () => {
     nom: z.string().min(2, "Le nom est requis"),
     prenom: z.string().min(2, "Le prénom est requis"),
     telephone: z.string().min(8, "Le numéro de téléphone est requis"),
-    sexe: z.enum(['M', 'F', 'Autre']).default('M'),
+    sexe: z.enum(['M', 'F']).default('M'),
     date_naissance: role === 'patient' ? z.string().min(1, "La date de naissance est requise") : z.string().optional(),
   });
 
@@ -134,7 +134,6 @@ export const Onboarding = () => {
               >
                 <option value="M">Masculin</option>
                 <option value="F">Féminin</option>
-                <option value="Autre">Autre</option>
               </select>
             </FadeInItem>
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Calendar, Phone, Globe, MapPin } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -11,6 +11,25 @@ export const PublicLayout = () => {
     { name: t('nos_services'), path: '/#services' },
     { name: t('contact'), path: '/#contact' },
   ];
+
+  const [workingHours, setWorkingHours] = useState([]);
+
+  useEffect(() => {
+    const savedHours = localStorage.getItem('clinic_working_hours');
+    if (savedHours) {
+      setWorkingHours(JSON.parse(savedHours));
+    } else {
+      setWorkingHours([
+        { day: 'dimanche', open: '08:00', close: '17:00', isClosed: false },
+        { day: 'lundi', open: '08:00', close: '17:00', isClosed: false },
+        { day: 'mardi', open: '08:00', close: '17:00', isClosed: false },
+        { day: 'mercredi', open: '08:00', close: '17:00', isClosed: false },
+        { day: 'jeudi', open: '08:00', close: '17:00', isClosed: false },
+        { day: 'vendredi', open: '08:00', close: '17:00', isClosed: true },
+        { day: 'samedi', open: '08:00', close: '12:00', isClosed: false },
+      ]);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans transition-colors duration-500">
@@ -85,18 +104,16 @@ export const PublicLayout = () => {
             <div>
               <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">{t('horaires')}</h3>
               <ul className="space-y-3 text-sm font-semibold">
-                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
-                  <span>{t('dim_jeu')}</span>
-                  <span className="text-blue-600 font-bold">08:00 - 17:00</span>
-                </li>
-                <li className="flex justify-between items-center text-slate-600 border-b border-slate-50 pb-2">
-                  <span>{t('samedi')}</span>
-                  <span className="text-blue-600 font-bold">08:00 - 12:00</span>
-                </li>
-                <li className="flex justify-between items-center text-red-500 bg-red-50 px-3 py-1.5 rounded-lg">
-                  <span>{t('vendredi')}</span>
-                  <span className="font-black text-[10px] uppercase">{t('ferme')}</span>
-                </li>
+                {workingHours.map((wh) => (
+                  <li key={wh.day} className={`flex justify-between items-center pb-2 ${wh.isClosed ? 'text-red-500 bg-red-50 px-3 py-1.5 rounded-lg' : 'text-slate-600 border-b border-slate-50'}`}>
+                    <span className="capitalize">{t(wh.day) || wh.day}</span>
+                    {wh.isClosed ? (
+                      <span className="font-black text-[10px] uppercase">{t('ferme') || 'FERMÉ'}</span>
+                    ) : (
+                      <span className="text-blue-600 font-bold">{wh.open} - {wh.close}</span>
+                    )}
+                  </li>
+                ))}
               </ul>
             </div>
 
@@ -132,10 +149,6 @@ export const PublicLayout = () => {
 
           <div className="pt-8 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             <p>© {new Date().getFullYear()} {t('clinic_name')}. {t('all_rights_reserved')}</p>
-            <div className="flex gap-8">
-              <button className="hover:text-blue-600 transition-colors">{t('mentions_legales')}</button>
-              <button className="hover:text-blue-600 transition-colors">{t('politique_confidentialite')}</button>
-            </div>
           </div>
         </div>
       </footer>
