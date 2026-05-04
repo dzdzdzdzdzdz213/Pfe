@@ -27,8 +27,8 @@ export const Login = () => {
       .min(2, "Le prénom est trop court")
       .regex(/^[a-zA-ZÀ-ÿ\s-]+$/, "Le prénom ne doit contenir que des lettres"),
     telephone: z.string()
-      .length(10, "Le numéro doit faire exactement 10 chiffres")
-      .regex(/^(05|06|07)[0-9]{8}$/, "Doit commencer par 05, 06 ou 07"),
+      .refine(val => val.replace(/\s/g, '').length === 10, "Le numéro doit faire exactement 10 chiffres")
+      .refine(val => /^(05|06|07)[0-9]{8}$/.test(val.replace(/\s/g, '')), "Doit commencer par 05, 06 ou 07"),
     age: z.string()
       .refine((val) => {
         const a = parseInt(val);
