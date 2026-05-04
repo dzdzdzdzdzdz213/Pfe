@@ -109,13 +109,25 @@ const ReportModal = ({ report, exam, patientName, onClose, t, lang }) => {
 // ---------------------------------------------------------------------------
 // Standalone Documents (Linked to dossier but no exam)
 // ---------------------------------------------------------------------------
-const StandaloneDocuments = ({ dossierId, t }) => {
+const StandaloneDocuments = ({ dossierId, t, onViewReport }) => {
   const { data: docs = [], isLoading } = useQuery({
     queryKey: ['standalone-docs', dossierId],
     queryFn: async () => {
+      // Fetch documents and try to join with comptes_rendus if it's a report
       const { data } = await supabase
         .from('documents_medicaux')
-        .select('*')
+        .select(`
+          *,
+          comptes_rendus (
+            id,
+            description_detaillee,
+            est_valide,
+            examen:examen_id (
+              services:service_id (nom),
+              date_realisation
+            )
+          )
+        `)
         .eq('dossier_id', dossierId)
         .order('date_creation', { ascending: false });
       return data || [];
@@ -131,32 +143,49 @@ const StandaloneDocuments = ({ dossierId, t }) => {
         <div className="h-8 w-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
           <FileText className="h-4 w-4" />
         </div>
-        <h3 className="text-sm font-extrabold text-slate-800">{t('records_other_docs') || 'Documents Généraux'}</h3>
+        <h3 className="text-sm font-extrabold text-slate-800">{t('records_other_docs') || 'Documents Médicaux'}</h3>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {isLoading ? (
           [1, 2].map(i => <div key={i} className="h-16 bg-slate-50 rounded-xl animate-pulse" />)
         ) : (
-          docs.map(doc => (
-            <div key={doc.id} className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 transition-colors">
-              <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm">
-                <FileText className="h-5 w-5" />
+          docs.map(doc => {
+            const isReport = doc.type === 'compte_rendu';
+            const reportData = doc.comptes_rendus?.[0];
+            const examData = reportData?.examen;
+
+            return (
+              <div key={doc.id} className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-100 rounded-xl hover:border-indigo-200 transition-colors">
+                <div className="h-10 w-10 rounded-full bg-white flex items-center justify-center text-indigo-500 shadow-sm">
+                  <FileText className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-slate-700 truncate">
+                    {examData?.services?.nom || t('document_label') || 'Document'} — {new Date(doc.date_creation).toLocaleDateString()}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{doc.statut || 'Terminé'}</p>
+                </div>
+                {isReport ? (
+                  <button
+                    onClick={() => onViewReport({ report: reportData, exam: examData })}
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                  >
+                    {t('view') || 'Voir'}
+                  </button>
+                ) : (
+                  <a
+                    href={doc.chemin_fichier}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                  >
+                    {t('view') || 'Voir'}
+                  </a>
+                )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-slate-700 truncate">{t('document_label') || 'Document'} — {new Date(doc.date_creation).toLocaleDateString()}</p>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{doc.statut || 'Valide'}</p>
-              </div>
-              <a
-                href={doc.chemin_fichier}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
-              >
-                {t('view') || 'Voir'}
-              </a>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
@@ -210,10 +239,10 @@ export const PatientRecords = () => {
             id,
             date_realisation,
             statut,
-            services:service_id(nom),
-            comptes_rendus(id, description_detaillee, est_valide),
+            services:services(nom),
+            comptes_rendus(id, description_detaillee, est_valide, document_medical_id),
             images_radiologiques(id, resolution, type_support, format_fichier, url_stockage, type_image, description),
-            documents_medicaux(id, chemin_fichier, statut, date_creation)
+            documents_medicaux(id, chemin_fichier, statut, date_creation, type)
           )
         `)
         .eq('patient_id', patientRecord?.id)
@@ -284,7 +313,11 @@ export const PatientRecords = () => {
 
       {/* Standalone Documents Section */}
       {dossier && (
-        <StandaloneDocuments dossierId={dossier.id} t={t} />
+        <StandaloneDocuments 
+          dossierId={dossier.id} 
+          t={t} 
+          onViewReport={(payload) => setActiveReport(payload)}
+        />
       )}
 
       {/* Exam List */}
