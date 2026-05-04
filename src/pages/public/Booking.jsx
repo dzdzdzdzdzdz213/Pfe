@@ -6,6 +6,7 @@ import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { FileUpload } from '@/components/common/FileUpload';
+import { toast } from 'sonner';
 import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
 import { fr, arSA } from 'date-fns/locale';
 
@@ -111,7 +112,7 @@ export const Booking = () => {
       const serviceTag = formData.service ? `[${formData.service.name}]` : '';
       const motif = `${serviceTag} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;
 
-      await supabase
+      const { error } = await supabase
         .from('rendez_vous')
         .insert({
           date_heure_debut: startDate.toISOString(),
@@ -120,8 +121,14 @@ export const Booking = () => {
           statut: 'planifie',
         });
 
+      if (error) throw error;
       setStep(4);
-    } catch (err) { setStep(4); } finally { setIsSubmitting(false); }
+    } catch (err) { 
+      console.error("Booking error:", err);
+      toast.error("Erreur lors de la réservation: " + (err.message || "Problème de connexion"));
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const variants = {

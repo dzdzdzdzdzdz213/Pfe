@@ -22,13 +22,18 @@ export const AuthProvider = ({ children }) => {
   // Helper to handle the "Lock broken" / "AbortError" race condition in Supabase
   const safeCall = async (operation) => {
     let lastError;
+    // Set a global timeout for any DB operation to prevent "hanging indefinitely"
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("Délai d'attente de la base de données dépassé (Timeout)")), 10000)
+    );
+
     for (let i = 0; i < 3; i++) {
       try {
-        const result = await operation();
-        // Check if the result itself has a lock error (some methods return {error})
+        const result = await Promise.race([operation(), timeoutPromise]);
+        
         if (result?.error && (result.error.message?.includes('Lock') || result.error.name === 'AbortError')) {
           console.warn(`[SafeCall] Lock error detected in result (attempt ${i+1}), retrying...`);
-          await new Promise(r => setTimeout(r, 300));
+          await new Promise(r => setTimeout(r, 400));
           continue;
         }
         return result;
@@ -36,13 +41,14 @@ export const AuthProvider = ({ children }) => {
         if (err.message?.includes('Lock') || err.name === 'AbortError') {
           console.warn(`[SafeCall] Lock exception caught (attempt ${i+1}), retrying...`);
           lastError = err;
-          await new Promise(r => setTimeout(r, 300));
+          await new Promise(r => setTimeout(r, 400));
           continue;
         }
+        console.error("[SafeCall] Permanent error:", err.message);
         throw err;
       }
     }
-    throw lastError;
+    throw lastError || new Error("Échec de la communication avec la base de données après plusieurs tentatives.");
   };
 
   const fetchUserRole = useCallback(async (authUser) => {
@@ -73,35 +79,27 @@ export const AuthProvider = ({ children }) => {
         await new Promise(r => setTimeout(r, 800));
       }
 
-      if (error && error.code === 'PGRST116') {
+      if (error?.code === 'PGRST116' || !data) {
         // Autoprovision: check if user exists by email without auth_id mapped yet
         const { data: legacyUser } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('email', authUser.email).maybeSingle());
         
         const fullName = authUser.user_metadata?.full_name || authUser.email.split('@')[0];
-        const nameParts = fullName.split(' ');
+        const nameParts = (fullName || '').split(' ');
         const finalRole = legacyUser?.role || 'patient';
-        const finalNom = authUser.user_metadata?.nom || legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0]);
-        const finalPrenom = authUser.user_metadata?.prenom || legacyUser?.prenom || nameParts[0];
+        const finalNom = authUser.user_metadata?.nom || legacyUser?.nom || (nameParts.slice(1).join(' ') || nameParts[0] || 'User');
+        const finalPrenom = authUser.user_metadata?.prenom || legacyUser?.prenom || nameParts[0] || 'Patient';
         const finalTelephone = authUser.user_metadata?.telephone || legacyUser?.telephone || null;
 
-        if (legacyUser) {
-          const { data: updatedUtil } = await safeCall(() => supabase.from('utilisateurs').update({
-            auth_id: authUser.id,
-            telephone: finalTelephone || legacyUser.telephone
-          }).eq('id', legacyUser.id).select().single());
-
-          let roleToSet = finalRole.toLowerCase().trim();
-          if (roleToSet === 'administrateur') roleToSet = 'admin';
-          if (roleToSet === 'assistant') roleToSet = 'receptionniste';
-
-          // Ensure role-specific row exists
-          if (roleToSet === 'patient') { const { data: ep } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!ep) await safeCall(() => supabase.from('patients').insert({ utilisateur_id: updatedUtil.id })); }
-          if (roleToSet === 'radiologue') { const { data: er } = await safeCall(() => supabase.from('radiologues').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!er) await safeCall(() => supabase.from('radiologues').insert({ utilisateur_id: updatedUtil.id })); }
+        if (finalRole !== 'patient') {
+          const roleToSet = finalRole;
+          const { data: updatedUtil } = await safeCall(() => supabase.from('utilisateurs').update({ auth_id: authUser.id }).eq('email', authUser.email).select().single());
+          
+          if (roleToSet === 'admin') { const { data: adm } = await safeCall(() => supabase.from('admins').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!adm) await safeCall(() => supabase.from('admins').insert({ utilisateur_id: updatedUtil.id })); }
+          if (roleToSet === 'radiologue') { const { data: rad } = await safeCall(() => supabase.from('radiologues').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!rad) await safeCall(() => supabase.from('radiologues').insert({ utilisateur_id: updatedUtil.id })); }
           if (roleToSet === 'receptionniste') { const { data: ere } = await safeCall(() => supabase.from('receptionnistes').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!ere) await safeCall(() => supabase.from('receptionnistes').insert({ utilisateur_id: updatedUtil.id })); }
 
           return { role: roleToSet, profileComplete: !!updatedUtil?.profil_complet, utilisateur: updatedUtil };
         } else {
-          // Use safe check-then-update/insert instead of upsert to avoid missing unique constraint errors
           let newUtil = null;
           let insErr = null;
           try {
@@ -114,25 +112,23 @@ export const AuthProvider = ({ children }) => {
               telephone: finalTelephone,
               age: authUser.user_metadata?.age || null,
               role: 'patient',
-              profil_complet: finalTelephone ? true : false
+              profil_complet: !!finalTelephone
             };
             if (checkUtil) {
-              const { data: updated, error } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', checkUtil.id).select().single());
-              newUtil = updated; insErr = error;
+              const { data: updated } = await safeCall(() => supabase.from('utilisateurs').update(payload).eq('id', checkUtil.id).select().single());
+              newUtil = updated;
             } else {
-              const { data: inserted, error } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
-              newUtil = inserted; insErr = error;
+              const { data: inserted } = await safeCall(() => supabase.from('utilisateurs').insert(payload).select().single());
+              newUtil = inserted;
             }
           } catch(e) { insErr = e; }
           
           if (insErr) {
-            console.warn("Erreur mineure de synchronisation du profil:", insErr.message);
-            // Don't block login. Return what we know.
+            console.warn("Erreur synchronisation du profil:", insErr.message);
             return { role: 'patient', profileComplete: false, utilisateur: null };
           }
           
           if (newUtil) {
-            // Check if patient row already exists
             const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', newUtil.id).maybeSingle());
             if (!existingPat) {
               await safeCall(() => supabase.from('patients').insert({ utilisateur_id: newUtil.id }));
@@ -142,16 +138,13 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // Any other DB error (e.g. RLS infinite recursion) — don't hang, fail fast
-      if (error && !error.message?.includes('Lock')) {
-        console.error('DB error fetching utilisateur:', error.message, error.code);
-        toast.error('Erreur DB fetch role: ' + error.message);
-        return { role: null, profileComplete: false, utilisateur: null };
-      } else if (error && error.message?.includes('Lock')) {
-        console.warn('Supabase JS Auth Lock error caught and ignored in fetchUserRole');
+      // Fallback for no data and no error
+      if (!data) {
+        console.warn("[fetchUserRole] No utilisateur found and no error. Using guest profile.");
+        return { role: 'patient', profileComplete: false, utilisateur: null };
       }
 
-      let fetchedRole = data?.role ? data.role.toLowerCase().trim() : null;
+      let fetchedRole = data.role ? data.role.toLowerCase().trim() : 'patient';
       if (fetchedRole === 'administrateur') fetchedRole = 'admin';
       if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
       return { role: fetchedRole, profileComplete: !!data?.profil_complet, utilisateur: data };
