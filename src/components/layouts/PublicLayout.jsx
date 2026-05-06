@@ -140,7 +140,7 @@ export const PublicLayout = () => {
               <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
                 <iframe
                   title="Localisation Cabinet Chemloul"
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3271.1!2d0.1528!3d34.8303!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzTCsDQ5JzQ5LjEiTiAwwrAwOScxMC4xIkU!5e0!3m2!1sfr!2sdz!4v1"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2438.346813763942!2d3.0853314999999992!3d36.647763!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fab0046f76375%3A0x2ca1aee7c3469cac!2sRadiologue%20BENTALHA%20Dr%20CHEMLOUL!5e1!3m2!1sfr!2sdz!4v1778103991503!5m2!1sfr!2sdz"
                   width="100%"
                   height="200"
                   style={{ border: 0 }}
