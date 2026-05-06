@@ -12,7 +12,7 @@ const { chromium } = require('playwright');
   const guestCtx = await browser.newContext({ viewport: { width: 800, height: 700 } });
   const guestPage = await guestCtx.newPage();
   console.log("-> Opening Guest Window...");
-  guestPage.goto('https://pfe-phi-five.vercel.app/booking').catch(() => {});
+  guestPage.goto('https://pfe-phi-five.vercel.app/book').catch(() => {});
 
   // Stage 2: Assistant Confirmation
   const asstCtx = await browser.newContext({ viewport: { width: 800, height: 700 } });
