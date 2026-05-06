@@ -52,50 +52,61 @@ export const Onboarding = () => {
     }
     setIsSubmitting(true);
     try {
-      // Fix: use auth_id to identify the current user in utilisateurs
-      const { error: userError } = await supabase
+      // 1. Update the central 'utilisateurs' table
+      const { data: updatedUser, error: userError } = await supabase
         .from('utilisateurs')
         .update({
           nom: data.nom,
           prenom: data.prenom,
           telephone: data.telephone,
+          date_naissance: data.date_naissance || null,
+          sexe: data.sexe || 'M',
           profil_complet: true
         })
-        .eq('auth_id', user.id);
+        .eq('auth_id', user.id)
+        .select()
+        .single();
         
       if (userError) throw userError;
 
-      // For patient: update date_naissance using the utilisateur's DB id (not auth id)
-      if (role === 'patient' && utilisateur?.id) {
-        // Use maybeSingle() to safely handle 0 rows without throwing
+      // 2. For patients: ensure the entry exists in the 'patients' table too
+      if (role === 'patient' && updatedUser) {
         const { data: existingPatient } = await supabase
           .from('patients')
           .select('id')
-          .eq('utilisateur_id', utilisateur.id)
+          .eq('utilisateur_id', updatedUser.id)
           .maybeSingle();
 
-        if (existingPatient?.id) {
+        if (existingPatient) {
           const { error: patientError } = await supabase
             .from('patients')
-            .update({ date_naissance: data.date_naissance, sexe: data.sexe || 'M' })
+            .update({ 
+              date_naissance: data.date_naissance, 
+              sexe: data.sexe || 'M' 
+            })
             .eq('id', existingPatient.id);
           if (patientError) throw patientError;
         } else {
           const { error: patientError } = await supabase
             .from('patients')
-            .insert({ utilisateur_id: utilisateur.id, date_naissance: data.date_naissance, sexe: data.sexe || 'M' });
+            .insert({ 
+              utilisateur_id: updatedUser.id, 
+              date_naissance: data.date_naissance, 
+              sexe: data.sexe || 'M' 
+            });
           if (patientError) throw patientError;
         }
       }
 
       toast.success("Profil complété avec succès !");
       
+      // Full redirect to refresh AuthContext state
       const dest = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
       window.location.href = dest;
       
     } catch (err) {
-      console.error(err);
-      toast.error('Erreur lors de la sauvegarde : ' + err.message);
+      console.error('Onboarding Error:', err);
+      toast.error('Erreur lors de la sauvegarde : ' + (err.message || 'Erreur inconnue'));
       setIsSubmitting(false);
     }
   };

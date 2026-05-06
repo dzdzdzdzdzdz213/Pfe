@@ -111,7 +111,8 @@ export const AuthProvider = ({ children }) => {
               prenom: finalPrenom,
               email: authUser.email,
               telephone: finalTelephone,
-              age: authUser.user_metadata?.age || null,
+              date_naissance: authUser.user_metadata?.date_naissance || null,
+              sexe: authUser.user_metadata?.sexe || 'M',
               role: 'patient',
               profil_complet: !!finalTelephone
             };
