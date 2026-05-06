@@ -146,7 +146,7 @@ const SendDocModal = ({ patient, exam, onClose }) => {
             </button>
           </div>
         ) : (
-          <div className="p-6 space-y-5 overflow-y-auto flex-1">
+          <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
             {/* Document Type */}
             <div>
               <label className="text-xs font-black text-slate-600 uppercase tracking-wider mb-2 block">{t('doc_type_label')}</label>
@@ -241,9 +241,7 @@ const PatientCard = ({ patient }) => {
   const [sendModal, setSendModal] = useState(null); // { patient, exam }
 
   // Extract exams safely from rendez_vous relationship
-  const patientExams = patient.rendez_vous 
-    ? patient.rendez_vous.map(rv => rv.examens).filter(Boolean)
-    : patient.examens || [];
+  const patientExams = patient.exams || [];
 
   // Guard: skip rendering if utilisateur relation is missing
   if (!patient.utilisateur) return null;
@@ -268,6 +266,12 @@ const PatientCard = ({ patient }) => {
           <span className="text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-full border border-slate-100">
             {t('exam_count_alt').replace('{count}', (patientExams || []).length)}
           </span>
+          <button
+            onClick={e => { e.stopPropagation(); window.location.href=`/radiologue/patient-history?id=${patient.id}`; }}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl text-xs font-bold border border-emerald-100 hover:border-emerald-500 transition-all"
+          >
+            <FileText className="h-3.5 w-3.5" /> Dossier
+          </button>
           <button
             onClick={e => { e.stopPropagation(); setSendModal({ patient, exam: null }); }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 hover:bg-primary text-primary hover:text-white rounded-xl text-xs font-bold border border-primary/10 hover:border-primary transition-all"
@@ -389,7 +393,7 @@ const RadiologuePatientSearchContent = () => {
       let q = supabase.from('patients').select(`
         id, 
         utilisateur_id,
-        utilisateur:utilisateur_id(prenom, nom, email, telephone),
+        utilisateur:utilisateurs(prenom, nom, email, telephone, role),
         date_naissance,
         sexe,
         adresse,
@@ -400,7 +404,7 @@ const RadiologuePatientSearchContent = () => {
              id, 
              date_realisation, 
              statut,
-             service:service_id(id, nom),
+             service:services(id, nom),
              comptes_rendus(id, description_detaillee, est_valide),
              images_radiologiques(id, url_stockage, type_image),
              documents_medicaux(id, chemin_fichier, statut, date_creation)
@@ -418,21 +422,37 @@ const RadiologuePatientSearchContent = () => {
         throw error;
       }
       
-      // Flatten the data: patient.rendez_vous[].examens -> patient.exams[]
-      let result = (data || []).map(p => ({
-        ...p,
-        exams: (p.rendez_vous || [])
-          .map(rv => rv.examens)
-          .filter(Boolean)
-      }));
+      // Filter out any lingering non-patient profiles and flatten exams
+      let result = (data || [])
+        .filter(p => p.utilisateur?.role === 'patient')
+        .map(p => ({
+          ...p,
+          exams: (p.rendez_vous || [])
+            .flatMap(rv => rv.examens || [])
+            .filter(Boolean)
+        }));
 
       // Client-side filtering by exam date/service/status
       if (dateFrom || dateTo || serviceFilter || statusFilter) {
         result = result.filter(patient => {
+          if (!patient.exams || patient.exams.length === 0) return false;
           return patient.exams.some(exam => {
-            const date = exam.date_realisation ? new Date(exam.date_realisation) : null;
-            if (dateFrom && date && date < new Date(dateFrom)) return false;
-            if (dateTo && date && date > new Date(dateTo + 'T23:59:59')) return false;
+            const examDateStr = exam.date_realisation || exam.date_creation || '';
+            if (!examDateStr) return false;
+            
+            const date = new Date(examDateStr);
+            date.setHours(0, 0, 0, 0);
+            
+            if (dateFrom) {
+              const dFrom = new Date(dateFrom);
+              dFrom.setHours(0, 0, 0, 0);
+              if (date < dFrom) return false;
+            }
+            if (dateTo) {
+              const dTo = new Date(dateTo);
+              dTo.setHours(0, 0, 0, 0);
+              if (date > dTo) return false;
+            }
             if (serviceFilter && exam.service?.id !== serviceFilter) return false;
             if (statusFilter && exam.statut !== statusFilter) return false;
             return true;

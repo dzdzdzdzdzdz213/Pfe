@@ -235,6 +235,12 @@ export const ReportEditor = () => {
         if (report) setReportId(report.id);
       }
       
+      // Log report action
+      auditService.createAuditLog(
+        validate ? 'Validation Compte Rendu' : 'Brouillon Compte Rendu',
+        `Examen ID: ${id}${validate ? ' (Validé)' : ' (Brouillon)'}`
+      ).catch(console.warn);
+      
       // Save Ordonnance if content exists
       if (ordonnance.description.trim()) {
         // Check if one already exists (no unique constraint = can't use ON CONFLICT)

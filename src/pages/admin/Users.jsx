@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/users';
+import { auditService } from '@/services/audit';
 import { DataTable } from '@/components/common/DataTable';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { toast } from 'sonner';
@@ -37,34 +38,42 @@ export const AdminUsers = () => {
   });
 
   const filteredUsers = roleFilter === 'all'
-    ? allUsers.filter(u => u.role !== 'patient')
-    : allUsers.filter(u => u.role === roleFilter);
+    ? allUsers.filter(u => (u.role || '').trim().toLowerCase() !== 'patient')
+    : allUsers.filter(u => {
+        const r = (u.role || '').trim().toLowerCase();
+        if (roleFilter === 'receptionniste') return r === 'receptionniste' || r === 'assistant';
+        if (roleFilter === 'admin') return r === 'admin' || r === 'administrateur';
+        return r === roleFilter;
+      });
 
   const createMutation = useMutation({
     mutationFn: (data) => userService.createUser(data),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(t('user_created_success'));
       setShowDialog(false);
+      auditService.createAuditLog('Création Utilisateur', `Utilisateur créé: ${variables.email} (${variables.role})`).catch(console.warn);
     },
     onError: (err) => toast.error(err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => userService.deleteUser(id),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(t('user_deleted_success'));
+      auditService.createAuditLog('Suppression Utilisateur', `ID: ${id}`).catch(console.warn);
     },
     onError: (err) => toast.error(err.message),
   });
   
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => userService.updateUser(id, data),
-    onSuccess: () => {
+    onSuccess: (_, { id, data }) => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(t('user_updated_success'));
       setShowDialog(false);
+      auditService.createAuditLog('Mise à jour Utilisateur', `Utilisateur mis à jour: ${data.email} (ID: ${id})`).catch(console.warn);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -156,6 +165,7 @@ export const AdminUsers = () => {
       },
     },
     { key: 'telephone', label: t('phone_label'), render: (row) => <span className="text-sm font-medium">{row.telephone || '-'}</span> },
+    { key: 'dob', label: t('dob'), render: (row) => <span className="text-sm font-medium">{row.date_naissance ? formatDate(row.date_naissance) : '-'}</span> },
     { key: 'dateCreationCompte', label: t('created_on'), render: (row) => <span className="text-sm font-medium">{formatDate(row.dateCreationCompte)}</span> },
     {
       key: 'actions', label: t('actions'), sortable: false,

@@ -57,6 +57,9 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   });
 
   const filteredPatients = patients.filter(p => {
+    // Only show users with the patient role
+    if (p.utilisateur?.role && p.utilisateur.role !== 'patient') return false;
+    
     if (!searchTerm.trim()) return true;
     const searchWords = searchTerm.toLowerCase().trim().split(/\s+/);
     const patientData = `${p.utilisateur?.prenom || ''} ${p.utilisateur?.nom || ''} ${p.utilisateur?.telephone || ''}`

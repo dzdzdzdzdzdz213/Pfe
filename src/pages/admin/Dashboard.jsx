@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { auditService } from '@/services/audit';
@@ -10,6 +10,19 @@ import { Link } from 'react-router-dom';
 
 export const AdminDashboard = () => {
   const { t, lang } = useLanguage();
+
+  // Auto-cancel past RDVs on load
+  useEffect(() => {
+    const runMaintenance = async () => {
+      try {
+        const { error } = await supabase.rpc('auto_cancel_past_rdv');
+        if (error) throw error;
+      } catch (e) {
+        console.warn('Auto-maintenance failed:', e);
+      }
+    };
+    runMaintenance();
+  }, []);
   const today = new Date();
   const startOf7DaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
@@ -18,13 +31,24 @@ export const AdminDashboard = () => {
   const { data: dashboardData, isLoading: loadingMetrics } = useQuery({
     queryKey: ['admin', 'dashboardMetrics'],
     queryFn: async () => {
-      const { count, error } = await supabase
+      const { count, error: countErr } = await supabase
         .from('utilisateurs')
-        .select('*', { count: 'exact', head: true })
-        .neq('role', 'patient');
+        .select('*', { count: 'exact', head: true });
       
-      if (error) throw error;
-      return { usersCount: count || 0 };
+      const { data: recentStaff, error: staffErr } = await supabase
+        .from('utilisateurs')
+        .select('id, nom, prenom, role, profil_complet')
+        .neq('role', 'patient')
+        .order('date_creation_compte', { ascending: false })
+        .limit(6);
+
+      if (countErr) throw countErr;
+      if (staffErr) throw staffErr;
+      
+      return { 
+        usersCount: count || 0,
+        recentStaff: recentStaff || []
+      };
     }
   });
 
@@ -46,14 +70,43 @@ export const AdminDashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center min-h-[300px] text-center">
-          <Users className="h-12 w-12 text-slate-200 mb-4" />
-          <h3 className="text-lg font-bold text-slate-800">{t('user_management')}</h3>
-          <p className="text-sm text-slate-500 max-w-xs mt-2">Gérez les comptes des radiologues, réceptionnistes et administrateurs de la plateforme.</p>
-          <Link to="/admin/users" className="mt-6 px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
-            {t('view_all_users')}
-          </Link>
+        {/* Staff List */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('staff_members') || 'Membres du Personnel'}</h3>
+            <Link to="/admin/users" className="text-xs font-bold text-primary hover:underline">{t('view_all')}</Link>
+          </div>
+          <div className="flex-1 divide-y divide-slate-50">
+            {loadingMetrics ? (
+              [...Array(3)].map((_, i) => (
+                <div key={i} className="px-6 py-4 animate-pulse flex items-center gap-4">
+                  <div className="h-10 w-10 bg-slate-100 rounded-full" />
+                  <div className="h-4 w-32 bg-slate-100 rounded" />
+                </div>
+              ))
+            ) : (dashboardData?.recentStaff || []).length > 0 ? (
+              dashboardData.recentStaff.map(staff => (
+                <div key={staff.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-bold text-primary uppercase">
+                      {staff.prenom?.[0]}{staff.nom?.[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">{staff.prenom} {staff.nom}</p>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{staff.role}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter ${staff.profil_complet ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
+                      {staff.profil_complet ? 'Actif' : 'Incomplet'}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-slate-400 text-sm font-medium">Aucun personnel trouvé</div>
+            )}
+          </div>
         </div>
 
         {/* System Status */}

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { auditService } from '../services/audit';
 
 
 export const AuthContext = createContext();
@@ -283,6 +284,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    
+    // Log success
+    if (data?.user) {
+      auditService.createAuditLog('Connexion', `L'utilisateur ${email} s'est connecté`, data.user.id).catch(console.warn);
+    }
     return data;
   };
 
@@ -406,6 +412,9 @@ export const AuthProvider = ({ children }) => {
             loading: false,
             roleLoading: false
           }));
+          
+          // Log success
+          auditService.createAuditLog('Inscription', `Nouvel utilisateur inscrit: ${userData.email}`, authUser.id).catch(console.warn);
         }
         
         console.log("[REGISTER] Registration & Provisioning complete.");

@@ -19,7 +19,15 @@ export const AssistantDashboard = () => {
 
   // Auto-cancel expired planifie RDVs
   useEffect(() => {
-    supabase.rpc('auto_cancel_past_rdv').catch(() => {});
+    const runAutoCancel = async () => {
+      try {
+        const { error } = await supabase.rpc('auto_cancel_past_rdv');
+        if (error) throw error;
+      } catch (err) {
+        console.warn('Auto-cancel RPC failed:', err);
+      }
+    };
+    runAutoCancel();
   }, []);
 
   const { data: allAppointments = [], isLoading: loadingAppts } = useQuery({

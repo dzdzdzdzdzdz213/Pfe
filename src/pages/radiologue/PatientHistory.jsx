@@ -132,6 +132,23 @@ export const PatientHistory = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeTab, setActiveTab] = useState('examens');
   const [imageViewerExam, setImageViewerExam] = useState(null);
+  const [urlPatientId] = useState(new URLSearchParams(window.location.search).get('id'));
+
+  // Auto-fetch patient if ID in URL
+  useQuery({
+    queryKey: ['url-patient', urlPatientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('patients')
+        .select('*, utilisateur:utilisateur_id(nom, prenom, email, telephone)')
+        .eq('id', urlPatientId)
+        .single();
+      if (error) throw error;
+      setSelectedPatient(data);
+      return data;
+    },
+    enabled: !!urlPatientId && !selectedPatient,
+  });
 
   // Search patients
   const { data: patients = [] } = useQuery({
@@ -184,7 +201,7 @@ export const PatientHistory = () => {
           id, date_heure_debut, motif, statut,
           examens(
             id, date_realisation, statut, observations_cliniques,
-            services:service_id(nom),
+            services:services(nom),
             comptes_rendus(id, description_detaillee, est_valide),
             images_radiologiques(id, url_stockage, type_image, description),
             documents_medicaux(id, chemin_fichier, statut, date_creation, examen_id)
@@ -193,7 +210,7 @@ export const PatientHistory = () => {
         .eq('patient_id', selectedPatient.id)
         .order('date_heure_debut', { ascending: false });
       if (error) throw error;
-      return (data || []).map(rv => rv.examens).filter(Boolean);
+      return (data || []).flatMap(rv => rv.examens || []).filter(Boolean);
     },
     enabled: !!selectedPatient?.id,
   });

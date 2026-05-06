@@ -6,7 +6,7 @@ export const auditService = {
       .from('audit_logs')
       .select(`
         *,
-        utilisateur:utilisateurs!utilisateur_id(nom, prenom, email, role)
+        utilisateur:utilisateurs(nom, prenom, email, role)
       `);
 
     if (options.startDate) {

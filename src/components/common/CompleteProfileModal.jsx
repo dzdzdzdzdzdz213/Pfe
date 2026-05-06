@@ -9,14 +9,15 @@ export const CompleteProfileModal = ({ user, userData, onComplete }) => {
   const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    nom: userData?.nom || user?.user_metadata?.full_name?.split(' ')[1] || '',
-    prenom: userData?.prenom || user?.user_metadata?.full_name?.split(' ')[0] || '',
-    age: userData?.age || '',
+    nom: userData?.nom || user?.user_metadata?.nom || '',
+    prenom: userData?.prenom || user?.user_metadata?.prenom || '',
+    date_naissance: userData?.date_naissance || '',
+    sexe: userData?.sexe || 'M',
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.nom || !formData.prenom || !formData.age) {
+    if (!formData.nom || !formData.prenom || !formData.date_naissance) {
       toast.error(t('error_required_fields'));
       return;
     }
@@ -29,9 +30,11 @@ export const CompleteProfileModal = ({ user, userData, onComplete }) => {
         .update({
           nom: formData.nom,
           prenom: formData.prenom,
+          date_naissance: formData.date_naissance,
+          sexe: formData.sexe,
           profil_complet: true
         })
-        .eq('id', user.id);
+        .eq('auth_id', user.id);
 
       if (utilError) throw utilError;
 
@@ -101,20 +104,32 @@ export const CompleteProfileModal = ({ user, userData, onComplete }) => {
               </div>
             </div>
 
-            <div>
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">{t('age')}</label>
-              <div className="relative">
-                <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                <input
-                  type="number"
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">{t('dob')}</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="date"
+                    required
+                    max={new Date().toISOString().split('T')[0]}
+                    value={formData.date_naissance}
+                    onChange={e => setFormData({ ...formData, date_naissance: e.target.value })}
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-slate-700 text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1.5 ml-1">{t('gender')}</label>
+                <select
                   required
-                  min="1"
-                  max="120"
-                  value={formData.age}
-                  onChange={e => setFormData({ ...formData, age: e.target.value })}
-                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-slate-700 text-sm"
-                  placeholder="Âge"
-                />
+                  value={formData.sexe}
+                  onChange={e => setFormData({ ...formData, sexe: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all font-bold text-slate-700 text-sm"
+                >
+                  <option value="M">{t('gender_m')}</option>
+                  <option value="F">{t('gender_f')}</option>
+                </select>
               </div>
             </div>
 
