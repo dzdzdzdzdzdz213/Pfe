@@ -108,81 +108,8 @@ export const Landing = () => {
           </div>
         </div>
       </motion.section>
-
-      {/* 3. LOCATION SECTION */}
-      <section id="contact" className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-xs font-black text-blue-600 uppercase tracking-[0.2em] mb-4">
-                Localisation
-              </h2>
-              <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-6">
-                Comment nous trouver ?
-              </h3>
-              <p className="text-lg text-slate-500 font-medium mb-8">
-                Notre cabinet est situé à Bentalha, Baraki. Nous vous accueillons dans un environnement moderne et facile d'accès.
-              </p>
-              
-              <div className="space-y-6">
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Adresse</h4>
-                    <p className="text-sm text-slate-500 font-medium">Bentalha, Baraki, Alger, Algérie</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-blue-600 flex-shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-slate-900">Téléphone</h4>
-                    <p className="text-sm text-slate-500 font-medium">0770 99 11 11 / 0558 22 23 17</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-10">
-                <a 
-                  href="https://maps.app.goo.gl/VSnFcWiUBfzyvaeD9" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-6 py-3 bg-white border-2 border-blue-100 text-blue-600 rounded-2xl font-bold hover:bg-blue-50 transition-all text-sm"
-                >
-                  Ouvrir dans Google Maps
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              </div>
-            </div>
-            
-            <div className="h-[500px] rounded-[2.5rem] overflow-hidden border-8 border-white shadow-2xl relative">
-              <iframe
-                title="Google Maps Location"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2438.346813763942!2d3.0853314999999992!3d36.647763!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128fab0046f76375%3A0x2ca1aee7c3469cac!2sRadiologue%20BENTALHA%20Dr%20CHEMLOUL!5e1!3m2!1sfr!2sdz!4v1778103991503!5m2!1sfr!2sdz"
-                width="100%"
-                height="100%"
-                style={{ border: 0 }}
-                allowFullScreen=""
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 4. CALL TO ACTION */}
+      
+      {/* 3. CALL TO ACTION */}
       <motion.section
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
