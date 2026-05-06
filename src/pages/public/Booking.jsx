@@ -4,15 +4,13 @@ import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Wa
 import { useLocation } from 'react-router-dom';
 import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { supabase } from '@/lib/supabase';
 import { FileUpload } from '@/components/common/FileUpload';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfDay } from 'date-fns';
-import { fr, arSA } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 export const Booking = () => {
-  const { t, lang } = useLanguage();
-  const dateLocale = lang === 'ar' ? arSA : fr;
+  const { t } = useLanguage();
   const location = useLocation();
   const initialService = location.state?.serviceId || '';
   const initialServiceName = location.state?.serviceName || '';
@@ -20,7 +18,6 @@ export const Booking = () => {
   // --- CONFIGURATION DES LIMITES DE DATE ---
   const now = new Date();
   const todayStr = format(now, 'yyyy-MM-dd');
-  const todayMidnight = startOfDay(now);
 
   // Calcul de la date maximale (Aujourd'hui + 7 jours)
   const maxDateObj = new Date();
@@ -32,7 +29,6 @@ export const Booking = () => {
   const [step, setStep] = useState(initialService ? 2 : 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [takenSlots, setTakenSlots] = useState([]); // État pour stocker les heures déjà prises
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const [formData, setFormData] = useState({
     service: initialService ? { id: initialService, name: initialServiceName } : null,
@@ -96,7 +92,6 @@ export const Booking = () => {
 
   const handleNext = () => setStep((s) => Math.min(s + 1, 4));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
-  const monthDays = eachDayOfInterval({ start: startOfMonth(calendarMonth), end: endOfMonth(calendarMonth) });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,7 +102,7 @@ export const Booking = () => {
     try {
       const startDate = new Date(`${formData.date}T${formData.time}`);
       const endDate = new Date(startDate.getTime() + 30 * 60000);
-      let documentInfo = formData.documentUrl ? ` [DOC:${formData.documentUrl}]` : '';
+      const documentInfo = formData.documentUrl ? `\n[DOC:${formData.documentUrl}]` : '';
 
       const serviceTag = formData.service ? `[${formData.service.name}]` : '';
       const motif = `${serviceTag} ${formData.notes || 'Demande en ligne'} — Patient: ${formData.prenom} ${formData.nom} — Tél: ${formData.telephone} — Âge: ${formData.age}${documentInfo}`;

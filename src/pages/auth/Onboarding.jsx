@@ -20,7 +20,7 @@ export const Onboarding = () => {
     date_naissance: role === 'patient' ? z.string().min(1, "La date de naissance est requise") : z.string().optional(),
   });
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
       nom: '',

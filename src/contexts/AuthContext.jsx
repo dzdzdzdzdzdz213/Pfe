@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';

@@ -77,11 +77,7 @@ const PrintableReport = ({ exam, report, patientName, t, lang }) => (
 // ---------------------------------------------------------------------------
 // Report Viewer Modal
 // ---------------------------------------------------------------------------
-const ReportModal = ({ report, exam, patientName, onClose, t, lang }) => {
-  const handlePrint = () => {
-    window.print();
-  };
-
+const ReportModal = ({ report, exam, patientName, onClose, t }) => {
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={onClose} />

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Calendar, Clock, Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { FileUpload } from '@/components/common/FileUpload';
-import { format, addDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore } from 'date-fns';
+import { format, isSameDay } from 'date-fns';
 import { fr, arSA } from 'date-fns/locale';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -24,7 +24,6 @@ export const PatientAppointments = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [motif, setMotif] = useState('');
   const [uploadedDocUrl, setUploadedDocUrl] = useState('');
-  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const dateLocale = lang === 'ar' ? arSA : fr;
 
@@ -126,7 +125,6 @@ export const PatientAppointments = () => {
     setSelectedTime(null);
     setMotif('');
     setUploadedDocUrl('');
-    setCalendarMonth(new Date());
   };
 
   const today = new Date();

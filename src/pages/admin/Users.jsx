@@ -77,6 +77,7 @@ export const AdminUsers = () => {
 
   const openEdit = (user) => {
     setEditUser(user);
+    setFormData({
       nom: user.nom, prenom: user.prenom, email: user.email, telephone: user.telephone || '', role: user.role, age: user.age || '',
       password: '', matricule_sante: '', specialite_principale: '',
     });
