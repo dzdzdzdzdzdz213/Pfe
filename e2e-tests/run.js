@@ -19,7 +19,7 @@ const { chromium } = require('playwright');
   const asstPage = await asstCtx.newPage();
   console.log("-> Opening Assistant Window...");
   asstPage.goto('https://pfe-phi-five.vercel.app/login').then(async () => {
-    await asstPage.fill('input[type="email"]', 'aimenmamache511@gmail.com').catch(() => {});
+    await asstPage.fill('input[type="email"]', 'test_assistant_e2e@gmail.com').catch(() => {});
     await asstPage.fill('input[type="password"]', 'Password123!').catch(() => {});
     await asstPage.locator('button[type="submit"]').click().catch(() => {});
   }).catch(() => {});
