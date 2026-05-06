@@ -122,8 +122,7 @@ export const DashboardLayout = () => {
     if (role === 'admin' || role === 'administrateur') {
       return [
         ...common,
-        { name: t('calendar'), href: '/admin/calendar', icon: Calendar },
-        { name: t('patients'), href: '/admin/patients', icon: Users },
+
         { name: t('users'), href: '/admin/users', icon: Users },
         { name: t('statistics'), href: '/admin/stats', icon: BarChart2 },
         { name: t('audit_logs'), href: '/admin/audit-logs', icon: ClipboardList },

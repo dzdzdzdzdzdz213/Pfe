@@ -297,6 +297,26 @@ export const ReportEditor = () => {
       queryClient.invalidateQueries({ queryKey: ['exams'] });
       queryClient.invalidateQueries({ queryKey: ['reports'] });
       toast.success(validate ? t('report_validated') : t('report_saved'));
+      
+      if (!validate && editor) {
+        const content = editor.getHTML();
+        const blob = new Blob([
+          `<html><head><meta charset="utf-8"><title>Brouillon - Compte Rendu</title></head><body style="font-family: sans-serif; padding: 20px;">
+          <h2>Brouillon de Compte Rendu</h2>
+          <hr/>
+          ${content}
+          </body></html>`
+        ], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Brouillon_${exam?.patient?.utilisateur?.nom || 'Patient'}_${exam?.patient?.utilisateur?.prenom || ''}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
       if (validate) navigate('/radiologue/examens');
     },
     onError: (err) => toast.error(err.message),

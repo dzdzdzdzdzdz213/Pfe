@@ -312,7 +312,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                   </div>
                   <input placeholder={t('phone')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.telephone} onChange={e => setNewPatientForm(p => ({ ...p, telephone: e.target.value }))} />
                   <input placeholder={t('login_email_optional')} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.email} onChange={e => setNewPatientForm(p => ({ ...p, email: e.target.value }))} />
-                  <input type="date" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.date_naissance} onChange={e => setNewPatientForm(p => ({ ...p, date_naissance: e.target.value }))} />
+                  <input type="date" max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.date_naissance} onChange={e => setNewPatientForm(p => ({ ...p, date_naissance: e.target.value }))} />
                   <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={newPatientForm.sexe} onChange={e => setNewPatientForm(p => ({ ...p, sexe: e.target.value }))}>
                     <option value="M">{t('gender_m')}</option>
                     <option value="F">{t('gender_f')}</option>
@@ -561,7 +561,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step < totalSteps ? (
             <button
               onClick={() => setStep(s => s + 1)}
-              disabled={(step === 1 && !formData.patient_id) || (step === 2 && !formData.service_id)}
+              disabled={(step === 1 && !formData.patient_id) || (step === 2 && !formData.service_id) || (step === 3 && (!formData.date_heure_debut || !formData.date_heure_fin))}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
             >
               {t('next')} <ChevronRight className="h-4 w-4" />

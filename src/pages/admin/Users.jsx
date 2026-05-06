@@ -27,7 +27,7 @@ export const AdminUsers = () => {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', password: generatePassword(),
+    nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', age: '', password: generatePassword(),
     matricule_sante: '', specialite_principale: '',
   });
 
@@ -71,14 +71,13 @@ export const AdminUsers = () => {
 
   const openCreate = () => {
     setEditUser(null);
-    setFormData({ nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', password: generatePassword(), matricule_sante: '', specialite_principale: '' });
+    setFormData({ nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', age: '', password: generatePassword(), matricule_sante: '', specialite_principale: '' });
     setShowDialog(true);
   };
 
   const openEdit = (user) => {
     setEditUser(user);
-    setFormData({
-      nom: user.nom, prenom: user.prenom, email: user.email, telephone: user.telephone || '', role: user.role,
+      nom: user.nom, prenom: user.prenom, email: user.email, telephone: user.telephone || '', role: user.role, age: user.age || '',
       password: '', matricule_sante: '', specialite_principale: '',
     });
     setShowDialog(true);
@@ -117,10 +116,10 @@ export const AdminUsers = () => {
     if (editUser) {
       updateMutation.mutate({ 
         id: editUser.id, 
-        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: formData.role } 
+        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: formData.role, age: formData.age ? parseInt(formData.age) : null } 
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate({ ...formData, age: formData.age ? parseInt(formData.age) : null });
     }
   };
 
@@ -175,7 +174,7 @@ export const AdminUsers = () => {
       <div className="flex gap-2 flex-wrap">
         {[
           { key: 'all', label: t('all') },
-          { key: 'administrateur', label: t('role_admin') },
+          { key: 'admin', label: t('role_admin') },
           { key: 'radiologue', label: t('role_radiologue') },
           { key: 'receptionniste', label: t('role_assistant') }
         ].map(f => (
@@ -223,9 +222,15 @@ export const AdminUsers = () => {
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('email')} *</label>
-                <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} disabled={!!editUser} />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('email')} *</label>
+                  <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} disabled={!!editUser} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('age')}</label>
+                  <input type="number" min="1" max="130" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.age} onChange={e => setFormData(p => ({ ...p, age: e.target.value }))} />
+                </div>
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone_label')} <span className="text-slate-400 font-normal normal-case">(05/06/07 XX XX XX XX)</span></label>

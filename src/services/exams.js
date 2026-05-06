@@ -23,10 +23,12 @@ export const examService = {
       .from('examens')
       .select(`
         *,
-        rendez_vous:rendez_vous_id(patient_id, patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom))),
+        rendez_vous!inner(patient_id, statut, patient:patients(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom))),
         radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
         service:services(*)
-      `);
+      `)
+      .eq('rendez_vous.statut', 'confirme')
+      .not('rendez_vous.patient_id', 'is', null);
 
     if (options.statut) {
       query = query.eq('statut', options.statut);
