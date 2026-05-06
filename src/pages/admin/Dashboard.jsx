@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { auditService } from '@/services/audit';
 import { timeAgo } from '@/lib/utils';
-import { Users, Calendar, Activity, FileText, ClipboardList, TrendingUp, Database, Shield, ChevronRight } from 'lucide-react';
+import { Users, ClipboardList, Database, Shield, ChevronRight } from 'lucide-react';
 import { StatCard } from '@/components/common/StatCard';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Link } from 'react-router-dom';
@@ -18,45 +18,17 @@ export const AdminDashboard = () => {
   const { data: dashboardData, isLoading: loadingMetrics } = useQuery({
     queryKey: ['admin', 'dashboardMetrics'],
     queryFn: async () => {
-      const usersP = supabase.from('utilisateurs').select('*', { count: 'exact', head: true });
-      const examsP = supabase.from('examens').select('*', { count: 'exact', head: true }).eq('statut', 'planifie');
-      const reportsP = supabase.from('comptes_rendus').select('*', { count: 'exact', head: true }).eq('est_valide', true);
-      const rdvP = supabase.from('rendez_vous').select('date_heure_debut').gte('date_heure_debut', startOf7DaysAgo).lte('date_heure_debut', endOfDay);
-
-      const [usersRes, examsRes, reportsRes, rdvRes] = await Promise.all([usersP, examsP, reportsP, rdvP]);
-
-      const rdvData = rdvRes.data || [];
-      const chartDays = [];
-      let todayCount = 0;
-
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-        const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59).getTime();
-        
-        const count = rdvData.filter(r => {
-          const t = new Date(r.date_heure_debut).getTime();
-          return t >= dayStart && t <= dayEnd;
-        }).length;
-        
-        if (i === 0) todayCount = count; // Today's count
-
-        chartDays.push({ day: new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'fr', { weekday: 'short' }).format(d), count });
-      }
-
-      return {
-        usersCount: usersRes.count || 0,
-        pendingExams: examsRes.count || 0,
-        weekReports: reportsRes.count || 0,
-        todayAppointments: todayCount,
-        weekData: chartDays
-      };
+      const { count, error } = await supabase
+        .from('utilisateurs')
+        .select('*', { count: 'exact', head: true })
+        .neq('role', 'patient');
+      
+      if (error) throw error;
+      return { usersCount: count || 0 };
     }
   });
 
-  const { usersCount = 0, pendingExams = 0, weekReports = 0, todayAppointments = 0, weekData = [] } = dashboardData || {};
-  const maxCount = Math.max(...weekData.map(d => d.count), 1);
+  const { usersCount = 0 } = dashboardData || {};
 
   const { data: recentLogs = [], isLoading: loadingLogs } = useQuery({
     queryKey: ['admin', 'recentLogs'],
@@ -71,43 +43,17 @@ export const AdminDashboard = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title={t('total_users')} value={usersCount} icon={Users} color="blue" loading={loadingMetrics} />
-        <StatCard title={t('appointments_today')} value={todayAppointments} icon={Calendar} color="emerald" loading={loadingMetrics} />
-        <StatCard title={t('exams_pending')} value={pendingExams} icon={Activity} color="amber" loading={loadingMetrics} />
-        <StatCard title={t('reports_validated')} value={weekReports} icon={FileText} color="violet" loading={loadingMetrics} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-800 tracking-tight">{t('appointments_7_days')}</h3>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('recent_activity')}</p>
-            </div>
-            <TrendingUp className="h-5 w-5 text-slate-300" />
-          </div>
-          <div className="flex items-end gap-3 h-48">
-            {loadingMetrics ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="animate-pulse flex items-end gap-3 w-full h-full">
-                  {[...Array(7)].map((_, i) => (
-                    <div key={i} className="flex-1 bg-slate-100 rounded-t-lg" style={{ height: `${Math.max(20, Math.random() * 100)}%` }} />
-                  ))}
-                </div>
-              </div>
-            ) : (
-              weekData.map((item, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                  <span className="text-xs font-bold text-slate-600">{item.count}</span>
-                  <div
-                    className="w-full bg-primary/80 rounded-t-lg transition-all duration-500 hover:bg-primary min-h-[4px]"
-                    style={{ height: `${(item.count / maxCount) * 160}px` }}
-                  />
-                  <span className="text-[10px] font-bold text-slate-400 uppercase">{item.day}</span>
-                </div>
-              ))
-            )}
-          </div>
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center min-h-[300px] text-center">
+          <Users className="h-12 w-12 text-slate-200 mb-4" />
+          <h3 className="text-lg font-bold text-slate-800">{t('user_management')}</h3>
+          <p className="text-sm text-slate-500 max-w-xs mt-2">Gérez les comptes des radiologues, réceptionnistes et administrateurs de la plateforme.</p>
+          <Link to="/admin/users" className="mt-6 px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">
+            {t('view_all_users')}
+          </Link>
         </div>
 
         {/* System Status */}

@@ -27,7 +27,7 @@ export const examService = {
         radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom)),
         service:services(*)
       `)
-      .eq('rendez_vous.statut', 'confirme')
+      .not('rendez_vous.statut', 'eq', 'annule')
       .not('rendez_vous.patient_id', 'is', null);
 
     if (options.statut) {

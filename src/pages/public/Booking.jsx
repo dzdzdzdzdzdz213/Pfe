@@ -21,7 +21,7 @@ export const Booking = () => {
 
   // Calcul de la date maximale (Aujourd'hui + 7 jours)
   const maxDateObj = new Date();
-  maxDateObj.setDate(maxDateObj.getDate() + 7);
+  maxDateObj.setDate(maxDateObj.getDate() + 30);
   const maxDate = maxDateObj.toISOString().split('T')[0];
 
   const currentTime = now.getHours() * 60 + now.getMinutes();

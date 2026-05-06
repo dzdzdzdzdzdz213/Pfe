@@ -183,6 +183,8 @@ export const Onboarding = () => {
                 </label>
                 <input
                   type="date"
+                  min="1900-01-01"
+                  max={new Date().toISOString().split('T')[0]}
                   {...register('date_naissance')}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-semibold text-slate-700"
                 />

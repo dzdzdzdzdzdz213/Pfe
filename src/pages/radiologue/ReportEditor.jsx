@@ -271,13 +271,21 @@ export const ReportEditor = () => {
 
         // Notify patient that their results are ready
         try {
-          const { data: rdv } = await supabase
-            .from('rendez_vous')
-            .select('patient_id, patient:patients(utilisateur_id)')
-            .eq('examen_id', id)
+          const { data: examData } = await supabase
+            .from('examens')
+            .select('rendez_vous_id')
+            .eq('id', id)
             .maybeSingle();
 
-          const utilisateurId = rdv?.patient?.utilisateur_id;
+          let utilisateurId = null;
+          if (examData?.rendez_vous_id) {
+            const { data: rdv } = await supabase
+              .from('rendez_vous')
+              .select('patient_id, patient:patients(utilisateur_id)')
+              .eq('id', examData.rendez_vous_id)
+              .maybeSingle();
+            utilisateurId = rdv?.patient?.utilisateur_id;
+          }
           if (utilisateurId) {
             await supabase.from('notifications').insert({
               utilisateur_id: utilisateurId,

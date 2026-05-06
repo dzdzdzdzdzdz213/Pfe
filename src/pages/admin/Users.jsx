@@ -27,7 +27,7 @@ export const AdminUsers = () => {
   const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState({
-    nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', age: '', password: generatePassword(),
+    nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', date_naissance: '', sexe: 'M', password: generatePassword(),
     matricule_sante: '', specialite_principale: '',
   });
 
@@ -37,7 +37,7 @@ export const AdminUsers = () => {
   });
 
   const filteredUsers = roleFilter === 'all'
-    ? allUsers
+    ? allUsers.filter(u => u.role !== 'patient')
     : allUsers.filter(u => u.role === roleFilter);
 
   const createMutation = useMutation({
@@ -71,14 +71,15 @@ export const AdminUsers = () => {
 
   const openCreate = () => {
     setEditUser(null);
-    setFormData({ nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', age: '', password: generatePassword(), matricule_sante: '', specialite_principale: '' });
+    setFormData({ nom: '', prenom: '', email: '', telephone: '', role: 'receptionniste', date_naissance: '', sexe: 'M', password: generatePassword(), matricule_sante: '', specialite_principale: '' });
     setShowDialog(true);
   };
 
   const openEdit = (user) => {
     setEditUser(user);
     setFormData({
-      nom: user.nom, prenom: user.prenom, email: user.email, telephone: user.telephone || '', role: user.role, age: user.age || '',
+      nom: user.nom, prenom: user.prenom, email: user.email, telephone: user.telephone || '', role: user.role, 
+      date_naissance: user.date_naissance || '', sexe: user.sexe || 'M',
       password: '', matricule_sante: '', specialite_principale: '',
     });
     setShowDialog(true);
@@ -117,10 +118,18 @@ export const AdminUsers = () => {
     if (editUser) {
       updateMutation.mutate({ 
         id: editUser.id, 
-        data: { nom: formData.nom, prenom: formData.prenom, email: formData.email, telephone: formData.telephone, role: formData.role, age: formData.age ? parseInt(formData.age) : null } 
+        data: { 
+          nom: formData.nom, 
+          prenom: formData.prenom, 
+          email: formData.email, 
+          telephone: formData.telephone, 
+          role: formData.role, 
+          date_naissance: formData.date_naissance, 
+          sexe: formData.sexe 
+        } 
       });
     } else {
-      createMutation.mutate({ ...formData, age: formData.age ? parseInt(formData.age) : null });
+      createMutation.mutate({ ...formData });
     }
   };
 
@@ -164,7 +173,9 @@ export const AdminUsers = () => {
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('user_management')}</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">{t('user_count_summary').replace('{count}', (allUsers || []).length)}</p>
+          <p className="text-sm text-slate-500 font-medium mt-1">
+            {t('user_count_summary').replace('{count}', (allUsers || []).filter(u => u.role !== 'patient').length)} staff
+          </p>
         </div>
         <button onClick={openCreate} className="px-5 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all flex items-center gap-2">
           <UserPlus className="h-5 w-5" /> {t('new_user')}
@@ -174,10 +185,11 @@ export const AdminUsers = () => {
       {/* Role Filter */}
       <div className="flex gap-2 flex-wrap">
         {[
-          { key: 'all', label: t('all') },
+          { key: 'all', label: t('all_staff') || 'Tout le Personnel' },
           { key: 'admin', label: t('role_admin') },
           { key: 'radiologue', label: t('role_radiologue') },
-          { key: 'receptionniste', label: t('role_assistant') }
+          { key: 'receptionniste', label: t('role_assistant') },
+          { key: 'patient', label: t('role_patient') }
         ].map(f => (
           <button key={f.key} onClick={() => setRoleFilter(f.key)} className={cn('px-4 py-2 rounded-xl text-sm font-bold transition-all', roleFilter === f.key ? 'bg-primary text-white shadow-lg shadow-blue-100' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50')}>
             {f.label}
@@ -223,14 +235,21 @@ export const AdminUsers = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('email')} *</label>
                   <input type="email" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.email} onChange={e => setFormData(p => ({ ...p, email: e.target.value }))} disabled={!!editUser} />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('age')}</label>
-                  <input type="number" min="1" max="130" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.age} onChange={e => setFormData(p => ({ ...p, age: e.target.value }))} />
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('dob')} *</label>
+                  <input type="date" max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.date_naissance} onChange={e => setFormData(p => ({ ...p, date_naissance: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('sexe')} *</label>
+                  <select className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.sexe} onChange={e => setFormData(p => ({ ...p, sexe: e.target.value }))}>
+                    <option value="M">{t('gender_m')}</option>
+                    <option value="F">{t('gender_f')}</option>
+                  </select>
                 </div>
               </div>
               <div>

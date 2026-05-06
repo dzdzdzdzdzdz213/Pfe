@@ -57,8 +57,10 @@ export const userService = {
    *   prenom: string,
    *   email: string,
    *   telephone?: string,
-   *   role: 'radiologue'|'receptionniste'|'administrateur',
+   *   role: 'radiologue'|'receptionniste'|'administrateur'|'admin',
    *   password: string,
+   *   date_naissance?: string,
+   *   sexe?: 'M'|'F',
    *   matricule_sante?: string,
    *   specialite_principale?: string
    * }} userData - Combined utilisateur + role-specific data.
@@ -86,6 +88,8 @@ export const userService = {
       p_email: email,
       p_telephone: telephone,
       p_role: role,
+      p_date_naissance: rest.date_naissance || null,
+      p_sexe: rest.sexe || 'M',
       p_matricule_sante: rest.matricule_sante || null,
       p_specialite_principale: rest.specialite_principale || null
     });
@@ -116,9 +120,12 @@ export const userService = {
       if (rpcError) throw rpcError;
     }
 
+    const { nom, prenom, telephone, date_naissance, sexe } = updates;
+    const cleanUpdates = { nom, prenom, telephone, date_naissance, sexe };
+    
     const { data, error } = await supabase
       .from('utilisateurs')
-      .update(updates)
+      .update(cleanUpdates)
       .eq('id', id)
       .select()
       .single();

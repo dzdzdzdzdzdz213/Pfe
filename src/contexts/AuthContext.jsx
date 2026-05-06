@@ -306,7 +306,9 @@ export const AuthProvider = ({ children }) => {
             prenom: userData.prenom,
             nom: userData.nom,
             telephone: userData.telephone,
-            age: userData.age,
+            age: userData.date_naissance ? Math.floor((new Date() - new Date(userData.date_naissance)) / (365.25 * 24 * 60 * 60 * 1000)) : null,
+            date_naissance: userData.date_naissance || null,
+            sexe: userData.sexe || 'M',
             manual_signup: true
           }
         }
@@ -354,16 +356,17 @@ export const AuthProvider = ({ children }) => {
         try {
           const { data: existingUtil } = await safeCall(() => supabase.from('utilisateurs').select('*').eq('auth_id', authUser.id).maybeSingle());
           
-          const payload = {
-            auth_id: authUser.id,
-            nom: userData.nom,
-            prenom: userData.prenom,
-            email: userData.email,
-            telephone: userData.telephone || null,
-            age: userData.age || null,
-            role: 'patient',
-            profil_complet: true
-          };
+            const computedAge = userData.date_naissance ? Math.floor((new Date() - new Date(userData.date_naissance)) / (365.25 * 24 * 60 * 60 * 1000)) : null;
+            const payload = {
+              auth_id: authUser.id,
+              nom: userData.nom,
+              prenom: userData.prenom,
+              email: userData.email,
+              telephone: userData.telephone || null,
+              age: computedAge,
+              role: 'patient',
+              profil_complet: true
+            };
 
           if (existingUtil) {
             // Update with the full name from the form (trigger may have used email as nom)
@@ -383,7 +386,7 @@ export const AuthProvider = ({ children }) => {
           try {
             const { data: existingPat } = await safeCall(() => supabase.from('patients').select('id').eq('utilisateur_id', util.id).maybeSingle());
             if (!existingPat) {
-              await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id }));
+              await safeCall(() => supabase.from('patients').insert({ utilisateur_id: util.id, sexe: userData.sexe || 'M', date_naissance: userData.date_naissance || null }));
             }
           } catch(e) {
             console.warn("[REGISTER] Patient row warning:", e.message);

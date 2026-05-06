@@ -29,11 +29,13 @@ export const Login = () => {
     telephone: z.string()
       .refine(val => val.replace(/\s/g, '').length === 10, "Le numéro doit faire exactement 10 chiffres")
       .refine(val => /^(05|06|07)[0-9]{8}$/.test(val.replace(/\s/g, '')), "Doit commencer par 05, 06 ou 07"),
-    age: z.string()
+    date_naissance: z.string()
+      .min(1, "La date de naissance est requise")
       .refine((val) => {
-        const a = parseInt(val);
-        return a >= 0 && a <= 120;
-      }, { message: "L'âge doit être entre 0 et 120 ans" }),
+        const d = new Date(val);
+        return d <= new Date();
+      }, { message: "La date ne peut pas être dans le futur" }),
+    sexe: z.string().optional(),
     email: z.string().email({ message: t('error_invalid_email') }),
     // --- SÉCURITÉ MOT DE PASSE RENFORCÉE ---
     password: z.string()
@@ -254,16 +256,27 @@ export const Login = () => {
                     {errors.telephone && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.telephone.message}</p>}
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Âge</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Date de naissance</label>
                     <input
-                      type="number"
-                      placeholder="Âge"
-                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 ${errors.age ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
-                      {...register('age')}
+                      type="date"
+                      max={new Date().toISOString().split('T')[0]}
+                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 ${errors.date_naissance ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
+                      {...register('date_naissance')}
                       disabled={isSubmitting}
                     />
-                    {errors.age && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.age.message}</p>}
+                    {errors.date_naissance && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.date_naissance.message}</p>}
                   </div>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Genre</label>
+                  <select
+                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 border-slate-200 focus:border-primary`}
+                    {...register('sexe')}
+                    disabled={isSubmitting}
+                  >
+                    <option value="M">Homme</option>
+                    <option value="F">Femme</option>
+                  </select>
                 </div>
               </FadeInItem>
             )}

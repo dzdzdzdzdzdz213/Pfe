@@ -120,7 +120,7 @@ const SendDocModal = ({ patient, exam, onClose }) => {
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden">
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
         <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white">
           <div>
             <h2 className="text-base font-extrabold text-slate-900">{t('send_doc_title')}</h2>
@@ -146,7 +146,7 @@ const SendDocModal = ({ patient, exam, onClose }) => {
             </button>
           </div>
         ) : (
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-5 overflow-y-auto flex-1">
             {/* Document Type */}
             <div>
               <label className="text-xs font-black text-slate-600 uppercase tracking-wider mb-2 block">{t('doc_type_label')}</label>
@@ -433,7 +433,7 @@ const RadiologuePatientSearchContent = () => {
             const date = exam.date_realisation ? new Date(exam.date_realisation) : null;
             if (dateFrom && date && date < new Date(dateFrom)) return false;
             if (dateTo && date && date > new Date(dateTo + 'T23:59:59')) return false;
-            if (serviceFilter && exam.services?.id !== serviceFilter) return false;
+            if (serviceFilter && exam.service?.id !== serviceFilter) return false;
             if (statusFilter && exam.statut !== statusFilter) return false;
             return true;
           });
@@ -549,16 +549,11 @@ const RadiologuePatientSearchContent = () => {
             <PatientCard key={patient.id} patient={patient} />
           ))}
         </div>
-      ) : query || hasActiveFilters ? (
+      ) : (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm py-16 text-center text-slate-400">
           <User className="h-10 w-10 mx-auto mb-3 opacity-30" />
           <p className="font-bold text-sm">{t('no_patient_found')}</p>
           <p className="text-xs font-medium mt-1">{t('search_modify_hint')}</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm py-16 text-center text-slate-400">
-          <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p className="font-bold text-sm">{t('search_initial_hint')}</p>
         </div>
       )}
     </div>

@@ -131,7 +131,7 @@ export const PatientAppointments = () => {
   const todayStr = format(today, 'yyyy-MM-dd');
   
   const maxDateObj = new Date();
-  maxDateObj.setDate(maxDateObj.getDate() + 7);
+  maxDateObj.setDate(maxDateObj.getDate() + 30);
   const maxDateStr = format(maxDateObj, 'yyyy-MM-dd');
 
   return (

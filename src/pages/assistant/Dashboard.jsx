@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
+import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTime, formatDate, getStatusColor, getStatusLabel, cn } from '@/lib/utils';
 import { Calendar, UserPlus, ClipboardList, Clock, Users, ChevronRight, Plus } from 'lucide-react';
@@ -15,6 +16,11 @@ export const AssistantDashboard = () => {
   const today = new Date();
   const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
   const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
+
+  // Auto-cancel expired planifie RDVs
+  useEffect(() => {
+    supabase.rpc('auto_cancel_past_rdv').catch(() => {});
+  }, []);
 
   const { data: allAppointments = [], isLoading: loadingAppts } = useQuery({
     queryKey: ['appointments', 'all'],

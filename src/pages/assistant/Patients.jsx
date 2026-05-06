@@ -261,7 +261,7 @@ export const AssistantPatients = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('dob')} *</label>
-                  <input type="date" max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.date_naissance} onChange={e => setFormData(p => ({ ...p, date_naissance: e.target.value }))} />
+                  <input type="date" min="1900-01-01" max={new Date().toISOString().split('T')[0]} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={formData.date_naissance} onChange={e => setFormData(p => ({ ...p, date_naissance: e.target.value }))} />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('gender')} *</label>
