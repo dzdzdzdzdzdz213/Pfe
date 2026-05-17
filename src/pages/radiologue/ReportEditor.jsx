@@ -154,6 +154,9 @@ export const ReportEditor = () => {
   const [reportId, setReportId] = useState(null);
   const [imageViewerOpen, setImageViewerOpen] = useState(false);
   const [ordonnance, setOrdonnance] = useState({ description: '', nom_medecin_prescripteur: '' });
+  // Locally-tracked images uploaded during this session — survives cache invalidations
+  // so newly uploaded files never visually "disappear" while the background refetch runs.
+  const [recentlyUploaded, setRecentlyUploaded] = useState([]);
 
   const { data: exam, isLoading: loadingExam } = useQuery({
     queryKey: ['exam', id],
@@ -346,7 +349,19 @@ export const ReportEditor = () => {
     toast.info(t('template_applied').replace('{name}', template.name));
   };
 
-  const images = exam?.images_radiologiques || exam?.images || [];
+  // Merge images from DB with recently uploaded ones, dedup by id and url
+  const images = React.useMemo(() => {
+    const fromDb = exam?.images_radiologiques || exam?.images || [];
+    const seen = new Set();
+    const merged = [];
+    for (const img of [...fromDb, ...recentlyUploaded]) {
+      const key = img.id || img.url_stockage;
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(img);
+    }
+    return merged;
+  }, [exam, recentlyUploaded]);
 
   const handleFileUploadComplete = useCallback(async (uploadedFiles) => {
     if (!uploadedFiles || uploadedFiles.length === 0) return;
@@ -366,20 +381,25 @@ export const ReportEditor = () => {
         .select();
       if (error) throw error;
 
-      // Optimistically update the exam cache so images appear instantly
+      const newRows = (inserted && inserted.length ? inserted : inserts);
+
+      // Keep them locally so they survive cache invalidations / refetch races.
+      setRecentlyUploaded(prev => [...prev, ...newRows]);
+
+      // Also seed the exam cache (best-effort)
       queryClient.setQueryData(['exam', id], (old) => {
         if (!old) return old;
         const oldImages = old.images_radiologiques || old.images || [];
         return {
           ...old,
-          images: [...oldImages, ...(inserted || inserts)],
-          images_radiologiques: [...oldImages, ...(inserted || inserts)]
+          images: [...oldImages, ...newRows],
+          images_radiologiques: [...oldImages, ...newRows]
         };
       });
 
-      // Also update the radio-images cache for the ImageViewerModal
+      // And the radio-images cache for the ImageViewerModal
       queryClient.setQueryData(['radio-images', id], (old) => {
-        const newImgs = (inserted || inserts).map(img => ({
+        const newImgs = newRows.map(img => ({
           ...img,
           signedUrl: img.url_stockage
         }));
@@ -388,7 +408,8 @@ export const ReportEditor = () => {
 
       toast.success('Fichiers enregistrés avec succès au dossier médical du patient !');
 
-      // Background refetch to sync with DB (non-blocking)
+      // Background refetch (non-blocking) — even if it returns stale data,
+      // recentlyUploaded keeps the images visible.
       queryClient.invalidateQueries({ queryKey: ['exam', id] });
       queryClient.invalidateQueries({ queryKey: ['radio-images', id] });
     } catch (err) {

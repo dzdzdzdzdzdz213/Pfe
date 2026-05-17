@@ -109,7 +109,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   });
 
   const handleSubmit = async () => {
-    if ((!isEditing && !formData.patient_id) || !formData.date_heure_debut || !formData.date_heure_fin || !formData.service_id) {
+    // When editing, service_id and patient_id are not required (they're locked to the existing exam/patient)
+    if (!isEditing && (!formData.patient_id || !formData.service_id)) {
+      toast.error(t('error_required_fields'));
+      return;
+    }
+    if (!formData.date_heure_debut || !formData.date_heure_fin) {
       toast.error(t('error_required_fields'));
       return;
     }

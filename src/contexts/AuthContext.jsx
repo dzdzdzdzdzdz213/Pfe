@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
     for (let i = 0; i < 3; i++) {
       try {
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Délai d'attente de la base de données dépassé (Timeout)")), 10000)
+          setTimeout(() => reject(new Error("Délai d'attente de la base de données dépassé (Timeout)")), 20000)
         );
         const result = await Promise.race([operation(), timeoutPromise]);
         
@@ -151,12 +151,13 @@ export const AuthProvider = ({ children }) => {
       if (fetchedRole === 'assistant') fetchedRole = 'receptionniste';
       return { role: fetchedRole, profileComplete: !!data?.profil_complet, utilisateur: data };
     } catch (err) {
-      if (err.message === 'DB_TIMEOUT') {
-        console.error('fetchUserRole timed out — check RLS policies on utilisateurs table');
-        toast.error('Délai d\'attente dépassé pour la base de données. Vérifiez RLS.');
+      // Silent for timeouts - they're transient network/RLS issues and showing a toast
+      // every retry creates noisy spam. The UI will retry automatically.
+      const isTimeout = err.message?.includes('Timeout') || err.message?.includes('Délai d\'attente') || err.message === 'DB_TIMEOUT';
+      if (isTimeout) {
+        console.warn('[fetchUserRole] Timeout — silent retry');
       } else {
         console.error('Unexpected error fetching utilisateur:', err.message);
-        toast.error('Erreur inattendue: ' + err.message);
       }
       return { role: null, profileComplete: false, utilisateur: null };
     }
