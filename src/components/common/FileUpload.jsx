@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/lib/supabase';
 import { UploadCloud, File, X, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
@@ -12,6 +12,18 @@ export const FileUpload = ({
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState(null);
+  const onUploadCompleteRef = useRef(onUploadComplete);
+  useEffect(() => { onUploadCompleteRef.current = onUploadComplete; }, [onUploadComplete]);
+
+  useEffect(() => {
+    const prevent = (e) => { e.preventDefault(); e.stopPropagation(); };
+    document.addEventListener('dragover', prevent);
+    document.addEventListener('drop', prevent);
+    return () => {
+      document.removeEventListener('dragover', prevent);
+      document.removeEventListener('drop', prevent);
+    };
+  }, []);
 
   const onDrop = useCallback(async (acceptedFiles) => {
     setError(null);
@@ -55,10 +67,10 @@ export const FileUpload = ({
     setFiles(prev => [...prev, ...uploadedFiles]);
     setUploading(false);
 
-    if (onUploadComplete) {
-      onUploadComplete(uploadedFiles.filter(f => f.status === 'success'));
+    if (onUploadCompleteRef.current) {
+      onUploadCompleteRef.current(uploadedFiles.filter(f => f.status === 'success'));
     }
-  }, [bucket, folder, onUploadComplete]);
+  }, [bucket, folder]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

@@ -12,33 +12,30 @@ const useRadioImages = (examenId) =>
       if (!examenId) return [];
       const { data: images, error } = await supabase
         .from('images_radiologiques')
-        .select('id, url_stockage, type_image, description')
+        .select('id, url_stockage, type_image, description, nom_fichier, format_fichier')
         .eq('examen_id', examenId);
       if (error) throw error;
       if (!images?.length) return [];
 
       const withUrls = await Promise.all(
         images.map(async (img) => {
-          // If url_stockage is already a full URL (starts with http), use it directly
           if (img.url_stockage?.startsWith('http')) {
             return { ...img, signedUrl: img.url_stockage };
           }
-          
-          // Otherwise, try to get a signed URL (expects a path)
+
           try {
             const { data: signed } = await supabase.storage
               .from('exam-images')
               .createSignedUrl(img.url_stockage, 3600);
-            
+
             if (signed?.signedUrl) {
               return { ...img, signedUrl: signed.signedUrl };
             }
 
-            // Fallback to public URL if signed fails
             const { data: publicData } = supabase.storage
               .from('exam-images')
               .getPublicUrl(img.url_stockage);
-            
+
             return { ...img, signedUrl: publicData?.publicUrl || null };
           } catch (err) {
             console.error("Error fetching image URL:", err);
@@ -49,31 +46,36 @@ const useRadioImages = (examenId) =>
       return withUrls;
     },
     enabled: !!examenId,
-    staleTime: 1000 * 60 * 50,
+    staleTime: 1000 * 30,
   });
 
 const ThumbnailStrip = ({ images, activeIndex, onSelect }) => (
   <div className="flex gap-2 overflow-x-auto p-3 bg-slate-950/80 flex-shrink-0">
-    {images.map((img, i) => (
-      <button
-        key={img.id}
-        onClick={() => onSelect(i)}
-        className={cn(
-          'h-16 w-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all',
-          i === activeIndex
-            ? 'border-blue-400 shadow-lg scale-105'
-            : 'border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500'
-        )}
-      >
-        {img.signedUrl ? (
-          <img src={img.signedUrl} alt={`Img ${i + 1}`} className="h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-slate-800 flex items-center justify-center">
-            <ImageIcon className="h-4 w-4 text-slate-500" />
-          </div>
-        )}
-      </button>
-    ))}
+    {images.map((img, i) => {
+      const isPdf = img.nom_fichier?.toLowerCase().endsWith('.pdf') || img.signedUrl?.toLowerCase().endsWith('.pdf');
+      return (
+        <button
+          key={img.id}
+          onClick={() => onSelect(i)}
+          className={cn(
+            'h-16 w-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all',
+            i === activeIndex
+              ? 'border-blue-400 shadow-lg scale-105'
+              : 'border-slate-700 opacity-60 hover:opacity-100 hover:border-slate-500'
+          )}
+        >
+          {isPdf ? (
+            <div className="h-full w-full bg-slate-800 flex items-center justify-center text-[10px] font-bold text-blue-400">PDF</div>
+          ) : img.signedUrl ? (
+            <img src={img.signedUrl} alt={`Img ${i + 1}`} className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full bg-slate-800 flex items-center justify-center">
+              <ImageIcon className="h-4 w-4 text-slate-500" />
+            </div>
+          )}
+        </button>
+      );
+    })}
   </div>
 );
 
@@ -151,13 +153,22 @@ export const ImageViewerModal = ({ examenId, onClose, initialIndex = 0 }) => {
                 <p className="text-sm mt-1 opacity-60">{t('image_viewer_hint')}</p>
               </div>
             ) : currentImage?.signedUrl ? (
-              <img
-                src={currentImage.signedUrl}
-                alt={currentImage.description || t('radiological_image')}
-                className="max-h-full max-w-full object-contain transition-transform duration-200 select-none"
-                style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                draggable={false}
-              />
+              (currentImage.nom_fichier?.toLowerCase().endsWith('.pdf') || currentImage.signedUrl?.toLowerCase().endsWith('.pdf')) ? (
+                <iframe
+                  src={currentImage.signedUrl}
+                  title={currentImage.description || 'PDF'}
+                  className="w-full h-full border-0"
+                  style={{ minHeight: '500px' }}
+                />
+              ) : (
+                <img
+                  src={currentImage.signedUrl}
+                  alt={currentImage.description || t('radiological_image')}
+                  className="max-h-full max-w-full object-contain transition-transform duration-200 select-none"
+                  style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                  draggable={false}
+                />
+              )
             ) : (
               <div className="text-center text-slate-600">
                 <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-20" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -348,23 +348,53 @@ export const ReportEditor = () => {
 
   const images = exam?.images_radiologiques || exam?.images || [];
 
-  const handleFileUploadComplete = async (uploadedFiles) => {
+  const handleFileUploadComplete = useCallback(async (uploadedFiles) => {
+    if (!uploadedFiles || uploadedFiles.length === 0) return;
+
     try {
       const inserts = uploadedFiles.map(file => ({
         examen_id: id,
-        url_stockage: file.url, // Store the full public URL so it renders correctly
-        nom_fichier: file.name
+        url_stockage: file.url,
+        nom_fichier: file.name,
+        format_fichier: file.type || null,
+        taille_fichier: file.size || null
       }));
-      
-      const { error } = await supabase.from('images_radiologiques').insert(inserts);
+
+      const { data: inserted, error } = await supabase
+        .from('images_radiologiques')
+        .insert(inserts)
+        .select();
       if (error) throw error;
-      
+
+      // Optimistically update the exam cache so images appear instantly
+      queryClient.setQueryData(['exam', id], (old) => {
+        if (!old) return old;
+        const oldImages = old.images_radiologiques || old.images || [];
+        return {
+          ...old,
+          images: [...oldImages, ...(inserted || inserts)],
+          images_radiologiques: [...oldImages, ...(inserted || inserts)]
+        };
+      });
+
+      // Also update the radio-images cache for the ImageViewerModal
+      queryClient.setQueryData(['radio-images', id], (old) => {
+        const newImgs = (inserted || inserts).map(img => ({
+          ...img,
+          signedUrl: img.url_stockage
+        }));
+        return [...(old || []), ...newImgs];
+      });
+
       toast.success('Fichiers enregistrés avec succès au dossier médical du patient !');
+
+      // Background refetch to sync with DB (non-blocking)
       queryClient.invalidateQueries({ queryKey: ['exam', id] });
+      queryClient.invalidateQueries({ queryKey: ['radio-images', id] });
     } catch (err) {
       toast.error('Erreur lors de la sauvegarde des images : ' + err.message);
     }
-  };
+  }, [id, queryClient]);
 
   if (loadingExam) {
     return (
@@ -509,16 +539,31 @@ export const ReportEditor = () => {
             </div>
           </div>
           <div className="bg-slate-900 min-h-[400px] flex items-center justify-center overflow-hidden relative">
-            {images.length > 0 ? (
-              <img
-                src={images[0]?.signedUrl || images[0]?.url_stockage || ''}
-                alt="Radiology"
-                className="max-w-full max-h-[500px] object-contain transition-transform duration-300 cursor-zoom-in"
-                style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                onClick={() => setImageViewerOpen(true)}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            ) : (
+            {images.length > 0 ? (() => {
+              const firstImg = images[0];
+              const url = firstImg?.signedUrl || firstImg?.url_stockage || '';
+              const isPdf = firstImg?.nom_fichier?.toLowerCase().endsWith('.pdf') || url.toLowerCase().endsWith('.pdf');
+              if (isPdf) {
+                return (
+                  <div className="text-center text-slate-400 p-8 cursor-pointer" onClick={() => setImageViewerOpen(true)}>
+                    <FileText className="h-16 w-16 mx-auto mb-3 text-blue-400" />
+                    <p className="text-sm font-bold">{firstImg?.nom_fichier || 'Document PDF'}</p>
+                    <p className="text-xs opacity-60 mt-1">Cliquez pour ouvrir</p>
+                  </div>
+                );
+              }
+              return (
+                <img
+                  key={url}
+                  src={url}
+                  alt="Radiology"
+                  className="max-w-full max-h-[500px] object-contain transition-transform duration-300 cursor-zoom-in"
+                  style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                  onClick={() => setImageViewerOpen(true)}
+                  onError={(e) => { e.target.src = ''; e.target.alt = 'Image non disponible'; }}
+                />
+              );
+            })() : (
               <div className="text-center text-slate-500 p-8">
                 <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
                 <p className="text-sm font-bold">{t('image_viewer_none')}</p>
@@ -528,12 +573,20 @@ export const ReportEditor = () => {
           </div>
           {images.length > 1 && (
             <div className="p-3 border-t border-slate-100 flex gap-2 overflow-x-auto bg-slate-50/50">
-              {images.map((img, i) => (
-                <button key={i} onClick={() => setImageViewerOpen(true)}
-                  className="h-16 w-16 rounded-lg border-2 border-slate-200 overflow-hidden flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
-                  <div className="h-full w-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">IMG {i + 1}</div>
-                </button>
-              ))}
+              {images.map((img, i) => {
+                const url = img.signedUrl || img.url_stockage || '';
+                const isPdf = url.toLowerCase().endsWith('.pdf');
+                return (
+                  <button key={img.id || i} onClick={() => setImageViewerOpen(true)}
+                    className="h-16 w-16 rounded-lg border-2 border-slate-200 overflow-hidden flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
+                    {isPdf ? (
+                      <div className="h-full w-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">PDF</div>
+                    ) : (
+                      <img src={url} alt={`Img ${i + 1}`} className="h-full w-full object-cover" onError={(e) => { e.target.src = ''; }} />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           )}
           <div className="p-4 border-t border-slate-100 bg-slate-50/50">

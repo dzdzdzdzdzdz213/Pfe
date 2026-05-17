@@ -24,13 +24,12 @@ export const AuthProvider = ({ children }) => {
   // Helper to handle the "Lock broken" / "AbortError" race condition in Supabase
   const safeCall = async (operation) => {
     let lastError;
-    // Set a global timeout for any DB operation to prevent "hanging indefinitely"
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error("Délai d'attente de la base de données dépassé (Timeout)")), 10000)
-    );
 
     for (let i = 0; i < 3; i++) {
       try {
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Délai d'attente de la base de données dépassé (Timeout)")), 10000)
+        );
         const result = await Promise.race([operation(), timeoutPromise]);
         
         if (result?.error && (result.error.message?.includes('Lock') || result.error.name === 'AbortError')) {

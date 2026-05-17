@@ -90,6 +90,9 @@ export const PatientProfile = () => {
     if (personalForm.telephone && !validateAlgerianPhone(personalForm.telephone)) {
       return toast.error('Format de téléphone invalide (05/06/07 XX XX XX XX)');
     }
+    if (personalForm.age && (parseInt(personalForm.age) < 1 || parseInt(personalForm.age) > 120)) {
+      return toast.error('L\'âge doit être entre 1 et 120 ans.');
+    }
     setPersonalLoading(true);
     try {
       const { error } = await supabase
@@ -310,7 +313,14 @@ export const PatientProfile = () => {
             <div>
               <label className={LABEL}>Âge</label>
               <input type="number" min="1" max="120" className={INPUT} value={personalForm.age} placeholder="Votre âge"
-                onChange={e => setPersonalForm(p => ({ ...p, age: e.target.value }))} />
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '') { setPersonalForm(p => ({ ...p, age: '' })); return; }
+                  const num = parseInt(val, 10);
+                  if (!isNaN(num) && num >= 1 && num <= 120) {
+                    setPersonalForm(p => ({ ...p, age: String(num) }));
+                  }
+                }} />
             </div>
             {role === 'patient' && (
               <div>
