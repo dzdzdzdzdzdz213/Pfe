@@ -1,3 +1,6 @@
 node_modules
 .env
 .env.backup
+
+# Claude Code (agent) local config — preview launch settings & permission allowlist
+.claude/
