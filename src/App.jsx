@@ -86,7 +86,7 @@ const Unauthorized = () => {
 
   useEffect(() => {
     // AUTO-RECOVERY: If we are here but the role is actually valid, bounce them back!
-    if (!loading && !roleLoading && role && role !== 'patient') {
+    if (!loading && !roleLoading && role) {
       const path = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
       // eslint-disable-next-line no-console
       console.log("Auto-recovering from unauthorized state to:", path);

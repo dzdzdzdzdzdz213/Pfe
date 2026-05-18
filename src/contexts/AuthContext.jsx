@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { toast } from 'sonner';
 import { auditService } from '../services/audit';
 
 
@@ -95,7 +94,7 @@ export const AuthProvider = ({ children }) => {
           const roleToSet = finalRole;
           const { data: updatedUtil } = await safeCall(() => supabase.from('utilisateurs').update({ auth_id: authUser.id }).eq('email', authUser.email).select().single());
           
-          if (roleToSet === 'admin') { const { data: adm } = await safeCall(() => supabase.from('admins').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!adm) await safeCall(() => supabase.from('admins').insert({ utilisateur_id: updatedUtil.id })); }
+          if (roleToSet === 'admin') { const { data: adm } = await safeCall(() => supabase.from('administrateurs').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!adm) await safeCall(() => supabase.from('administrateurs').insert({ utilisateur_id: updatedUtil.id })); }
           if (roleToSet === 'radiologue') { const { data: rad } = await safeCall(() => supabase.from('radiologues').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!rad) await safeCall(() => supabase.from('radiologues').insert({ utilisateur_id: updatedUtil.id })); }
           if (roleToSet === 'receptionniste') { const { data: ere } = await safeCall(() => supabase.from('receptionnistes').select('id').eq('utilisateur_id', updatedUtil.id).maybeSingle()); if (!ere) await safeCall(() => supabase.from('receptionnistes').insert({ utilisateur_id: updatedUtil.id })); }
 

@@ -133,7 +133,7 @@ export const AssistantPatients = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-slate-800">{row.utilisateur?.prenom} {row.utilisateur?.nom}</p>
-            <p className="text-xs text-slate-500 font-medium">{row.sexe === 'M' ? t('gender_m') : t('gender_f')}</p>
+            <p className="text-xs text-slate-500 font-medium">{row.sexe === 'F' ? t('gender_f') : row.sexe === 'M' ? t('gender_m') : '-'}</p>
           </div>
         </div>
       ),

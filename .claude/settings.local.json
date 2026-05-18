@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "mcp__Claude_in_Chrome__tabs_context_mcp",
-      "mcp__57153308-5dc6-4704-b258-6ab9687c515a__execute_sql"
+      "mcp__57153308-5dc6-4704-b258-6ab9687c515a__execute_sql",
+      "Bash(npm run *)"
     ]
   }
 }

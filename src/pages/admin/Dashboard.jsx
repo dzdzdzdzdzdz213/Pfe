@@ -23,10 +23,6 @@ export const AdminDashboard = () => {
     };
     runMaintenance();
   }, []);
-  const today = new Date();
-  const startOf7DaysAgo = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString();
-  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59).toISOString();
-
   // Unified Dashboard Metrics Query
   const { data: dashboardData, isLoading: loadingMetrics } = useQuery({
     queryKey: ['admin', 'dashboardMetrics'],

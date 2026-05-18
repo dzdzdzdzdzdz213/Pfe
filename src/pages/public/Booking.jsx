@@ -67,28 +67,40 @@ export const Booking = () => {
   };
 
   // --- EFFET POUR RÉCUPÉRER LES HEURES DÉJÀ RÉSERVÉES ---
-  useEffect(() => {
-    const fetchTakenSlots = async () => {
-      if (!formData.date) return;
+  const fetchTakenSlots = React.useCallback(async () => {
+    if (!formData.date) return;
 
-      const { data, error } = await supabase
-        .from('rendez_vous')
-        .select('date_heure_debut')
-        .gte('date_heure_debut', `${formData.date}T00:00:00`)
-        .lte('date_heure_debut', `${formData.date}T23:59:59`);
+    // Exclude cancelled rdv so freed slots become bookable again
+    const { data, error } = await supabase
+      .from('rendez_vous')
+      .select('date_heure_debut, statut')
+      .neq('statut', 'annule')
+      .gte('date_heure_debut', `${formData.date}T00:00:00`)
+      .lte('date_heure_debut', `${formData.date}T23:59:59`);
 
-      if (!error && data) {
-        // On extrait l'heure (HH:mm) de chaque rendez-vous trouvé
-        const hours = data.map(rdv => {
-          const d = new Date(rdv.date_heure_debut);
-          return format(d, 'HH:mm');
-        });
-        setTakenSlots(hours);
-      }
-    };
-
-    fetchTakenSlots();
+    if (!error && data) {
+      const hours = data.map(rdv => {
+        const d = new Date(rdv.date_heure_debut);
+        return format(d, 'HH:mm');
+      });
+      setTakenSlots(hours);
+    }
   }, [formData.date]);
+
+  useEffect(() => {
+    fetchTakenSlots();
+  }, [fetchTakenSlots]);
+
+  // Real-time: refresh taken slots when any rdv is inserted/updated by anyone
+  useEffect(() => {
+    const channel = supabase
+      .channel('public-booking-slots')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rendez_vous' }, () => {
+        fetchTakenSlots();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchTakenSlots]);
 
   const handleNext = () => setStep((s) => Math.min(s + 1, 4));
   const handlePrev = () => setStep((s) => Math.max(s - 1, 1));
@@ -102,6 +114,26 @@ export const Booking = () => {
     try {
       const startDate = new Date(`${formData.date}T${formData.time}`);
       const endDate = new Date(startDate.getTime() + 30 * 60000);
+
+      // Final race-condition check — someone may have taken this slot
+      // between when the user picked it and when they clicked submit.
+      const { data: conflicts, error: confErr } = await supabase
+        .from('rendez_vous')
+        .select('id')
+        .neq('statut', 'annule')
+        .lt('date_heure_debut', endDate.toISOString())
+        .gt('date_heure_fin', startDate.toISOString());
+
+      if (confErr) throw confErr;
+      if (conflicts && conflicts.length > 0) {
+        toast.error("Ce créneau vient d'être réservé par un autre patient. Veuillez choisir un autre horaire.");
+        setFormData(prev => ({ ...prev, time: '' }));
+        fetchTakenSlots();
+        setStep(2);
+        setIsSubmitting(false);
+        return;
+      }
+
       const documentInfo = formData.documentUrl ? `\n[DOC:${formData.documentUrl}]` : '';
 
       const serviceTag = formData.service ? `[${formData.service.name}]` : '';

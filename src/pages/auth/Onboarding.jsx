@@ -9,7 +9,7 @@ import { Loader2, User, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition';
 
 export const Onboarding = () => {
-  const { user, utilisateur, role } = useAuth();
+  const { user, role } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const schema = z.object({

@@ -26,10 +26,17 @@ export const patientService = {
       .from('patients')
       .select(`
         *,
-        utilisateur:utilisateurs(nom, prenom, email, telephone)
+        utilisateur:utilisateurs(nom, prenom, email, telephone, sexe, date_naissance, role)
       `);
     if (error) throw error;
-    return data;
+    // Backfill sexe / date_naissance from the linked utilisateur when the patients
+    // row doesn't have its own value (older accounts created before the columns were
+    // populated). Default to 'M' rather than treating missing as Female.
+    return (data || []).map(p => ({
+      ...p,
+      sexe: p.sexe || p.utilisateur?.sexe || 'M',
+      date_naissance: p.date_naissance || p.utilisateur?.date_naissance || null,
+    }));
   },
 
   /**

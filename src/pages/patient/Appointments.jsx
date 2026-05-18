@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -24,6 +24,35 @@ export const PatientAppointments = () => {
   const [selectedTime, setSelectedTime] = useState(null);
   const [motif, setMotif] = useState('');
   const [uploadedDocUrl, setUploadedDocUrl] = useState('');
+  const [takenSlots, setTakenSlots] = useState([]);
+
+  // Fetch already-booked slots for the chosen date
+  const fetchTakenSlots = useCallback(async () => {
+    if (!selectedDate) { setTakenSlots([]); return; }
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    const { data, error } = await supabase
+      .from('rendez_vous')
+      .select('date_heure_debut, statut')
+      .neq('statut', 'annule')
+      .gte('date_heure_debut', `${dateStr}T00:00:00`)
+      .lte('date_heure_debut', `${dateStr}T23:59:59`);
+    if (!error && data) {
+      setTakenSlots(data.map(r => format(new Date(r.date_heure_debut), 'HH:mm')));
+    }
+  }, [selectedDate]);
+
+  useEffect(() => { fetchTakenSlots(); }, [fetchTakenSlots]);
+
+  // Real-time refresh so a slot taken by another user disappears immediately
+  useEffect(() => {
+    const channel = supabase
+      .channel('patient-booking-slots')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rendez_vous' }, () => {
+        fetchTakenSlots();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchTakenSlots]);
 
   const dateLocale = lang === 'ar' ? arSA : fr;
 
@@ -66,6 +95,18 @@ export const PatientAppointments = () => {
       const start = new Date(selectedDate);
       start.setHours(parseInt(hours), parseInt(minutes), 0);
       const end = new Date(start.getTime() + 30 * 60000);
+
+      // Race-condition guard: re-verify the slot is still free
+      const free = await appointmentService.checkAvailability(
+        start.toISOString(),
+        end.toISOString()
+      );
+      if (!free) {
+        await fetchTakenSlots();
+        setSelectedTime(null);
+        setBookingStep(2);
+        throw new Error("Ce créneau vient d'être réservé. Veuillez choisir un autre horaire.");
+      }
 
       // 1. Create one exam
       const { data: createdExam, error: examError } = await supabase
@@ -348,14 +389,15 @@ export const PatientAppointments = () => {
                 {TIME_SLOTS.map(time => {
                   const [h, m] = time.split(':').map(Number);
                   const isPastTime = selectedDate && isSameDay(selectedDate, today) && (h * 60 + m < today.getHours() * 60 + today.getMinutes());
-                  const isDisabled = isPastTime;
+                  const isTaken = takenSlots.includes(time);
+                  const isDisabled = isPastTime || isTaken;
                   return (
                   <button key={time} disabled={isDisabled} onClick={() => { setSelectedTime(time); setBookingStep(3); }}
                     className={cn('py-3 rounded-xl text-sm font-bold transition-all border flex flex-col items-center justify-center',
                       isDisabled ? 'bg-red-50 text-red-300 border-red-100 cursor-not-allowed opacity-50' :
                       selectedTime === time ? 'bg-primary text-white border-primary shadow-lg shadow-blue-200' : 'bg-white border-slate-200 text-slate-700 hover:border-primary/30')}>
                     <span>{time}</span>
-                    {isDisabled && <span className="block text-[8px] mt-0.5">PASSÉ</span>}
+                    {isDisabled && <span className="block text-[8px] mt-0.5">{isTaken ? 'COMPLET' : 'PASSÉ'}</span>}
                   </button>
                   );
                 })}

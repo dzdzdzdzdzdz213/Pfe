@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
@@ -35,6 +35,29 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
   // Consent form state
   const [isInvasive, setIsInvasive] = useState(false);
   const [typeActeInvasif, setTypeActeInvasif] = useState('');
+
+  // Live slot-conflict warning
+  const [slotConflict, setSlotConflict] = useState(false);
+  useEffect(() => {
+    if (!formData.date_heure_debut || !formData.date_heure_fin) {
+      setSlotConflict(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const free = await appointmentService.checkAvailability(
+          formData.date_heure_debut,
+          formData.date_heure_fin,
+          isEditing ? appointment?.id : null
+        );
+        if (!cancelled) setSlotConflict(!free);
+      } catch {
+        if (!cancelled) setSlotConflict(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [formData.date_heure_debut, formData.date_heure_fin, isEditing, appointment?.id]);
 
   const [newPatientForm, setNewPatientForm] = useState({
     nom: '', prenom: '', email: '', telephone: '', sexe: 'M', date_naissance: '', adresse: ''
@@ -121,6 +144,22 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     if (isInvasive && !typeActeInvasif.trim()) {
       toast.error(t('error_invasive_type'));
       return;
+    }
+
+    // Verify slot is still free (exclude this appointment when editing)
+    try {
+      const isFree = await appointmentService.checkAvailability(
+        formData.date_heure_debut,
+        formData.date_heure_fin,
+        isEditing ? appointment.id : null
+      );
+      if (!isFree) {
+        toast.error("Ce créneau est déjà réservé. Veuillez choisir un autre horaire.");
+        setStep(3);
+        return;
+      }
+    } catch (err) {
+      console.warn('Availability check failed:', err.message);
     }
 
     if (isEditing) {
@@ -395,6 +434,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                     onChange={(e) => setFormData(prev => ({ ...prev, date_heure_fin: new Date(e.target.value).toISOString() }))}
                   />
                 </div>
+                {slotConflict && (
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
+                    <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <span>Ce créneau est déjà réservé. Veuillez choisir un autre horaire.</span>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -569,7 +614,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           {step < totalSteps ? (
             <button
               onClick={() => setStep(s => s + 1)}
-              disabled={(step === 1 && !formData.patient_id) || (step === 2 && !formData.service_id) || (step === 3 && (!formData.date_heure_debut || !formData.date_heure_fin))}
+              disabled={(step === 1 && !formData.patient_id) || (step === 2 && !formData.service_id) || (step === 3 && (!formData.date_heure_debut || !formData.date_heure_fin || slotConflict))}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-100"
             >
               {t('next')} <ChevronRight className="h-4 w-4" />
@@ -577,7 +622,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={isPending}
+              disabled={isPending || slotConflict}
               className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100"
             >
               {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

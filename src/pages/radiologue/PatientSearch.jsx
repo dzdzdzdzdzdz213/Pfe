@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Search, User, FileText, Image, Send, ChevronDown, ChevronUp, Loader2, CheckCircle, X, FilePlus, Filter } from 'lucide-react';
@@ -237,6 +238,7 @@ const SendDocModal = ({ patient, exam, onClose }) => {
 // ---------------------------------------------------------------------------
 const PatientCard = ({ patient }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [sendModal, setSendModal] = useState(null); // { patient, exam }
 
@@ -267,7 +269,7 @@ const PatientCard = ({ patient }) => {
             {t('exam_count_alt').replace('{count}', (patientExams || []).length)}
           </span>
           <button
-            onClick={e => { e.stopPropagation(); window.location.href=`/radiologue/history?id=${patient.id}`; }}
+            onClick={e => { e.stopPropagation(); navigate(`/radiologue/history?id=${patient.id}`); }}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white rounded-xl text-xs font-bold border border-emerald-100 hover:border-emerald-500 transition-all"
           >
             <FileText className="h-3.5 w-3.5" /> Dossier

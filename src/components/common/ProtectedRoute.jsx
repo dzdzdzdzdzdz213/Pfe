@@ -2,10 +2,14 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user, role, profileComplete, loading, roleLoading } = useAuth();
+  const { user, role, profileComplete, loading, roleLoading, authInitialized } = useAuth();
   const location = useLocation();
 
-  if (loading || roleLoading) {
+  // Wait for auth check, OR for role to be resolved when a user is present but
+  // the role hasn't loaded yet (race condition during refetch).
+  // Once authInitialized is true and role is still null, treat it as a load failure
+  // and fall through to the unauthorized handler (rather than spinning forever).
+  if (loading || roleLoading || (user && !role && !authInitialized)) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">

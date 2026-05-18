@@ -270,7 +270,7 @@ export const Login = () => {
                 <div>
                   <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Genre</label>
                   <select
-                    className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 border-slate-200 focus:border-primary`}
+                    className="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 border-slate-200 focus:border-primary"
                     {...register('sexe')}
                     disabled={isSubmitting}
                   >
