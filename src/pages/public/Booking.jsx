@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Waves, HeartPulse, Microscope, Syringe, ClipboardCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Calendar, CheckCircle2, Scan, Bone, Activity, Waves, HeartPulse, Microscope, Syringe, ClipboardCheck, Stethoscope, Loader2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { FileUpload } from '@/components/common/FileUpload';
@@ -43,10 +44,37 @@ export const Booking = () => {
     notes: ''
   });
 
-  const servicesList = [
-    { id: 1, icon: Scan }, { id: 2, icon: Bone }, { id: 3, icon: Waves }, { id: 4, icon: Activity },
-    { id: 5, icon: HeartPulse }, { id: 6, icon: Microscope }, { id: 7, icon: Syringe }, { id: 8, icon: ClipboardCheck },
-  ];
+  // Admin-controlled services list (fetched from DB so new entries in
+  // /admin/settings show up here automatically)
+  const { data: dbServices = [] } = useQuery({
+    queryKey: ['public-services'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('services').select('id, nom, description').order('nom');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Map service name → icon for visual identity. Anything unknown falls back to Stethoscope.
+  const iconForService = (name = '') => {
+    const n = name.toLowerCase();
+    if (n.includes('écho') || n.includes('echo')) return Scan;
+    if (n.includes('radio')) return Bone;
+    if (n.includes('doppler')) return Waves;
+    if (n.includes('scanner') || n.includes('tomo')) return Activity;
+    if (n.includes('mammo')) return HeartPulse;
+    if (n.includes('biopsi') || n.includes('microbio')) return Microscope;
+    if (n.includes('cyto') || n.includes('ponction')) return Syringe;
+    if (n.includes('dmo') || n.includes('densit')) return ClipboardCheck;
+    return Stethoscope;
+  };
+
+  const servicesList = dbServices.map(s => ({
+    id: s.id,
+    name: s.nom,
+    description: s.description || '',
+    icon: iconForService(s.nom),
+  }));
 
   const timeSlots = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
 
@@ -195,13 +223,12 @@ export const Booking = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {servicesList.map((srv) => {
                     const SrvIcon = srv.icon;
-                    const serviceTitle = t(`service_${srv.id}_title`);
                     const isSelected = formData.service?.id === srv.id;
                     return (
                       <button
                         key={srv.id}
                         onClick={() => {
-                          setFormData(prev => ({ ...prev, service: { id: srv.id, name: serviceTitle } }));
+                          setFormData(prev => ({ ...prev, service: { id: srv.id, name: srv.name } }));
                           setStep(2);
                         }}
                         className={`
@@ -216,8 +243,8 @@ export const Booking = () => {
                           <SrvIcon className={`w-7 h-7 ${isSelected ? 'text-primary' : 'text-slate-400 group-hover:text-primary'} transition-colors`} />
                           {isSelected && <CheckCircle2 className="w-5 h-5 text-primary" />}
                         </div>
-                        <h3 className="font-bold text-slate-800 text-sm mb-1">{serviceTitle}</h3>
-                        <p className="text-[10px] font-medium text-slate-500 leading-snug line-clamp-2">{t(`service_${srv.id}_desc`)}</p>
+                        <h3 className="font-bold text-slate-800 text-sm mb-1">{srv.name}</h3>
+                        <p className="text-[10px] font-medium text-slate-500 leading-snug line-clamp-2">{srv.description}</p>
                       </button>
                     );
                   })}

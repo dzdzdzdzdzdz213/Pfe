@@ -136,7 +136,7 @@ export const PublicLayout = () => {
             </div>
 
             <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">Localisation</h3>
+              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-6">{t('localisation')}</h3>
               <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-sm">
                 <iframe
                   title="Localisation Cabinet Chemloul"

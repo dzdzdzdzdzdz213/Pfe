@@ -31,13 +31,25 @@ export const AdminSettings = () => {
 
   const [showServiceDialog, setShowServiceDialog] = useState(false);
   const [editService, setEditService] = useState(null);
-  const [serviceForm, setServiceForm] = useState({ nom: '', description: '' });
+  const [serviceForm, setServiceForm] = useState({ nom: '', description: '', image_url: '', tag: '' });
+  const [imageUploading, setImageUploading] = useState(false);
 
   const createServiceMutation = useMutation({
     mutationFn: async (data) => {
+      // Block duplicate names client-side (no DB unique constraint exists on `nom`)
+      const trimmed = (data.nom || '').trim();
+      const { data: existing } = await supabase
+        .from('services')
+        .select('id')
+        .ilike('nom', trimmed)
+        .maybeSingle();
+      if (existing) {
+        throw new Error(`Un service nommé "${trimmed}" existe déjà.`);
+      }
+
       const { data: result, error } = await supabase
         .from('services')
-        .upsert(data, { onConflict: 'nom' })
+        .insert({ ...data, nom: trimmed })
         .select()
         .single();
       if (error) throw error;
@@ -79,7 +91,12 @@ export const AdminSettings = () => {
 
   const openServiceEdit = (service) => {
     setEditService(service);
-    setServiceForm({ nom: service.nom, description: service.description || '' });
+    setServiceForm({
+      nom: service.nom,
+      description: service.description || '',
+      image_url: service.image_url || '',
+      tag: service.tag || '',
+    });
     setShowServiceDialog(true);
   };
 
@@ -89,6 +106,27 @@ export const AdminSettings = () => {
       updateServiceMutation.mutate({ id: editService.id, data: serviceForm });
     } else {
       createServiceMutation.mutate(serviceForm);
+    }
+  };
+
+  // Upload an image to the public 'documents' bucket and store its public URL on the form
+  const handleImageUpload = async (file) => {
+    if (!file) return;
+    setImageUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `services/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from('documents')
+        .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type });
+      if (upErr) throw upErr;
+      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
+      setServiceForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
+      toast.success('Image téléchargée');
+    } catch (err) {
+      toast.error("Erreur lors du téléchargement de l'image : " + err.message);
+    } finally {
+      setImageUploading(false);
     }
   };
 
@@ -148,7 +186,7 @@ export const AdminSettings = () => {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <h3 className="text-base font-extrabold text-slate-800">Services Médicaux</h3>
-            <button onClick={() => { setEditService(null); setServiceForm({ nom: '', description: '' }); setShowServiceDialog(true); }} className="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
+            <button onClick={() => { setEditService(null); setServiceForm({ nom: '', description: '', image_url: '', tag: '' }); setShowServiceDialog(true); }} className="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
               <Plus className="h-4 w-4" /> Ajouter
             </button>
           </div>
@@ -157,14 +195,28 @@ export const AdminSettings = () => {
               [...Array(3)].map((_, i) => <div key={i} className="px-6 py-5 flex items-center gap-4"><div className="h-4 w-40 bg-slate-100 rounded animate-pulse" /></div>)
             ) : services.length > 0 ? (
               services.map((service) => (
-                <div key={service.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors">
-                  <div>
-                    <p className="text-sm font-bold text-slate-800">{service.nom}</p>
-                    <p className="text-xs text-slate-500 font-medium mt-0.5">{service.description || 'Aucune description'}</p>
+                <div key={service.id} className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors gap-4">
+                  <div className="flex items-center gap-4 min-w-0 flex-1">
+                    {service.image_url ? (
+                      <img src={service.image_url} alt={service.nom} className="h-12 w-12 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                    ) : (
+                      <div className="h-12 w-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                        <Stethoscope className="h-5 w-5 text-slate-400" />
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold text-slate-800">{service.nom}</p>
+                        {service.tag && (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">{service.tag}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-0.5 truncate">{service.description || 'Aucune description'}</p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button onClick={() => openServiceEdit(service)} className="p-2 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"><Edit className="h-4 w-4" /></button>
-                    <button onClick={() => deleteServiceMutation.mutate(service.id)} className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="h-4 w-4" /></button>
+                    <button onClick={() => { if (window.confirm(`Supprimer le service "${service.nom}" ?`)) deleteServiceMutation.mutate(service.id); }} className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 </div>
               ))
@@ -291,6 +343,48 @@ export const AdminSettings = () => {
               <div>
                 <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Description</label>
                 <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} placeholder="Description du service..." />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Étiquette (Tag)</label>
+                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={serviceForm.tag} onChange={e => setServiceForm(p => ({ ...p, tag: e.target.value }))} placeholder="Ex: Haute précision, Vasculaire, Dépistage..." />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Photo du service</label>
+                {serviceForm.image_url ? (
+                  <div className="relative rounded-xl overflow-hidden border border-slate-200 mb-2">
+                    <img src={serviceForm.image_url} alt="aperçu" className="w-full h-32 object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setServiceForm(p => ({ ...p, image_url: '' }))}
+                      className="absolute top-2 right-2 bg-white/90 hover:bg-white p-1.5 rounded-lg text-red-600 hover:text-red-700 shadow"
+                      title="Retirer la photo"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : null}
+                <label className={cn(
+                  "flex items-center justify-center gap-2 w-full px-4 py-3 border-2 border-dashed rounded-xl text-sm font-bold transition-all cursor-pointer",
+                  imageUploading
+                    ? 'border-slate-200 bg-slate-50 text-slate-400 cursor-wait'
+                    : 'border-slate-200 bg-slate-50 hover:border-primary hover:bg-blue-50/30 text-slate-600 hover:text-primary'
+                )}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={imageUploading}
+                    onChange={e => handleImageUpload(e.target.files?.[0])}
+                  />
+                  {imageUploading ? 'Téléchargement…' : (serviceForm.image_url ? 'Remplacer la photo' : 'Téléverser une photo')}
+                </label>
+                <p className="text-[10px] text-slate-400 font-medium mt-1.5">Vous pouvez aussi coller une URL ci-dessous</p>
+                <input
+                  className="mt-1.5 w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
+                  value={serviceForm.image_url}
+                  onChange={e => setServiceForm(p => ({ ...p, image_url: e.target.value }))}
+                  placeholder="https://… ou /images/exemple.jpg"
+                />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
