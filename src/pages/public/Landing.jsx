@@ -45,13 +45,6 @@ export const Landing = () => {
         <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[800px] h-[800px] rounded-full bg-blue-50 blur-3xl opacity-50" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 block lg:flex items-center gap-12 lg:gap-20">
           <div className="flex-1 text-center lg:text-start">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs font-bold mb-8">
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-600" />
-              </span>
-              {t('cabinet_ouvert')}
-            </div>
             <h1 className="text-4xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-6">
               {t('imagerie_haute_precision').split('\n').map((line, i) => (
                 <React.Fragment key={i}>
@@ -73,12 +66,6 @@ export const Landing = () => {
                 style={{ backgroundImage: `url('/images/hero-medical.jpg')` }}
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-transparent" />
-              <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md shadow-lg border border-white/50">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-wider">Technologie 2026</span>
-                </div>
-              </div>
             </div>
           </div>
         </div>
