@@ -450,15 +450,20 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
             const hasDoc = rawMotif.includes('[DOC:');
             const docUrl = rawMotif.match(/\[DOC:(.*?)\]/)?.[1];
             const isGuestBooking = rawMotif.includes('— Patient:');
-            
+
             const guestSpecialty = isGuestBooking ? rawMotif.match(/\[(.*?)\]/)?.[1] : '';
-            const guestMessage = isGuestBooking 
-              ? rawMotif.split('—')[0].replace(/\[(.*?)\]/, '').trim() 
+            const guestMessage = isGuestBooking
+              ? rawMotif.split('—')[0].replace(/\[(.*?)\]/, '').trim()
               : rawMotif.replace(/\[DOC:.*?\]/g, '').trim();
             const guestPhone = isGuestBooking ? rawMotif.split('—')[2]?.replace('Tél:', '').trim() : '';
             const guestAge = rawMotif.match(/Âge:\s*(\d+)/)?.[1] || '';
             const guestNameMatch = rawMotif.match(/Patient:\s*([^—-]+)/);
             const guestName = guestNameMatch ? guestNameMatch[1].trim() : (isGuestBooking ? rawMotif.split('—')[1]?.replace('Patient:', '').trim() : 'Patient');
+
+            // For logged-in patient bookings the motif is "[ServiceName] note" — pull the service tag out
+            const loggedInService = !isGuestBooking ? (rawMotif.match(/^\[(.*?)\]/)?.[1] || '') : '';
+            const loggedInPhone = !isGuestBooking ? (appointment?.patient?.utilisateur?.telephone || selectedPatient?.utilisateur?.telephone || '') : '';
+            const loggedInNote = !isGuestBooking ? rawMotif.replace(/^\[.*?\]\s*/, '').replace(/\[DOC:.*?\]/g, '').trim() : '';
 
             return (
               <div className="space-y-4">
@@ -466,29 +471,24 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                   <FileText className="h-4 w-4 text-primary" /> {t('modal_details')}
                 </h3>
 
-                {isEditing && rawMotif && (guestMessage || hasDoc || isGuestBooking) && (
+                {isEditing && isGuestBooking && (
                   <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
                     <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3">
-                      {isGuestBooking ? "Informations de Réservation" : "Détails envoyés par le patient"}
+                      Informations de Réservation
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      {isGuestBooking && (
-                        <>
-                          <div className="flex flex-col">
-                            <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
-                            <span className="font-bold text-amber-900">{guestPhone || '-'}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
-                            <span className="font-bold text-amber-900">{guestAge || '-'}</span>
-                          </div>
-                          <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
-                            <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
-                            <span className="font-black text-amber-900 text-base">{guestSpecialty || 'Non spécifiée'}</span>
-                          </div>
-                        </>
-                      )}
-                      
+                      <div className="flex flex-col">
+                        <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
+                        <span className="font-bold text-amber-900">{guestPhone || '-'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-amber-600/70 text-xs font-semibold">Âge</span>
+                        <span className="font-bold text-amber-900">{guestAge || '-'}</span>
+                      </div>
+                      <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
+                        <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
+                        <span className="font-black text-amber-900 text-base">{guestSpecialty || 'Non spécifiée'}</span>
+                      </div>
                       {guestMessage && guestMessage !== 'Demande en ligne' && (
                         <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
                           <span className="text-amber-600/70 text-xs font-semibold">Message du patient</span>
@@ -498,11 +498,47 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                     </div>
                     {hasDoc && (
                       <div className="mt-3 pt-3 border-t border-amber-200">
-                        <a 
-                          href={`${docUrl}?download=Ordonnance_${encodeURIComponent(guestName.replace(/\s+/g, '_'))}.${docUrl.split('.').pop()}`} 
-                          target="_blank" 
+                        <a
+                          href={`${docUrl}?download=Ordonnance_${encodeURIComponent(guestName.replace(/\s+/g, '_'))}.${docUrl.split('.').pop()}`}
+                          target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
+                        >
+                          <FileText className="h-3.5 w-3.5" /> Voir le document joint
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {isEditing && !isGuestBooking && (
+                  <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4">
+                    <h4 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">
+                      Informations Patient
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="flex flex-col">
+                        <span className="text-blue-600/70 text-xs font-semibold">Téléphone</span>
+                        <span className="font-bold text-blue-900">{loggedInPhone || '-'}</span>
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-blue-600/70 text-xs font-semibold">Service demandé</span>
+                        <span className="font-black text-blue-900 text-base">{loggedInService || appointment?.examens?.[0]?.service?.nom || '-'}</span>
+                      </div>
+                      {loggedInNote && (
+                        <div className="flex flex-col col-span-2 pt-2 border-t border-blue-200/50">
+                          <span className="text-blue-600/70 text-xs font-semibold">Note du patient</span>
+                          <span className="font-medium text-blue-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-blue-100">"{loggedInNote}"</span>
+                        </div>
+                      )}
+                    </div>
+                    {hasDoc && (
+                      <div className="mt-3 pt-3 border-t border-blue-200">
+                        <a
+                          href={docUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-white/60 px-3 py-1.5 rounded-lg"
                         >
                           <FileText className="h-3.5 w-3.5" /> Voir le document joint
                         </a>

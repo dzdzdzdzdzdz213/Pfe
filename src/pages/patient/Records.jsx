@@ -265,8 +265,9 @@ export const PatientRecords = () => {
             statut,
             services:services(nom),
             comptes_rendus(id, description_detaillee, est_valide, document_medical_id),
-            images_radiologiques(id, resolution, type_support, format_fichier, url_stockage, type_image, description),
-            documents_medicaux(id, chemin_fichier, statut, date_creation, type)
+            images_radiologiques(id, resolution, type_support, format_fichier, url_stockage, type_image, description, nom_fichier),
+            documents_medicaux(id, chemin_fichier, statut, date_creation, type),
+            ordonnances(id, description, nom_medecin_prescripteur)
           )
         `)
         .eq('patient_id', patientRecord?.id)
@@ -352,6 +353,8 @@ export const PatientRecords = () => {
           exams.flatMap(rv => (rv.examens || []).map(exam => ({ ...exam, rv }))).map(exam => {
             const rv = exam.rv;
             const validatedReports = exam?.comptes_rendus?.filter(cr => cr.est_valide) || [];
+            const draftReports = exam?.comptes_rendus?.filter(cr => !cr.est_valide && cr.description_detaillee && cr.description_detaillee.trim() !== '') || [];
+            const ordonnances = exam?.ordonnances || [];
             const hasImages = exam?.images_radiologiques?.length > 0;
 
             return (
@@ -394,6 +397,44 @@ export const PatientRecords = () => {
                                 <Printer className="h-3.5 w-3.5" /> {t('records_pdf')}
                               </button>
                             </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Draft reports — the doctor has started writing but not validated yet */}
+                    {draftReports.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {draftReports.map(cr => (
+                          <div key={cr.id} className="flex items-center gap-2 p-3 bg-amber-50/50 border border-amber-100 rounded-xl">
+                            <FileText className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                            <span className="text-xs font-bold text-amber-700 flex-1">Rapport en cours de rédaction</span>
+                            <button
+                              onClick={() => setActiveReport({ report: cr, exam })}
+                              className="px-3 py-1.5 bg-white border border-amber-200 rounded-lg text-xs font-bold text-amber-700 hover:bg-amber-50 transition-colors flex items-center gap-1.5"
+                            >
+                              <Eye className="h-3.5 w-3.5" /> {t('view')}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Prescriptions (ordonnances) written by the doctor */}
+                    {ordonnances.length > 0 && (
+                      <div className="mt-2 space-y-2">
+                        {ordonnances.map(ord => (
+                          <div key={ord.id} className="p-3 bg-violet-50/50 border border-violet-100 rounded-xl">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Stethoscope className="h-4 w-4 text-violet-600 flex-shrink-0" />
+                              <span className="text-xs font-bold text-violet-700 flex-1">Ordonnance</span>
+                              {ord.nom_medecin_prescripteur && (
+                                <span className="text-[10px] text-violet-600 font-bold uppercase tracking-wider">Dr. {ord.nom_medecin_prescripteur}</span>
+                              )}
+                            </div>
+                            {ord.description && (
+                              <p className="text-xs text-slate-700 font-medium whitespace-pre-wrap pl-6 leading-relaxed">{ord.description}</p>
+                            )}
                           </div>
                         ))}
                       </div>

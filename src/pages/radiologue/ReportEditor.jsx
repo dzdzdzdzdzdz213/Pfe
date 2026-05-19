@@ -16,7 +16,7 @@ import {
   Save, CheckCircle, FileText, User, Calendar, Stethoscope,
   ZoomIn, ZoomOut, RotateCw, Loader2, ArrowLeft,
   Bold, Italic, List, ListOrdered, Heading2, Undo, Redo, Minus,
-  Printer, Image as ImageIcon, Pill
+  Printer, Image as ImageIcon, Pill, Trash2
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -417,6 +417,55 @@ export const ReportEditor = () => {
     }
   }, [id, queryClient]);
 
+  // Remove an uploaded image: delete the DB row + the storage object, then
+  // sync the local cache and the recentlyUploaded list so the UI updates.
+  const handleDeleteImage = useCallback(async (img) => {
+    if (!img) return;
+    if (!window.confirm('Supprimer ce fichier ? Cette action est irréversible.')) return;
+    try {
+      // 1. Remove DB row when it has a real id (skip optimistic-only rows)
+      if (img.id) {
+        const { error: delErr } = await supabase.from('images_radiologiques').delete().eq('id', img.id);
+        if (delErr) throw delErr;
+      }
+      // 2. Best-effort: also remove the underlying storage object so we don't leak files.
+      //    url_stockage is a public URL like "https://<proj>.supabase.co/storage/v1/object/public/exam-images/<path>"
+      const url = img.url_stockage || '';
+      const marker = '/object/public/exam-images/';
+      const idx = url.indexOf(marker);
+      if (idx !== -1) {
+        const path = decodeURIComponent(url.slice(idx + marker.length).split('?')[0]);
+        if (path) {
+          await supabase.storage.from('exam-images').remove([path]).catch(() => {});
+        }
+      }
+
+      // 3. Drop it from any locally tracked optimistic uploads
+      setRecentlyUploaded(prev => prev.filter(r => (r.id || r.url_stockage) !== (img.id || img.url_stockage)));
+
+      // 4. Drop it from the exam cache (so the UI updates immediately, no flicker)
+      queryClient.setQueryData(['exam', id], (old) => {
+        if (!old) return old;
+        const filter = (list) => (list || []).filter(r => (r.id || r.url_stockage) !== (img.id || img.url_stockage));
+        return {
+          ...old,
+          images: filter(old.images),
+          images_radiologiques: filter(old.images_radiologiques),
+        };
+      });
+      queryClient.setQueryData(['radio-images', id], (old) =>
+        (old || []).filter(r => (r.id || r.url_stockage) !== (img.id || img.url_stockage))
+      );
+
+      toast.success('Fichier supprimé.');
+      // 5. Background refetch to stay in sync
+      queryClient.invalidateQueries({ queryKey: ['exam', id] });
+      queryClient.invalidateQueries({ queryKey: ['radio-images', id] });
+    } catch (err) {
+      toast.error('Erreur lors de la suppression : ' + err.message);
+    }
+  }, [id, queryClient]);
+
   if (loadingExam) {
     return (
       <div className="h-96 flex items-center justify-center">
@@ -564,25 +613,34 @@ export const ReportEditor = () => {
               const firstImg = images[0];
               const url = firstImg?.signedUrl || firstImg?.url_stockage || '';
               const isPdf = firstImg?.nom_fichier?.toLowerCase().endsWith('.pdf') || url.toLowerCase().endsWith('.pdf');
-              if (isPdf) {
-                return (
-                  <div className="text-center text-slate-400 p-8 cursor-pointer" onClick={() => setImageViewerOpen(true)}>
-                    <FileText className="h-16 w-16 mx-auto mb-3 text-blue-400" />
-                    <p className="text-sm font-bold">{firstImg?.nom_fichier || 'Document PDF'}</p>
-                    <p className="text-xs opacity-60 mt-1">Cliquez pour ouvrir</p>
-                  </div>
-                );
-              }
               return (
-                <img
-                  key={url}
-                  src={url}
-                  alt="Radiology"
-                  className="max-w-full max-h-[500px] object-contain transition-transform duration-300 cursor-zoom-in"
-                  style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
-                  onClick={() => setImageViewerOpen(true)}
-                  onError={(e) => { e.target.src = ''; e.target.alt = 'Image non disponible'; }}
-                />
+                <>
+                  {isPdf ? (
+                    <div className="text-center text-slate-400 p-8 cursor-pointer" onClick={() => setImageViewerOpen(true)}>
+                      <FileText className="h-16 w-16 mx-auto mb-3 text-blue-400" />
+                      <p className="text-sm font-bold">{firstImg?.nom_fichier || 'Document PDF'}</p>
+                      <p className="text-xs opacity-60 mt-1">Cliquez pour ouvrir</p>
+                    </div>
+                  ) : (
+                    <img
+                      key={url}
+                      src={url}
+                      alt="Radiology"
+                      className="max-w-full max-h-[500px] object-contain transition-transform duration-300 cursor-zoom-in"
+                      style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
+                      onClick={() => setImageViewerOpen(true)}
+                      onError={(e) => { e.target.src = ''; e.target.alt = 'Image non disponible'; }}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleDeleteImage(firstImg); }}
+                    title="Supprimer ce fichier"
+                    className="absolute top-3 right-3 p-2 rounded-lg bg-red-600/90 hover:bg-red-700 text-white shadow-lg z-10"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </>
               );
             })() : (
               <div className="text-center text-slate-500 p-8">
@@ -592,20 +650,30 @@ export const ReportEditor = () => {
               </div>
             )}
           </div>
-          {images.length > 1 && (
+          {images.length > 0 && (
             <div className="p-3 border-t border-slate-100 flex gap-2 overflow-x-auto bg-slate-50/50">
               {images.map((img, i) => {
                 const url = img.signedUrl || img.url_stockage || '';
                 const isPdf = url.toLowerCase().endsWith('.pdf');
                 return (
-                  <button key={img.id || i} onClick={() => setImageViewerOpen(true)}
-                    className="h-16 w-16 rounded-lg border-2 border-slate-200 overflow-hidden flex-shrink-0 opacity-70 hover:opacity-100 transition-opacity">
-                    {isPdf ? (
-                      <div className="h-full w-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">PDF</div>
-                    ) : (
-                      <img src={url} alt={`Img ${i + 1}`} className="h-full w-full object-cover" onError={(e) => { e.target.src = ''; }} />
-                    )}
-                  </button>
+                  <div key={img.id || i} className="relative h-16 w-16 flex-shrink-0 group">
+                    <button onClick={() => setImageViewerOpen(true)}
+                      className="h-full w-full rounded-lg border-2 border-slate-200 overflow-hidden opacity-70 hover:opacity-100 transition-opacity">
+                      {isPdf ? (
+                        <div className="h-full w-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">PDF</div>
+                      ) : (
+                        <img src={url} alt={`Img ${i + 1}`} className="h-full w-full object-cover" onError={(e) => { e.target.src = ''; }} />
+                      )}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteImage(img); }}
+                      title="Supprimer ce fichier"
+                      className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <Trash2 className="h-2.5 w-2.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
