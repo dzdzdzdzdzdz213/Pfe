@@ -204,8 +204,8 @@ export const PatientHistory = () => {
             id, date_realisation, statut, observations_cliniques,
             services:services(nom),
             comptes_rendus(id, description_detaillee, est_valide),
-            images_radiologiques(id, url_stockage, type_image, description),
-            documents_medicaux(id, chemin_fichier, statut, date_creation, examen_id)
+            images_radiologiques(id, url_stockage, type_image, description, nom_fichier, format_fichier, taille_fichier),
+            documents_medicaux(id, chemin_fichier, statut, date_creation, examen_id, type)
           )
         `)
         .eq('patient_id', selectedPatient.id)
@@ -239,6 +239,7 @@ export const PatientHistory = () => {
     examDate: e.date_realisation,
     examId: e.id,
     examImages: e.images_radiologiques || [],
+    examDocs: e.documents_medicaux || [],
   })));
   const validatedReports = allReports.filter(cr => cr.est_valide);
   const allDocs = examens.flatMap(e => (e.documents_medicaux || []).map(doc => ({ ...doc, examService: e.services?.nom })));
@@ -538,6 +539,12 @@ export const PatientHistory = () => {
 // ---------------------------------------------------------------------------
 const ReportFullView = ({ report, ordonnances, patientName, onClose, onOpenImageViewer }) => {
   const images = report.examImages || [];
+  const docs = report.examDocs || [];
+  const isPdfUrl = (url = '', name = '') => {
+    const n = (name || '').toLowerCase();
+    const u = (url || '').toLowerCase();
+    return n.endsWith('.pdf') || u.endsWith('.pdf') || u.includes('.pdf?');
+  };
   return (
     <>
       <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -576,29 +583,39 @@ const ReportFullView = ({ report, ordonnances, patientName, onClose, onOpenImage
             )}
           </section>
 
-          {/* Images */}
+          {/* Images & Files uploaded in the report editor */}
           <section>
             <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-              <Image className="h-3.5 w-3.5" /> Images & Fichiers ({images.length})
+              <Image className="h-3.5 w-3.5" /> Images & Fichiers téléversés ({images.length})
             </h3>
             {images.length > 0 ? (
               <>
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
-                  {images.slice(0, 8).map(img => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mb-3">
+                  {images.map(img => {
                     const url = img.url_stockage || '';
-                    const isPdf = url.toLowerCase().endsWith('.pdf');
+                    const isPdf = isPdfUrl(url, img.nom_fichier);
                     return (
-                      <button
-                        key={img.id}
-                        onClick={onOpenImageViewer}
-                        className="aspect-square rounded-xl overflow-hidden border-2 border-slate-200 hover:border-primary transition-all group"
-                      >
-                        {isPdf ? (
-                          <div className="h-full w-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">PDF</div>
-                        ) : (
-                          <img src={url} alt={img.description || ''} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                      <div key={img.id} className="space-y-1">
+                        <button
+                          onClick={onOpenImageViewer}
+                          className="w-full aspect-square rounded-xl overflow-hidden border-2 border-slate-200 hover:border-primary transition-all group"
+                          title={img.nom_fichier || img.description || ''}
+                        >
+                          {isPdf ? (
+                            <div className="h-full w-full bg-slate-100 flex flex-col items-center justify-center gap-2">
+                              <FileText className="h-8 w-8 text-blue-500" />
+                              <span className="text-[10px] font-black text-slate-500 uppercase tracking-wider">PDF</span>
+                            </div>
+                          ) : (
+                            <img src={url} alt={img.description || img.nom_fichier || ''} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                          )}
+                        </button>
+                        {img.nom_fichier && (
+                          <p className="text-[10px] text-slate-500 font-medium truncate" title={img.nom_fichier}>
+                            {img.nom_fichier}
+                          </p>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
@@ -606,13 +623,42 @@ const ReportFullView = ({ report, ordonnances, patientName, onClose, onOpenImage
                   onClick={onOpenImageViewer}
                   className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
                 >
-                  <Eye className="h-3.5 w-3.5" /> Ouvrir la visionneuse
+                  <Eye className="h-3.5 w-3.5" /> Ouvrir la visionneuse plein écran
                 </button>
               </>
             ) : (
               <p className="text-sm text-slate-400 italic font-medium">Aucune image téléversée pour cet examen.</p>
             )}
           </section>
+
+          {/* Generated documents (sent reports, shared PDFs, ...) */}
+          {docs.length > 0 && (
+            <section>
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <ScrollText className="h-3.5 w-3.5" /> Documents générés ({docs.length})
+              </h3>
+              <div className="space-y-2">
+                {docs.map(doc => (
+                  <a
+                    key={doc.id}
+                    href={doc.chemin_fichier}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 bg-slate-50 hover:bg-slate-100 border border-slate-100 rounded-xl transition-colors"
+                  >
+                    <div className="h-9 w-9 rounded-lg bg-white flex items-center justify-center text-slate-500 border border-slate-200 flex-shrink-0">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-slate-800 truncate">{doc.statut || doc.type || 'Document'}</p>
+                      <p className="text-[10px] text-slate-500 font-medium">{formatDate(doc.date_creation)}</p>
+                    </div>
+                    <Eye className="h-4 w-4 text-slate-400 flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </section>
+          )}
 
           {/* Ordonnances */}
           {ordonnances.length > 0 && (
