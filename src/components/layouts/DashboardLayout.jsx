@@ -10,7 +10,6 @@ import {
   Users,
   Calendar,
   ClipboardList,
-  Settings,
   LogOut,
   Menu,
   X,
@@ -126,7 +125,6 @@ export const DashboardLayout = () => {
         { name: t('users'), href: '/admin/users', icon: Users },
         { name: t('statistics'), href: '/admin/stats', icon: BarChart2 },
         { name: t('audit_logs'), href: '/admin/audit-logs', icon: ClipboardList },
-        { name: t('settings'), href: '/admin/settings', icon: Settings },
       ];
     }
 
@@ -352,17 +350,11 @@ export const DashboardLayout = () => {
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">{translateRole(role)}</p>
                     </div>
                     <div className="p-2 space-y-1">
-                      <button 
+                      <button
                         onClick={() => { navigate(`/${getRoleBasePath(role)}/profile`); setShowUserMenu(false); }}
                         className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
                       >
                         <User className="h-4 w-4 ltr:mr-3 rtl:ml-3" /> {t('profile')}
-                      </button>
-                      <button 
-                        onClick={() => { navigate(`/${getRoleBasePath(role)}/settings`); setShowUserMenu(false); }}
-                        className="w-full flex items-center px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-primary rounded-xl transition-colors"
-                      >
-                        <Settings className="h-4 w-4 ltr:mr-3 rtl:ml-3" /> {t('settings')}
                       </button>
                     </div>
                     <div className="p-2 border-t border-slate-100">
