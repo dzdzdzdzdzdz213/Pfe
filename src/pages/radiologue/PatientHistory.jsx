@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { formatDate, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
-import { Search, Calendar, Stethoscope, FileText, Clock, AlertCircle, Activity, Droplets, Pill, ScrollText, Image, ChevronDown, ChevronUp, CheckCircle, Eye } from 'lucide-react';
+import { Search, Calendar, Stethoscope, FileText, Clock, AlertCircle, Activity, Droplets, Pill, ScrollText, Image, ChevronDown, ChevronUp, CheckCircle, Eye, X } from 'lucide-react';
 import { ImageViewerModal } from '@/components/common/ImageViewerModal';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -132,6 +132,7 @@ export const PatientHistory = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [activeTab, setActiveTab] = useState('examens');
   const [imageViewerExam, setImageViewerExam] = useState(null);
+  const [reportFullView, setReportFullView] = useState(null);
   const [urlPatientId] = useState(new URLSearchParams(window.location.search).get('id'));
 
   // Auto-fetch patient if ID in URL
@@ -232,7 +233,13 @@ export const PatientHistory = () => {
     enabled: !!examens?.length,
   });
 
-  const allReports = examens.flatMap(e => (e.comptes_rendus || []).map(cr => ({ ...cr, examService: e.services?.nom, examDate: e.date_realisation })));
+  const allReports = examens.flatMap(e => (e.comptes_rendus || []).map(cr => ({
+    ...cr,
+    examService: e.services?.nom,
+    examDate: e.date_realisation,
+    examId: e.id,
+    examImages: e.images_radiologiques || [],
+  })));
   const validatedReports = allReports.filter(cr => cr.est_valide);
   const allDocs = examens.flatMap(e => (e.documents_medicaux || []).map(doc => ({ ...doc, examService: e.services?.nom })));
 
@@ -419,14 +426,22 @@ export const PatientHistory = () => {
                           dangerouslySetInnerHTML={{ __html: cr.description_detaillee }}
                         />
                       )}
-                      {cr.est_valide && (
-                        <button 
-                          onClick={() => window.print()} 
-                          className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setReportFullView(cr)}
+                          className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
                         >
-                          <ScrollText className="h-3.5 w-3.5" /> {t('print_report_title')}
+                          <Eye className="h-3.5 w-3.5" /> Voir Rapport
                         </button>
-                      )}
+                        {cr.est_valide && (
+                          <button
+                            onClick={() => window.print()}
+                            className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all flex items-center gap-2 shadow-lg shadow-slate-200"
+                          >
+                            <ScrollText className="h-3.5 w-3.5" /> {t('print_report_title')}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -502,6 +517,123 @@ export const PatientHistory = () => {
           onClose={() => setImageViewerExam(null)}
         />
       )}
+
+      {/* Full Report View (text + images + ordonnance) */}
+      {reportFullView && (
+        <ReportFullView
+          report={reportFullView}
+          ordonnances={ordonnances.filter(o => o.examen_id === reportFullView.examId)}
+          patientName={selectedPatient ? `${selectedPatient.utilisateur?.prenom || ''} ${selectedPatient.utilisateur?.nom || ''}`.trim() : ''}
+          onClose={() => setReportFullView(null)}
+          onOpenImageViewer={() => { setImageViewerExam(reportFullView.examId); }}
+        />
+      )}
     </div>
+  );
+};
+
+// ---------------------------------------------------------------------------
+// Full Report Viewer — shows the whole report (HTML), all uploaded images
+// for the parent exam, and any ordonnances linked to that exam.
+// ---------------------------------------------------------------------------
+const ReportFullView = ({ report, ordonnances, patientName, onClose, onOpenImageViewer }) => {
+  const images = report.examImages || [];
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-3xl max-h-[90vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 flex-shrink-0">
+          <div>
+            <h2 className="text-lg font-black text-slate-900 leading-tight">{report.examService || 'Rapport'}</h2>
+            <p className="text-xs text-slate-500 font-bold mt-0.5">
+              {patientName} {report.examDate ? `— ${formatDate(report.examDate)}` : ''}
+              {' '}
+              {report.est_valide ? (
+                <span className="ml-2 inline-flex items-center gap-1 text-emerald-700"><CheckCircle className="h-3 w-3" /> Validé</span>
+              ) : (
+                <span className="ml-2 inline-flex items-center gap-1 text-amber-700"><Clock className="h-3 w-3" /> Brouillon</span>
+              )}
+            </p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-500 transition-colors"><X className="h-5 w-5" /></button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Full text */}
+          <section>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <FileText className="h-3.5 w-3.5" /> Compte-rendu
+            </h3>
+            {report.description_detaillee ? (
+              <div
+                className="prose prose-sm max-w-none text-slate-700 leading-relaxed bg-slate-50 rounded-2xl p-5 border border-slate-100"
+                dangerouslySetInnerHTML={{ __html: report.description_detaillee }}
+              />
+            ) : (
+              <p className="text-sm text-slate-400 italic font-medium">Aucun contenu rédigé.</p>
+            )}
+          </section>
+
+          {/* Images */}
+          <section>
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+              <Image className="h-3.5 w-3.5" /> Images & Fichiers ({images.length})
+            </h3>
+            {images.length > 0 ? (
+              <>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-3">
+                  {images.slice(0, 8).map(img => {
+                    const url = img.url_stockage || '';
+                    const isPdf = url.toLowerCase().endsWith('.pdf');
+                    return (
+                      <button
+                        key={img.id}
+                        onClick={onOpenImageViewer}
+                        className="aspect-square rounded-xl overflow-hidden border-2 border-slate-200 hover:border-primary transition-all group"
+                      >
+                        {isPdf ? (
+                          <div className="h-full w-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-500">PDF</div>
+                        ) : (
+                          <img src={url} alt={img.description || ''} className="h-full w-full object-cover group-hover:scale-105 transition-transform" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={onOpenImageViewer}
+                  className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all flex items-center gap-2 shadow-lg shadow-blue-100"
+                >
+                  <Eye className="h-3.5 w-3.5" /> Ouvrir la visionneuse
+                </button>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400 italic font-medium">Aucune image téléversée pour cet examen.</p>
+            )}
+          </section>
+
+          {/* Ordonnances */}
+          {ordonnances.length > 0 && (
+            <section>
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Pill className="h-3.5 w-3.5" /> Ordonnances ({ordonnances.length})
+              </h3>
+              <div className="space-y-3">
+                {ordonnances.map(ord => (
+                  <div key={ord.id} className="p-4 bg-violet-50/50 border border-violet-100 rounded-2xl">
+                    {ord.nom_medecin_prescripteur && (
+                      <p className="text-[10px] font-bold text-violet-600 uppercase tracking-wider mb-2">Dr. {ord.nom_medecin_prescripteur}</p>
+                    )}
+                    <p className="text-sm text-slate-700 font-medium whitespace-pre-line leading-relaxed">{ord.description || '—'}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
+    </>
   );
 };

@@ -619,9 +619,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
               <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
                 <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('modal_summary')}</p>
                 <p className="text-sm font-bold text-slate-800">{t('summary_patient')}: {selectedPatient?.utilisateur?.prenom} {selectedPatient?.utilisateur?.nom}</p>
-                <p className="text-sm text-slate-600 font-medium">
-                  {t('summary_service')}: <span className="text-primary font-bold">{services.find(s => s.id === formData.service_id)?.nom || '-'}</span>
-                </p>
+                {/* Service is already shown in the info card at the top when editing — only show here for new RDVs */}
+                {!isEditing && (
+                  <p className="text-sm text-slate-600 font-medium">
+                    {t('summary_service')}: <span className="text-primary font-bold">{services.find(s => s.id === formData.service_id)?.nom || '-'}</span>
+                  </p>
+                )}
                 <p className="text-sm text-slate-600 font-medium">{t('summary_date')}: {formData.date_heure_debut ? format(new Date(formData.date_heure_debut), 'PPP HH:mm', { locale: lang === 'ar' ? arDZ : fr }) : '-'}</p>
               </div>
             </div>
