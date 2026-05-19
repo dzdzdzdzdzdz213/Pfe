@@ -25,6 +25,14 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Email verification gate — block ALL protected pages until the user has
+  // confirmed their email. They can still reach /verify-email itself.
+  if (user && !user.email_confirmed_at) {
+    if (location.pathname !== '/verify-email') {
+      return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email || '')}`} replace />;
+    }
+  }
+
   // Force onboarding if profile is not complete
   if (user && !loading && !roleLoading && role && profileComplete === false) {
     // Allow access to /onboarding to prevent infinite loop if wrapped

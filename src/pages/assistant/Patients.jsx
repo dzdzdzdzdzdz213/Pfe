@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { patientService } from '@/services/patients';
+import { notificationService } from '@/services/notifications';
 import { DataTable } from '@/components/common/DataTable';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { toast } from 'sonner';
@@ -85,6 +86,12 @@ export const AssistantPatients = () => {
         toast.success(t('patient_save_success'));
       }
       setShowAddDialog(false);
+      // Notify admins of the new patient account
+      notificationService.notifyRole(
+        'admin',
+        `Nouveau compte patient créé par la réception : ${formData.prenom || ''} ${formData.nom || ''}${formData.email ? ' (' + formData.email + ')' : ''}.`.replace(/\s+/g, ' ').trim(),
+        'account_created'
+      );
       resetForm();
     },
     onError: (err) => {
@@ -114,10 +121,17 @@ export const AssistantPatients = () => {
 
   const deleteMutation = useMutation({
     mutationFn: (patient) => patientService.deletePatient(patient.id, patient.utilisateur_id),
-    onSuccess: () => {
+    onSuccess: (_data, patient) => {
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       toast.success(t('patient_delete_success') || 'Patient supprimé');
       setShowDeleteConfirm(false);
+      // Notify admins of the deletion
+      const label = `${patient?.utilisateur?.prenom || ''} ${patient?.utilisateur?.nom || ''}${patient?.utilisateur?.email ? ' (' + patient.utilisateur.email + ')' : ''}`.trim() || 'Patient';
+      notificationService.notifyRole(
+        'admin',
+        `Compte patient supprimé : ${label}.`,
+        'account_deleted'
+      );
     },
     onError: (err) => toast.error(err.message),
   });

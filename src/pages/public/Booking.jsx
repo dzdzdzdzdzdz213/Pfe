@@ -7,6 +7,7 @@ import { PageTransition } from '@/components/common/PageTransition';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { FileUpload } from '@/components/common/FileUpload';
 import { supabase } from '@/lib/supabase';
+import { notificationService } from '@/services/notifications';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -177,6 +178,15 @@ export const Booking = () => {
         });
 
       if (error) throw error;
+
+      // Notify all receptionnistes about the new guest booking
+      const formattedDate = format(startDate, 'dd/MM/yyyy HH:mm');
+      notificationService.notifyRole(
+        'receptionniste',
+        `Nouvelle réservation en ligne : ${formData.prenom} ${formData.nom} (${formData.service?.name || 'Service'}) le ${formattedDate}`,
+        'rdv_nouveau'
+      );
+
       setStep(4);
     } catch (err) { 
       console.error("Booking error:", err);

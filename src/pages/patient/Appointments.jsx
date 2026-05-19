@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { appointmentService } from '@/services/appointments';
+import { notificationService } from '@/services/notifications';
 import { toast } from 'sonner';
 import { formatDate, formatTime, cn, getStatusColor, getStatusLabel } from '@/lib/utils';
 import { Calendar, Clock, Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
@@ -143,19 +144,36 @@ export const PatientAppointments = () => {
 
       return rdv;
     },
-    onSuccess: () => {
+    onSuccess: (rdv) => {
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
       toast.success(t('appointments_confirm_success'));
       setBookingStep(5);
+      // Notify all receptionnistes of the new booking
+      const patientName = `${utilisateur?.prenom || ''} ${utilisateur?.nom || ''}`.trim() || 'Patient';
+      const dt = rdv?.date_heure_debut ? new Date(rdv.date_heure_debut) : new Date();
+      notificationService.notifyRole(
+        'receptionniste',
+        `Nouvelle réservation : ${patientName} (${selectedService?.nom || 'Service'}) le ${format(dt, 'dd/MM/yyyy HH:mm')}`,
+        'rdv_nouveau'
+      );
     },
     onError: (err) => toast.error(err.message),
   });
 
   const cancelMutation = useMutation({
     mutationFn: (id) => appointmentService.cancelAppointment(id, t('status_annule')),
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: ['patient-appointments'] });
       toast.success(t('appointments_cancel_success'));
+      // Notify all receptionnistes the patient cancelled
+      const patientName = `${utilisateur?.prenom || ''} ${utilisateur?.nom || ''}`.trim() || 'Patient';
+      const cancelled = appointments.find(a => a.id === id);
+      const dt = cancelled?.date_heure_debut ? format(new Date(cancelled.date_heure_debut), 'dd/MM/yyyy HH:mm') : '';
+      notificationService.notifyRole(
+        'receptionniste',
+        `${patientName} a annulé son rendez-vous${dt ? ' du ' + dt : ''}.`,
+        'rdv_annule'
+      );
     },
   });
 

@@ -2,6 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { auditService } from '../services/audit';
+import { notificationService } from '../services/notifications';
 
 
 export const AuthContext = createContext();
@@ -283,7 +284,17 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    
+
+    // Block login if the email isn't verified — sign them out and surface a
+    // clear error so the Login screen redirects them to /verify-email.
+    if (data?.user && !data.user.email_confirmed_at) {
+      try { await supabase.auth.signOut(); } catch { /* ignore */ }
+      const verifyErr = new Error('email_not_confirmed');
+      verifyErr.code = 'email_not_confirmed';
+      verifyErr.email = email;
+      throw verifyErr;
+    }
+
     // Log success
     if (data?.user) {
       auditService.createAuditLog('Connexion', `L'utilisateur ${email} s'est connecté`, data.user.id).catch(console.warn);
@@ -399,8 +410,33 @@ export const AuthProvider = ({ children }) => {
           }
         }
 
-        // 3. If we have a live session, update state immediately for instant redirect
-        if (data?.session) {
+        // 3. Audit + admin notification regardless of session state
+        auditService.createAuditLog('Inscription', `Nouvel utilisateur inscrit: ${userData.email}`, authUser.id).catch(console.warn);
+        notificationService.notifyRole(
+          'admin',
+          `Nouveau compte patient inscrit : ${userData.prenom || ''} ${userData.nom || ''} (${userData.email}).`.replace(/\s+/g, ' ').trim(),
+          'account_created'
+        );
+
+        // 4. ALWAYS force email verification before allowing access.
+        //    Even if Supabase auto-confirmed (settings dependent), we treat the
+        //    account as "needs verification" until `email_confirmed_at` is set.
+        const isConfirmed = !!authUser.email_confirmed_at;
+        if (!isConfirmed) {
+          // Sign out so the dashboard can't be reached. The user must click the link.
+          try { await supabase.auth.signOut(); } catch { /* ignore */ }
+          setState(prev => ({
+            ...prev,
+            user: null,
+            session: null,
+            utilisateur: null,
+            role: null,
+            profileComplete: false,
+            loading: false,
+            roleLoading: false,
+            authInitialized: true,
+          }));
+        } else if (data?.session) {
           setState(prev => ({
             ...prev,
             user: authUser,
@@ -409,17 +445,16 @@ export const AuthProvider = ({ children }) => {
             role: 'patient',
             profileComplete: true,
             loading: false,
-            roleLoading: false
+            roleLoading: false,
           }));
-          
-          // Log success
-          auditService.createAuditLog('Inscription', `Nouvel utilisateur inscrit: ${userData.email}`, authUser.id).catch(console.warn);
         }
-        
+
         console.log("[REGISTER] Registration & Provisioning complete.");
       }
 
-      return { ...data, requiresEmailConfirmation: !data?.session };
+      // The login screen reads this flag to decide whether to show the
+      // "vérifiez votre email" screen vs. wait for the dashboard redirect.
+      return { ...data, requiresEmailConfirmation: !data?.user?.email_confirmed_at };
     } finally {
       setTimeout(() => { isRegistering.current = false; }, 1000);
     }

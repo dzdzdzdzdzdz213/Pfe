@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { appointmentService } from '@/services/appointments';
 import { patientService } from '@/services/patients';
 import { consentementService } from '@/services/consentements';
+import { notificationService } from '@/services/notifications';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -109,12 +110,44 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     onError: (err) => toast.error(err.message || t('error_generic')),
   });
 
+  // Helper: get linked patient utilisateur_id from the appointment so we can notify them
+  const getPatientUtilisateurId = () => appointment?.patient?.utilisateur_id || appointment?.patient?.utilisateur?.id || null;
+  const formatDt = (iso) => iso ? format(new Date(iso), 'dd/MM/yyyy HH:mm') : '';
+
   // Update appointment mutation
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => appointmentService.updateAppointment(id, data),
-    onSuccess: () => {
+    onSuccess: (_data, { data }) => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast.success(t('modal_updated'));
+      const patientUserId = getPatientUtilisateurId();
+      const dt = formatDt(data.date_heure_debut || appointment?.date_heure_debut);
+      const previousStatus = appointment?.statut;
+      const newStatus = data.statut;
+      // Notify patient about status change / reschedule
+      if (patientUserId) {
+        if (newStatus && newStatus !== previousStatus) {
+          let msg = '';
+          if (newStatus === 'confirme') msg = `Votre rendez-vous du ${dt} a été confirmé.`;
+          else if (newStatus === 'annule') msg = `Votre rendez-vous du ${dt} a été annulé par la clinique.`;
+          else if (newStatus === 'termine') msg = `Votre rendez-vous du ${dt} est marqué comme terminé.`;
+          else msg = `Votre rendez-vous du ${dt} a été mis à jour (statut: ${newStatus}).`;
+          notificationService.notifyUser(patientUserId, msg, 'rdv_update');
+        } else if (data.date_heure_debut && data.date_heure_debut !== appointment?.date_heure_debut) {
+          notificationService.notifyUser(patientUserId, `Votre rendez-vous a été reprogrammé au ${dt}.`, 'rdv_update');
+        }
+      }
+      // When confirmed, also alert all radiologues so they're aware of the upcoming exam
+      if (newStatus === 'confirme' && previousStatus !== 'confirme') {
+        const patientName = appointment?.patient?.utilisateur
+          ? `${appointment.patient.utilisateur.prenom || ''} ${appointment.patient.utilisateur.nom || ''}`.trim()
+          : 'Patient';
+        notificationService.notifyRole(
+          'radiologue',
+          `Rendez-vous confirmé : ${patientName} le ${dt}.`,
+          'rdv_confirme'
+        );
+      }
       onClose();
     },
     onError: (err) => toast.error(err.message || t('error_generic')),
@@ -126,6 +159,15 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       toast.success(t('appointments_cancel_success'));
+      const patientUserId = getPatientUtilisateurId();
+      const dt = formatDt(appointment?.date_heure_debut);
+      if (patientUserId) {
+        notificationService.notifyUser(
+          patientUserId,
+          `Votre rendez-vous${dt ? ' du ' + dt : ''} a été annulé par la clinique.`,
+          'rdv_annule'
+        );
+      }
       onClose();
     },
     onError: (err) => toast.error(err.message),
@@ -226,6 +268,28 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['exams'] });
       toast.success(t('modal_created'));
+
+      // Notify the patient that the assistant just booked them an RDV
+      const newRdvDate = formatDt(formData.date_heure_debut);
+      const serviceName = services.find(s => s.id === formData.service_id)?.nom || 'Service';
+      if (selectedPatient?.utilisateur_id) {
+        notificationService.notifyUser(
+          selectedPatient.utilisateur_id,
+          `Un rendez-vous a été programmé pour vous : ${serviceName} le ${newRdvDate}.`,
+          'rdv_nouveau'
+        );
+      }
+      // If created already as confirmed, also notify radiologues
+      if (formData.statut === 'confirme') {
+        const patientName = selectedPatient?.utilisateur
+          ? `${selectedPatient.utilisateur.prenom || ''} ${selectedPatient.utilisateur.nom || ''}`.trim()
+          : 'Patient';
+        notificationService.notifyRole(
+          'radiologue',
+          `Rendez-vous confirmé : ${patientName} le ${newRdvDate}.`,
+          'rdv_confirme'
+        );
+      }
       onClose();
     } catch (err) {
       toast.error(err.message || t('error_generic'));

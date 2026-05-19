@@ -26,6 +26,7 @@ const LandingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/La
 const BookingSafe = withErrorBoundary(React.lazy(() => import('./pages/public/Booking').then(m => ({ default: m.Booking }))));
 const LoginSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/Login').then(m => ({ default: m.Login }))));
 const OnboardingSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/Onboarding').then(m => ({ default: m.Onboarding }))));
+const VerifyEmailSafe = withErrorBoundary(React.lazy(() => import('./pages/auth/VerifyEmail').then(m => ({ default: m.VerifyEmail }))));
 
 // Admin Pages
 const AdminDashboardSafe = withErrorBoundary(React.lazy(() => import('./pages/admin/Dashboard').then(m => ({ default: m.AdminDashboard }))));
@@ -134,6 +135,9 @@ const AppRoutes = () => {
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginSafe />} />
         </Route>
+
+        {/* Email verification gate — no layout, no auth guard */}
+        <Route path="/verify-email" element={<VerifyEmailSafe />} />
 
         <Route path="/onboarding" element={
           <ProtectedRoute>

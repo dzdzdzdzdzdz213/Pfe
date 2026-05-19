@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { userService } from '@/services/users';
 import { auditService } from '@/services/audit';
+import { notificationService } from '@/services/notifications';
 import { DataTable } from '@/components/common/DataTable';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { toast } from 'sonner';
@@ -53,6 +54,12 @@ export const AdminUsers = () => {
       toast.success(t('user_created_success'));
       setShowDialog(false);
       auditService.createAuditLog('Création Utilisateur', `Utilisateur créé: ${variables.email} (${variables.role})`).catch(console.warn);
+      // Notify all admins about the new account
+      notificationService.notifyRole(
+        'admin',
+        `Nouveau compte créé : ${variables.prenom || ''} ${variables.nom || ''} (${variables.email}) — rôle ${variables.role}.`.replace(/\s+/g, ' ').trim(),
+        'account_created'
+      );
     },
     onError: (err) => toast.error(err.message),
   });
@@ -60,9 +67,19 @@ export const AdminUsers = () => {
   const deleteMutation = useMutation({
     mutationFn: (id) => userService.deleteUser(id),
     onSuccess: (_, id) => {
+      // Look up the deleted user from the cache (best-effort) for a nice notification message
+      const cachedUsers = queryClient.getQueryData(['users']) || [];
+      const removed = cachedUsers.find?.(u => u.id === id);
       queryClient.invalidateQueries({ queryKey: ['users'] });
       toast.success(t('user_deleted_success'));
       auditService.createAuditLog('Suppression Utilisateur', `ID: ${id}`).catch(console.warn);
+      // Notify all admins about the deletion
+      const label = removed ? `${removed.prenom || ''} ${removed.nom || ''} (${removed.email || id})`.trim() : id;
+      notificationService.notifyRole(
+        'admin',
+        `Compte supprimé : ${label}.`,
+        'account_deleted'
+      );
     },
     onError: (err) => toast.error(err.message),
   });

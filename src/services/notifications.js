@@ -116,5 +116,62 @@ export const notificationService = {
         onNotification(payload.new);
       })
       .subscribe();
+  },
+
+  /**
+   * Send a notification to a specific `utilisateurs.id` (best-effort, never throws).
+   * Used for one-to-one notifications (e.g. patient notified when their RDV is confirmed).
+   */
+  async notifyUser(utilisateurId, contenu, type = 'info') {
+    if (!utilisateurId || !contenu) return;
+    try {
+      await supabase.from('notifications').insert({
+        utilisateur_id: utilisateurId,
+        contenu,
+        type,
+        date_envoi: new Date().toISOString(),
+        lu: false,
+      });
+    } catch (err) {
+      // Notifications are best-effort: never block the parent action on failure
+      // eslint-disable-next-line no-console
+      console.warn('[notifyUser] failed:', err?.message);
+    }
+  },
+
+  /**
+   * Send a notification to every user with a given role (e.g. all receptionnistes).
+   * Best-effort: never throws so the caller's main flow isn't blocked.
+   */
+  async notifyRole(role, contenu, type = 'info') {
+    if (!role || !contenu) return;
+    try {
+      // Match both schema-compliant role and the legacy alias
+      const aliases = {
+        admin: ['admin', 'administrateur'],
+        administrateur: ['admin', 'administrateur'],
+        receptionniste: ['receptionniste', 'assistant'],
+        assistant: ['receptionniste', 'assistant'],
+        radiologue: ['radiologue'],
+        patient: ['patient'],
+      };
+      const roleList = aliases[role] || [role];
+      const { data: users } = await supabase
+        .from('utilisateurs')
+        .select('id')
+        .in('role', roleList);
+      if (!users?.length) return;
+      const rows = users.map(u => ({
+        utilisateur_id: u.id,
+        contenu,
+        type,
+        date_envoi: new Date().toISOString(),
+        lu: false,
+      }));
+      await supabase.from('notifications').insert(rows);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[notifyRole] failed:', err?.message);
+    }
   }
 };

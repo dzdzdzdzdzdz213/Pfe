@@ -117,22 +117,30 @@ export const Login = () => {
 
         const result = await registerUser(data);
         if (result?.requiresEmailConfirmation) {
-          // Email confirmation required — show confirmation screen
-          setEmailConfirmationSent(true);
+          // Email confirmation required — redirect to the verification screen.
+          // We pass the email in the URL so the page can show + resend.
           setIsSubmitting(false);
+          navigate(`/verify-email?email=${encodeURIComponent(data.email)}`, { replace: true });
         } else {
-          // Session is live — keep spinner active and let useEffect redirect naturally
-          // once the database finishes creating the profile and assigning the role.
+          // Session is live (email already confirmed) — let useEffect redirect to dashboard.
           toast.success('Compte créé avec succès ! Préparation de votre espace...');
         }
       } else {
         await login(data.email, data.password);
         toast.success(t('login_success') + " Préparation de votre espace...");
-        // Do NOT set isSubmitting(false) here. 
+        // Do NOT set isSubmitting(false) here.
         // Let the useEffect handle the redirect when role is ready.
         return;
       }
     } catch (error) {
+      // Special-case: account exists but email not yet verified → bounce to gate
+      if (error?.code === 'email_not_confirmed' || error?.message === 'email_not_confirmed' || /email not confirmed/i.test(error?.message || '')) {
+        toast.error("Veuillez vérifier votre email avant de vous connecter.");
+        setIsSubmitting(false);
+        navigate(`/verify-email?email=${encodeURIComponent(error.email || data.email || '')}`, { replace: true });
+        return;
+      }
+
       toast.error(error.message || t('login_failed'));
 
       // Auto-recover from fatal lock error
