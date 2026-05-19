@@ -203,7 +203,7 @@ export const PatientHistory = () => {
           examens(
             id, date_realisation, statut, observations_cliniques,
             services:services(nom),
-            comptes_rendus(id, description_detaillee, est_valide),
+            comptes_rendus(id, description_detaillee, est_valide, document_medical_id),
             images_radiologiques(id, url_stockage, type_image, description, nom_fichier, format_fichier, taille_fichier),
             documents_medicaux(id, chemin_fichier, statut, date_creation, examen_id, type)
           )
@@ -242,7 +242,15 @@ export const PatientHistory = () => {
     examDocs: e.documents_medicaux || [],
   })));
   const validatedReports = allReports.filter(cr => cr.est_valide);
-  const allDocs = examens.flatMap(e => (e.documents_medicaux || []).map(doc => ({ ...doc, examService: e.services?.nom })));
+  const allDocs = examens.flatMap(e => (e.documents_medicaux || []).map(doc => ({
+    ...doc,
+    examService: e.services?.nom,
+    examId: e.id,
+    examImages: e.images_radiologiques || [],
+    examDate: e.date_realisation,
+    // Find the linked compte_rendu (if any) so "Voir" can open the report viewer
+    linkedReport: (e.comptes_rendus || []).find(cr => cr.document_medical_id === doc.id) || (e.comptes_rendus || [])[0] || null,
+  })));
 
   return (
     <div className="space-y-6">
@@ -457,23 +465,42 @@ export const PatientHistory = () => {
                     <ScrollText className="h-10 w-10 mx-auto mb-3 opacity-30" />
                     <p className="font-bold text-sm">{t('no_docs_medical')}</p>
                   </div>
-                ) : allDocs.map(doc => (
-                  <div key={doc.id} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                      <FileText className="h-5 w-5 text-slate-400" />
+                ) : allDocs.map(doc => {
+                  const isCompteRendu = doc.type === 'compte_rendu' || (!doc.chemin_fichier && doc.linkedReport);
+                  return (
+                    <div key={doc.id} className="bg-white rounded-xl border border-slate-100 shadow-sm p-4 flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                        <FileText className="h-5 w-5 text-slate-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-800">{isCompteRendu ? 'Compte-rendu' : (doc.statut || t('document_label'))}</p>
+                        <p className="text-xs text-slate-500 font-medium">{doc.examService} — {formatDate(doc.date_creation)}</p>
+                      </div>
+                      {isCompteRendu && doc.linkedReport ? (
+                        <button
+                          onClick={() => setReportFullView({
+                            ...doc.linkedReport,
+                            examService: doc.examService,
+                            examDate: doc.examDate,
+                            examId: doc.examId,
+                            examImages: doc.examImages,
+                            examDocs: [],
+                          })}
+                          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-1.5"
+                        >
+                          <Eye className="h-3.5 w-3.5" /> {t('view')}
+                        </button>
+                      ) : doc.chemin_fichier ? (
+                        <a href={doc.chemin_fichier} target="_blank" rel="noopener noreferrer"
+                          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-1.5">
+                          <Eye className="h-3.5 w-3.5" /> {t('view')}
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium italic">Aucun fichier</span>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-800">{doc.statut || t('document_label')}</p>
-                      <p className="text-xs text-slate-500 font-medium">{doc.examService} — {formatDate(doc.date_creation)}</p>
-                    </div>
-                    {doc.chemin_fichier && (
-                      <a href={doc.chemin_fichier} target="_blank" rel="noopener noreferrer"
-                        className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-600 hover:bg-primary hover:text-white hover:border-primary transition-all flex items-center gap-1.5">
-                        <Eye className="h-3.5 w-3.5" /> {t('view')}
-                      </a>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

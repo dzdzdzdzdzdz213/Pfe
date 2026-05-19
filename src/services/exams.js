@@ -62,7 +62,7 @@ export const examService = {
       .select(`
         *,
         rendez_vous:rendez_vous_id(patient_id, patient:patients(id, utilisateur_id, sexe, date_naissance, utilisateur:utilisateurs(nom, prenom, telephone))),
-        radiologue:radiologues(id, utilisateur_id, utilisateur:utilisateurs(nom, prenom, specialite_principale)),
+        radiologue:radiologues(id, utilisateur_id, specialite_principale, utilisateur:utilisateurs(nom, prenom)),
         service:services(*),
         images:images_radiologiques(*),
         comptes_rendus(*)
