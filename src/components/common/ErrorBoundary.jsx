@@ -16,6 +16,9 @@ export class ErrorBoundary extends React.Component {
 
   render() {
     if (this.state.hasError) {
+      // Read language from <html lang="…"> set by LanguageContext
+      const isAr = (typeof document !== 'undefined' && document.documentElement?.lang === 'ar');
+      const tr = (fr, ar) => isAr ? ar : fr;
       return (
         <div className="min-h-[400px] flex items-center justify-center p-8">
           <div className="text-center bg-white p-8 rounded-3xl border border-slate-200 shadow-xl max-w-md">
@@ -24,15 +27,15 @@ export class ErrorBoundary extends React.Component {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h2 className="text-xl font-bold text-slate-800">Une erreur est survenue</h2>
+            <h2 className="text-xl font-bold text-slate-800">{tr('Une erreur est survenue', 'حدث خطأ')}</h2>
             <p className="text-slate-500 mt-2 text-sm font-medium">
-              {this.state.error?.message || 'Erreur inattendue. Veuillez recharger la page.'}
+              {this.state.error?.message || tr('Erreur inattendue. Veuillez recharger la page.', 'خطأ غير متوقع. يرجى إعادة تحميل الصفحة.')}
             </p>
             <button
               onClick={() => window.location.reload()}
               className="mt-6 px-6 py-3 bg-primary text-white rounded-xl font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-100"
             >
-              Recharger la page
+              {tr('Recharger la page', 'إعادة تحميل الصفحة')}
             </button>
           </div>
         </div>

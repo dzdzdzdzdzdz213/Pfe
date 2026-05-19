@@ -196,7 +196,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
         isEditing ? appointment.id : null
       );
       if (!isFree) {
-        toast.error("Ce créneau est déjà réservé. Veuillez choisir un autre horaire.");
+        toast.error(t('slot_already_booked'));
         setStep(3);
         return;
       }
@@ -319,7 +319,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
       toast.success(t('patient_save_success'));
     } catch (err) {
       if (err.message?.includes('utilisateurs_email_key') || err.message?.includes('duplicate key')) {
-        toast.error('Cet email est déjà utilisé par un autre patient.');
+        toast.error(t('email_already_used'));
       } else {
         toast.error(err.message || t('error_generic'));
       }
@@ -501,7 +501,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 {slotConflict && (
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
                     <ShieldAlert className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                    <span>Ce créneau est déjà réservé. Veuillez choisir un autre horaire.</span>
+                    <span>{t('slot_already_booked')}</span>
                   </div>
                 )}
               </div>
@@ -538,11 +538,11 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 {isEditing && isGuestBooking && (
                   <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
                     <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-3">
-                      Informations de Réservation
+                      {t('reservation_info_title')}
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex flex-col">
-                        <span className="text-amber-600/70 text-xs font-semibold">Téléphone</span>
+                        <span className="text-amber-600/70 text-xs font-semibold">{t('phone')}</span>
                         <span className="font-bold text-amber-900">{guestPhone || '-'}</span>
                       </div>
                       <div className="flex flex-col">
@@ -550,12 +550,12 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                         <span className="font-bold text-amber-900">{guestAge || '-'}</span>
                       </div>
                       <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
-                        <span className="text-amber-600/70 text-xs font-semibold">Type d'examen / Spécialité</span>
+                        <span className="text-amber-600/70 text-xs font-semibold">{t('exam_type_specialty')}</span>
                         <span className="font-black text-amber-900 text-base">{guestSpecialty || 'Non spécifiée'}</span>
                       </div>
                       {guestMessage && guestMessage !== 'Demande en ligne' && (
                         <div className="flex flex-col col-span-2 pt-2 border-t border-amber-200/50">
-                          <span className="text-amber-600/70 text-xs font-semibold">Message du patient</span>
+                          <span className="text-amber-600/70 text-xs font-semibold">{t('patient_message')}</span>
                           <span className="font-medium text-amber-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-amber-100">"{guestMessage}"</span>
                         </div>
                       )}
@@ -568,7 +568,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg"
                         >
-                          <FileText className="h-3.5 w-3.5" /> Voir le document joint
+                          <FileText className="h-3.5 w-3.5" /> {t('view_attached_doc')}
                         </a>
                       </div>
                     )}
@@ -578,20 +578,20 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 {isEditing && !isGuestBooking && (
                   <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl mb-4">
                     <h4 className="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">
-                      Informations Patient
+                      {t('patient_info_title')}
                     </h4>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div className="flex flex-col">
-                        <span className="text-blue-600/70 text-xs font-semibold">Téléphone</span>
+                        <span className="text-blue-600/70 text-xs font-semibold">{t('phone')}</span>
                         <span className="font-bold text-blue-900">{loggedInPhone || '-'}</span>
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-blue-600/70 text-xs font-semibold">Service demandé</span>
+                        <span className="text-blue-600/70 text-xs font-semibold">{t('service_requested')}</span>
                         <span className="font-black text-blue-900 text-base">{loggedInService || appointment?.examens?.[0]?.service?.nom || '-'}</span>
                       </div>
                       {loggedInNote && (
                         <div className="flex flex-col col-span-2 pt-2 border-t border-blue-200/50">
-                          <span className="text-blue-600/70 text-xs font-semibold">Note du patient</span>
+                          <span className="text-blue-600/70 text-xs font-semibold">{t('patient_note')}</span>
                           <span className="font-medium text-blue-900 bg-white/50 p-2 rounded-lg text-sm italic mt-1 border border-blue-100">"{loggedInNote}"</span>
                         </div>
                       )}
@@ -604,7 +604,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                           rel="noreferrer"
                           className="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 hover:underline bg-white/60 px-3 py-1.5 rounded-lg"
                         >
-                          <FileText className="h-3.5 w-3.5" /> Voir le document joint
+                          <FileText className="h-3.5 w-3.5" /> {t('view_attached_doc')}
                         </a>
                       </div>
                     )}
@@ -614,7 +614,7 @@ export const AppointmentModal = ({ isOpen, onClose, appointment = null, selected
                 <div>
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
                     <span>{t('booking_motif_label')}</span>
-                    {isEditing && isGuestBooking && <span className="text-[10px] text-amber-600">(Modifiable - contient les infos brutes)</span>}
+                    {isEditing && isGuestBooking && <span className="text-[10px] text-amber-600">{t('modal_editable_raw_info')}</span>}
                   </label>
                   <textarea
                     rows={4}

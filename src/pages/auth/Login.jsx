@@ -110,7 +110,7 @@ export const Login = () => {
           .maybeSingle();
         
         if (existingUser) {
-          toast.error("Ce numéro de téléphone est déjà utilisé par un autre compte.");
+          toast.error(t('phone_already_used'));
           setIsSubmitting(false);
           return;
         }
@@ -123,7 +123,7 @@ export const Login = () => {
           navigate(`/verify-email?email=${encodeURIComponent(data.email)}`, { replace: true });
         } else {
           // Session is live (email already confirmed) — let useEffect redirect to dashboard.
-          toast.success('Compte créé avec succès ! Préparation de votre espace...');
+          toast.success(t('account_created_preparing'));
         }
       } else {
         await login(data.email, data.password);
@@ -135,7 +135,7 @@ export const Login = () => {
     } catch (error) {
       // Special-case: account exists but email not yet verified → bounce to gate
       if (error?.code === 'email_not_confirmed' || error?.message === 'email_not_confirmed' || /email not confirmed/i.test(error?.message || '')) {
-        toast.error("Veuillez vérifier votre email avant de vous connecter.");
+        toast.error(t('verify_email_before_login'));
         setIsSubmitting(false);
         navigate(`/verify-email?email=${encodeURIComponent(error.email || data.email || '')}`, { replace: true });
         return;
@@ -180,15 +180,15 @@ export const Login = () => {
           <div className="h-16 w-16 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto border border-emerald-100">
             <Mail className="h-8 w-8 text-emerald-500" />
           </div>
-          <h2 className="text-xl font-extrabold text-slate-800">Vérifiez votre email</h2>
+          <h2 className="text-xl font-extrabold text-slate-800">{t('verify_email_title')}</h2>
           <p className="text-sm text-slate-500 font-medium max-w-xs mx-auto">
-            Un lien de confirmation a été envoyé à votre adresse email. Cliquez dessus pour accéder à votre espace patient.
+            {t('confirmation_link_sent')}
           </p>
           <button
             onClick={() => { setEmailConfirmationSent(false); setIsSignUp(false); reset(); }}
             className="text-sm font-bold text-primary hover:underline"
           >
-            Retour à la connexion
+            {t('back_to_login')}
           </button>
         </div>
       ) : (
@@ -208,7 +208,7 @@ export const Login = () => {
                   onClick={() => { setIsSignUp(true); reset(); }}
                   className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${isSignUp ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
-                  Créer un compte
+                  {t('create_account')}
                 </button>
               </div>
             </div>
@@ -222,10 +222,10 @@ export const Login = () => {
               <FadeInItem className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Prénom</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">{t('first_name')}</label>
                     <input
                       type="text"
-                      placeholder="Prénom"
+                      placeholder={t('first_name')}
                       className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 ${errors.prenom ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
                       {...register('prenom')}
                       onChange={(e) => setValue('prenom', e.target.value.replace(/[^a-zA-ZÀ-ÿ\s-]/g, ''))}
@@ -234,10 +234,10 @@ export const Login = () => {
                     {errors.prenom && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.prenom.message}</p>}
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Nom</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">{t('last_name')}</label>
                     <input
                       type="text"
-                      placeholder="Nom"
+                      placeholder={t('last_name')}
                       className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 ${errors.nom ? 'border-red-300' : 'border-slate-200 focus:border-primary'}`}
                       {...register('nom')}
                       onChange={(e) => setValue('nom', e.target.value.replace(/[^a-zA-ZÀ-ÿ\s-]/g, ''))}
@@ -249,7 +249,7 @@ export const Login = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5 flex items-center justify-between">
-                      Téléphone
+                      {t('phone')}
                       <span className="text-[9px] lowercase text-slate-400 font-normal">06 12 34 56 78</span>
                     </label>
                     <input
@@ -264,7 +264,7 @@ export const Login = () => {
                     {errors.telephone && <p className="text-[10px] text-red-500 mt-1 font-bold italic">{errors.telephone.message}</p>}
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Date de naissance</label>
+                    <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">{t('date_of_birth')}</label>
                     <input
                       type="date"
                       max={new Date().toISOString().split('T')[0]}
@@ -276,14 +276,14 @@ export const Login = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">Genre</label>
+                  <label className="text-xs font-bold text-slate-700 uppercase block mb-1.5">{t('gender')}</label>
                   <select
                     className="w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none focus:ring-4 focus:ring-primary/10 border-slate-200 focus:border-primary"
                     {...register('sexe')}
                     disabled={isSubmitting}
                   >
-                    <option value="M">Homme</option>
-                    <option value="F">Femme</option>
+                    <option value="M">{t('gender_m')}</option>
+                    <option value="F">{t('gender_f')}</option>
                   </select>
                 </div>
               </FadeInItem>
@@ -297,7 +297,7 @@ export const Login = () => {
               <input
                 id="email"
                 type="email"
-                placeholder="votre@email.com"
+                placeholder={t('email_placeholder')}
                 className={`w-full px-4 py-3 bg-slate-50 border rounded-xl outline-none transition-all ${errors.email ? 'border-red-300 focus:border-red-500' : 'border-slate-200 focus:border-primary'}`}
                 {...register('email')}
                 disabled={isSubmitting}
@@ -385,7 +385,7 @@ export const Login = () => {
                 type="email"
                 value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
-                placeholder="votre@email.com"
+                placeholder={t('email_placeholder')}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
                 required
               />

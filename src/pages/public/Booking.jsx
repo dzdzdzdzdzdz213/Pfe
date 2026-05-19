@@ -155,7 +155,7 @@ export const Booking = () => {
 
       if (confErr) throw confErr;
       if (conflicts && conflicts.length > 0) {
-        toast.error("Ce créneau vient d'être réservé par un autre patient. Veuillez choisir un autre horaire.");
+        toast.error(t('slot_just_booked'));
         setFormData(prev => ({ ...prev, time: '' }));
         fetchTakenSlots();
         setStep(2);
@@ -190,7 +190,7 @@ export const Booking = () => {
       setStep(4);
     } catch (err) { 
       console.error("Booking error:", err);
-      toast.error("Erreur lors de la réservation: " + (err.message || "Problème de connexion"));
+      toast.error(t('reservation_error_prefix') + (err.message || ''));
     } finally { 
       setIsSubmitting(false); 
     }
@@ -363,7 +363,7 @@ export const Booking = () => {
                       onChange={(e) => setFormData({ ...formData, telephone: formatAlgerianPhone(e.target.value) })}
                       className={`w-full p-4 bg-slate-50 border rounded-xl outline-none ${formData.telephone.length > 0 && !isPhoneValid ? 'border-red-400' : 'border-slate-200'}`}
                     />
-                    {formData.telephone.length > 0 && !isPhoneValid && <p className="text-[10px] text-red-500 font-bold ml-2 italic">Numéro non valide (05/06/07 XX XX XX XX)</p>}
+                    {formData.telephone.length > 0 && !isPhoneValid && <p className="text-[10px] text-red-500 font-bold ml-2 italic">{t('phone_invalid_dz')}</p>}
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('age')}</label>
@@ -384,7 +384,7 @@ export const Booking = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">Ordonnance médicale</label>
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block mb-2">{t('medical_prescription')}</label>
                   <FileUpload 
                     bucket="documents" 
                     folder="public" 

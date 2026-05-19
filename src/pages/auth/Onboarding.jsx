@@ -4,12 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 import { Loader2, User, Phone, Calendar, ArrowRight } from 'lucide-react';
 import { StaggerContainer, FadeInItem } from '@/components/common/PageTransition';
 
 export const Onboarding = () => {
   const { user, role } = useAuth();
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const schema = z.object({
@@ -47,7 +49,7 @@ export const Onboarding = () => {
 
   const onSubmit = async (data) => {
     if (!validateAlgerianPhone(data.telephone)) {
-      toast.error('Format de téléphone invalide (05/06/07 XX XX XX XX)');
+      toast.error(t('phone_format_invalid'));
       return;
     }
     setIsSubmitting(true);
@@ -98,7 +100,7 @@ export const Onboarding = () => {
         }
       }
 
-      toast.success("Profil complété avec succès !");
+      toast.success(t('profile_completed_success'));
       
       // Full redirect to refresh AuthContext state
       const dest = role === 'admin' ? '/admin/dashboard' : `/${role}/dashboard`;
@@ -106,7 +108,7 @@ export const Onboarding = () => {
       
     } catch (err) {
       console.error('Onboarding Error:', err);
-      toast.error('Erreur lors de la sauvegarde : ' + (err.message || 'Erreur inconnue'));
+      toast.error(t('save_error_prefix') + (err.message || ''));
       setIsSubmitting(false);
     }
   };
@@ -119,9 +121,9 @@ export const Onboarding = () => {
             <div className="h-16 w-16 bg-blue-50 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100">
               <User className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-800">Finalisez votre profil</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-800">{t('finalize_profile_title')}</h1>
             <p className="text-sm text-slate-500 font-medium">
-              Veuillez compléter ces informations essentielles pour continuer vers votre espace de gestion.
+              {t('complete_info_essential')}
             </p>
           </FadeInItem>
 
@@ -129,10 +131,10 @@ export const Onboarding = () => {
             
             <div className="grid grid-cols-2 gap-4">
               <FadeInItem className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Prénom</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t('first_name')}</label>
                 <input
                   {...register('prenom')}
-                  placeholder="Votre prénom"
+                  placeholder={t('your_first_name')}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[0-9]/g, '');
                     setValue('prenom', val);
@@ -143,10 +145,10 @@ export const Onboarding = () => {
               </FadeInItem>
 
               <FadeInItem className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Nom</label>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t('last_name')}</label>
                 <input
                   {...register('nom')}
-                  placeholder="Votre nom"
+                  placeholder={t('your_last_name')}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[0-9]/g, '');
                     setValue('nom', val);
@@ -160,7 +162,7 @@ export const Onboarding = () => {
             <FadeInItem className="space-y-1.5">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
                 <Phone className="h-3 w-3 mr-1.5 text-primary" />
-                Téléphone <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span>
+                {t('phone')} <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span>
               </label>
               <input
                 {...register('telephone')}
@@ -176,13 +178,13 @@ export const Onboarding = () => {
             </FadeInItem>
 
             <FadeInItem className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Genre</label>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{t('gender')}</label>
               <select
                 {...register('sexe')}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
               >
-                <option value="M">Masculin</option>
-                <option value="F">Féminin</option>
+                <option value="M">{t('gender_m')}</option>
+                <option value="F">{t('gender_f')}</option>
               </select>
             </FadeInItem>
 
@@ -190,7 +192,7 @@ export const Onboarding = () => {
               <FadeInItem className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center">
                   <Calendar className="h-3 w-3 mr-1.5 text-primary" />
-                  Date de naissance (Âge)
+                  {t('date_of_birth_age')}
                 </label>
                 <input
                   type="date"
@@ -213,7 +215,7 @@ export const Onboarding = () => {
                   <Loader2 className="h-5 w-5 animate-spin mx-auto" />
                 ) : (
                   <>
-                    Accéder au portail
+                    {t('access_portal')}
                     <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
                   </>
                 )}

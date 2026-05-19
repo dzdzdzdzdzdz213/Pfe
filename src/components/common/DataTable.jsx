@@ -8,6 +8,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { cn, formatDate } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 // Flatten nested objects so search works on fields like utilisateur.nom, utilisateur.prenom, etc.
 const flattenValues = (obj) => {
@@ -17,13 +18,15 @@ const flattenValues = (obj) => {
   return Object.values(obj).flatMap(flattenValues);
 };
 
-export const DataTable = ({ 
-  columns, 
-  data, 
-  loading = false, 
-  searchPlaceholder = "Rechercher...",
+export const DataTable = ({
+  columns,
+  data,
+  loading = false,
+  searchPlaceholder,
   onRowClick
 }) => {
+  const { t } = useLanguage();
+  const searchPh = searchPlaceholder ?? (t('search') + '...');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,7 +101,7 @@ export const DataTable = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <input
             type="text"
-            placeholder={searchPlaceholder}
+            placeholder={searchPh}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-sm font-medium"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -159,7 +162,7 @@ export const DataTable = ({
               ) : (
                 <tr>
                   <td colSpan={columns.length} className="px-6 py-12 text-center text-slate-400 font-medium">
-                    Aucun résultat trouvé.
+                    {t('no_results')}
                   </td>
                 </tr>
               )}

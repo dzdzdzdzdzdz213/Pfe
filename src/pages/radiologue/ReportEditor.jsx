@@ -220,7 +220,7 @@ export const ReportEditor = () => {
       
       // Save Report
       if (!radioProfile?.id) {
-        toast.error("Impossible de sauvegarder : votre profil Radiologue n'est pas encore activé. Veuillez contacter l'administrateur.");
+        toast.error(t('cant_save_radiologue_profile'));
         return;
       }
       let report;
@@ -406,22 +406,22 @@ export const ReportEditor = () => {
         return [...(old || []), ...newImgs];
       });
 
-      toast.success('Fichiers enregistrés avec succès au dossier médical du patient !');
+      toast.success(t('files_saved_to_dossier'));
 
       // Background refetch (non-blocking) — even if it returns stale data,
       // recentlyUploaded keeps the images visible.
       queryClient.invalidateQueries({ queryKey: ['exam', id] });
       queryClient.invalidateQueries({ queryKey: ['radio-images', id] });
     } catch (err) {
-      toast.error('Erreur lors de la sauvegarde des images : ' + err.message);
+      toast.error(t('image_save_error_prefix') + err.message);
     }
-  }, [id, queryClient]);
+  }, [id, queryClient, t]);
 
   // Remove an uploaded image: delete the DB row + the storage object, then
   // sync the local cache and the recentlyUploaded list so the UI updates.
   const handleDeleteImage = useCallback(async (img) => {
     if (!img) return;
-    if (!window.confirm('Supprimer ce fichier ? Cette action est irréversible.')) return;
+    if (!window.confirm(t('confirm_delete_file'))) return;
     try {
       // 1. Remove DB row when it has a real id (skip optimistic-only rows)
       if (img.id) {
@@ -457,14 +457,14 @@ export const ReportEditor = () => {
         (old || []).filter(r => (r.id || r.url_stockage) !== (img.id || img.url_stockage))
       );
 
-      toast.success('Fichier supprimé.');
+      toast.success(t('file_deleted'));
       // 5. Background refetch to stay in sync
       queryClient.invalidateQueries({ queryKey: ['exam', id] });
       queryClient.invalidateQueries({ queryKey: ['radio-images', id] });
     } catch (err) {
-      toast.error('Erreur lors de la suppression : ' + err.message);
+      toast.error(t('delete_error_prefix') + err.message);
     }
-  }, [id, queryClient]);
+  }, [id, queryClient, t]);
 
   if (loadingExam) {
     return (
@@ -619,7 +619,7 @@ export const ReportEditor = () => {
                     <div className="text-center text-slate-400 p-8 cursor-pointer" onClick={() => setImageViewerOpen(true)}>
                       <FileText className="h-16 w-16 mx-auto mb-3 text-blue-400" />
                       <p className="text-sm font-bold">{firstImg?.nom_fichier || 'Document PDF'}</p>
-                      <p className="text-xs opacity-60 mt-1">Cliquez pour ouvrir</p>
+                      <p className="text-xs opacity-60 mt-1">{t('click_to_open')}</p>
                     </div>
                   ) : (
                     <img
@@ -668,7 +668,7 @@ export const ReportEditor = () => {
                     <button
                       type="button"
                       onClick={(e) => { e.stopPropagation(); handleDeleteImage(img); }}
-                      title="Supprimer ce fichier"
+                      title={t('delete_this_file')}
                       className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-red-600 hover:bg-red-700 text-white shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <Trash2 className="h-2.5 w-2.5" />
@@ -679,7 +679,7 @@ export const ReportEditor = () => {
             </div>
           )}
           <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Ajouter des images supplémentaires</h4>
+            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{t('add_more_images')}</h4>
             <FileUpload 
               bucket="exam-images"
               folder={id}

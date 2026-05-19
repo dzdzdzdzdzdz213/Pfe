@@ -4,19 +4,14 @@ import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { Plus, Edit, Trash2, Check, X, Clock, Building, Stethoscope, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLanguage } from '@/contexts/LanguageContext';
 
-const DAYS = [
-  { key: 'lundi', label: 'Lundi' },
-  { key: 'mardi', label: 'Mardi' },
-  { key: 'mercredi', label: 'Mercredi' },
-  { key: 'jeudi', label: 'Jeudi' },
-  { key: 'vendredi', label: 'Vendredi' },
-  { key: 'samedi', label: 'Samedi' },
-  { key: 'dimanche', label: 'Dimanche' },
-];
+const DAY_KEYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 
 export const AdminSettings = () => {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
+  const DAYS = DAY_KEYS.map(k => ({ key: k, label: t(k) }));
   const [activeTab, setActiveTab] = useState('services');
 
   // Services management
@@ -57,7 +52,7 @@ export const AdminSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });
-      toast.success('Service ajouté');
+      toast.success(t('service_added'));
       setShowServiceDialog(false);
     },
     onError: (err) => toast.error(err.message),
@@ -71,7 +66,7 @@ export const AdminSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });
-      toast.success('Service mis à jour');
+      toast.success(t('service_updated'));
       setShowServiceDialog(false);
     },
     onError: (err) => toast.error(err.message),
@@ -84,7 +79,7 @@ export const AdminSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });
-      toast.success('Service supprimé');
+      toast.success(t('service_deleted'));
     },
     onError: (err) => toast.error(err.message),
   });
@@ -101,7 +96,7 @@ export const AdminSettings = () => {
   };
 
   const handleServiceSubmit = () => {
-    if (!serviceForm.nom) { toast.error('Le nom est obligatoire'); return; }
+    if (!serviceForm.nom) { toast.error(t('service_name_required')); return; }
     if (editService) {
       updateServiceMutation.mutate({ id: editService.id, data: serviceForm });
     } else {
@@ -122,9 +117,9 @@ export const AdminSettings = () => {
       if (upErr) throw upErr;
       const { data: urlData } = supabase.storage.from('documents').getPublicUrl(path);
       setServiceForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
-      toast.success('Image téléchargée');
+      toast.success(t('image_uploaded'));
     } catch (err) {
-      toast.error("Erreur lors du téléchargement de l'image : " + err.message);
+      toast.error(t('image_upload_error') + ' : ' + err.message);
     } finally {
       setImageUploading(false);
     }
@@ -161,8 +156,8 @@ export const AdminSettings = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Paramètres Système</h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Configurez les paramètres de la clinique</p>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('system_settings_title')}</h1>
+        <p className="text-sm text-slate-500 font-medium mt-1">{t('system_settings_subtitle')}</p>
       </div>
 
       {/* Tabs */}
@@ -185,7 +180,7 @@ export const AdminSettings = () => {
       {activeTab === 'services' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-slate-800">Services Médicaux</h3>
+            <h3 className="text-base font-extrabold text-slate-800">{t('medical_services')}</h3>
             <button onClick={() => { setEditService(null); setServiceForm({ nom: '', description: '', image_url: '', tag: '' }); setShowServiceDialog(true); }} className="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
               <Plus className="h-4 w-4" /> Ajouter
             </button>
@@ -221,7 +216,7 @@ export const AdminSettings = () => {
                 </div>
               ))
             ) : (
-              <div className="py-12 text-center text-slate-400 font-semibold text-sm">Aucun service configuré</div>
+              <div className="py-12 text-center text-slate-400 font-semibold text-sm">{t('no_service_configured')}</div>
             )}
           </div>
         </div>
@@ -230,7 +225,7 @@ export const AdminSettings = () => {
       {/* Working Hours Tab */}
       {activeTab === 'hours' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-4">
-          <h3 className="text-base font-extrabold text-slate-800">Heures de Travail</h3>
+          <h3 className="text-base font-extrabold text-slate-800">{t('working_hours_title')}</h3>
           <div className="space-y-3">
             {workingHours.map((wh, i) => (
               <div key={wh.day} className="flex items-center gap-4 flex-wrap">
@@ -239,7 +234,7 @@ export const AdminSettings = () => {
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={!wh.isClosed} onChange={(e) => { const hrs = [...workingHours]; hrs[i].isClosed = !e.target.checked; setWorkingHours(hrs); }} className="h-4 w-4 rounded border-slate-300 text-primary accent-primary" />
-                  <span className="text-xs font-semibold text-slate-500">Ouvert</span>
+                  <span className="text-xs font-semibold text-slate-500">{t('ouvert_label')}</span>
                 </label>
                 {!wh.isClosed && (
                   <>
@@ -248,15 +243,15 @@ export const AdminSettings = () => {
                     <input type="time" value={wh.close} onChange={(e) => { const hrs = [...workingHours]; hrs[i].close = e.target.value; setWorkingHours(hrs); }} className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-primary/10" />
                   </>
                 )}
-                {wh.isClosed && <span className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full border border-red-100">Fermé</span>}
+                {wh.isClosed && <span className="text-xs font-bold text-red-500 bg-red-50 px-3 py-1 rounded-full border border-red-100">{t('ferme')}</span>}
               </div>
             ))}
           </div>
           <button onClick={() => {
             localStorage.setItem('clinic_working_hours', JSON.stringify(workingHours));
-            toast.success('Heures enregistrées');
+            toast.success(t('hours_saved'));
           }} className="mt-4 px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
-            <Save className="h-4 w-4" /> Enregistrer
+            <Save className="h-4 w-4" /> {t('save')}
           </button>
         </div>
       )}
@@ -267,7 +262,7 @@ export const AdminSettings = () => {
           <h3 className="text-base font-extrabold text-slate-800">Informations Clinique</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Nom de la clinique</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('clinic_name_label')}</label>
               <input 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
                 value={clinicInfo.nom}
@@ -275,7 +270,7 @@ export const AdminSettings = () => {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Téléphone</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('phone')}</label>
               <input 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
                 placeholder="+213 XX XX XX XX" 
@@ -294,7 +289,7 @@ export const AdminSettings = () => {
               />
             </div>
             <div>
-              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Durée RDV par défaut (min)</label>
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('rdv_duration_label')}</label>
               <input 
                 type="number" 
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" 
@@ -305,11 +300,11 @@ export const AdminSettings = () => {
             </div>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Adresse</label>
-            <textarea 
-              rows={2} 
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" 
-              placeholder="Adresse complète de la clinique" 
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('clinic_address')}</label>
+            <textarea
+              rows={2}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none"
+              placeholder={t('clinic_address_label')}
               value={clinicInfo.adresse}
               onChange={e => setClinicInfo(p => ({ ...p, adresse: e.target.value }))}
             />
@@ -317,11 +312,11 @@ export const AdminSettings = () => {
           <button 
             onClick={() => {
               localStorage.setItem('clinic_info', JSON.stringify(clinicInfo));
-              toast.success('Paramètres enregistrés');
+              toast.success(t('settings_saved'));
             }} 
             className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100"
           >
-            <Save className="h-4 w-4" /> Enregistrer
+            <Save className="h-4 w-4" /> {t('save')}
           </button>
         </div>
       )}
@@ -332,32 +327,32 @@ export const AdminSettings = () => {
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setShowServiceDialog(false)} />
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-extrabold text-slate-900">{editService ? 'Modifier Service' : 'Nouveau Service'}</h2>
+              <h2 className="text-lg font-extrabold text-slate-900">{editService ? t('edit') + ' Service' : t('add') + ' Service'}</h2>
               <button onClick={() => setShowServiceDialog(false)} className="p-2 rounded-xl hover:bg-slate-100 text-slate-400"><X className="h-5 w-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Nom du Service *</label>
-                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={serviceForm.nom} onChange={e => setServiceForm(p => ({ ...p, nom: e.target.value }))} placeholder="Ex: Radiographie, Scanner, IRM..." />
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('service_name_label')}</label>
+                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={serviceForm.nom} onChange={e => setServiceForm(p => ({ ...p, nom: e.target.value }))} placeholder={t('service_name_placeholder')} />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Description</label>
-                <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} placeholder="Description du service..." />
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('description_label')}</label>
+                <textarea rows={3} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary resize-none" value={serviceForm.description} onChange={e => setServiceForm(p => ({ ...p, description: e.target.value }))} placeholder={t('service_description_placeholder')} />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Étiquette (Tag)</label>
-                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={serviceForm.tag} onChange={e => setServiceForm(p => ({ ...p, tag: e.target.value }))} placeholder="Ex: Haute précision, Vasculaire, Dépistage..." />
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('service_tag_label')}</label>
+                <input className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary" value={serviceForm.tag} onChange={e => setServiceForm(p => ({ ...p, tag: e.target.value }))} placeholder={t('service_tag_placeholder')} />
               </div>
               <div>
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">Photo du service</label>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block">{t('service_photo_label')}</label>
                 {serviceForm.image_url ? (
                   <div className="relative rounded-xl overflow-hidden border border-slate-200 mb-2">
-                    <img src={serviceForm.image_url} alt="aperçu" className="w-full h-32 object-cover" />
+                    <img src={serviceForm.image_url} alt={t('photo_preview_alt')} className="w-full h-32 object-cover" />
                     <button
                       type="button"
                       onClick={() => setServiceForm(p => ({ ...p, image_url: '' }))}
                       className="absolute top-2 right-2 bg-white/90 hover:bg-white p-1.5 rounded-lg text-red-600 hover:text-red-700 shadow"
-                      title="Retirer la photo"
+                      title={t('remove_photo')}
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -376,21 +371,21 @@ export const AdminSettings = () => {
                     disabled={imageUploading}
                     onChange={e => handleImageUpload(e.target.files?.[0])}
                   />
-                  {imageUploading ? 'Téléchargement…' : (serviceForm.image_url ? 'Remplacer la photo' : 'Téléverser une photo')}
+                  {imageUploading ? t('uploading') : (serviceForm.image_url ? t('replace_photo') : t('upload_photo_btn'))}
                 </label>
-                <p className="text-[10px] text-slate-400 font-medium mt-1.5">Vous pouvez aussi coller une URL ci-dessous</p>
+                <p className="text-[10px] text-slate-400 font-medium mt-1.5">{t('paste_url_below')}</p>
                 <input
                   className="mt-1.5 w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary"
                   value={serviceForm.image_url}
                   onChange={e => setServiceForm(p => ({ ...p, image_url: e.target.value }))}
-                  placeholder="https://… ou /images/exemple.jpg"
+                  placeholder={t('url_placeholder')}
                 />
               </div>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 justify-end">
-              <button onClick={() => setShowServiceDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">Annuler</button>
+              <button onClick={() => setShowServiceDialog(false)} className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">{t('cancel')}</button>
               <button onClick={handleServiceSubmit} className="px-5 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 shadow-lg shadow-blue-100">
-                <Check className="h-4 w-4" /> {editService ? 'Mettre à jour' : 'Ajouter'}
+                <Check className="h-4 w-4" /> {editService ? t('update') : t('add')}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Loader2, RefreshCw, LogOut, CheckCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
 
 /**
@@ -21,6 +22,7 @@ export const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [resending, setResending] = useState(false);
   const [polling, setPolling] = useState(false);
 
@@ -34,10 +36,10 @@ export const VerifyEmail = () => {
   // If the user is verified mid-stay, bounce them to the appropriate space.
   useEffect(() => {
     if (user?.email_confirmed_at) {
-      toast.success('Email vérifié — accès accordé.');
+      toast.success(t('email_verified_access'));
       navigate('/login', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, t]);
 
   // Light polling — every 5s, refresh the session so a freshly-verified email
   // detected by Supabase bounces the user out automatically.
@@ -55,7 +57,7 @@ export const VerifyEmail = () => {
 
   const handleResend = async () => {
     if (!email) {
-      toast.error("Adresse email introuvable. Veuillez vous reconnecter.");
+      toast.error(t('email_not_found_relogin'));
       return;
     }
     setResending(true);
@@ -66,9 +68,9 @@ export const VerifyEmail = () => {
         options: { emailRedirectTo: window.location.origin + '/login' }
       });
       if (error) throw error;
-      toast.success("Un nouvel email de vérification a été envoyé.");
+      toast.success(t('verification_email_resent'));
     } catch (err) {
-      toast.error(err.message || "Impossible d'envoyer l'email.");
+      toast.error(err.message || t('cannot_send_email'));
     } finally {
       setResending(false);
     }
@@ -87,19 +89,20 @@ export const VerifyEmail = () => {
             <Mail className="h-10 w-10 text-blue-500" />
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
-            Vérifiez votre email
+            {t('verify_email_title')}
           </h1>
           <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6 max-w-sm mx-auto">
-            Nous avons envoyé un lien de vérification à&nbsp;
-            <span className="font-bold text-slate-800">{email || 'votre adresse email'}</span>.
-            Cliquez sur le lien dans cet email pour activer votre compte.
+            {t('verify_email_intro')}&nbsp;
+            <span className="font-bold text-slate-800">{email}</span>.
+            <br />
+            {t('verify_email_outro')}
             <br /><br />
-            Vous ne pourrez accéder à l'application qu'une fois votre adresse vérifiée.
+            {t('cant_access_until_verified')}
           </p>
 
           {polling && (
             <p className="text-[10px] text-slate-400 font-medium mb-4 flex items-center justify-center gap-1.5">
-              <CheckCircle className="h-3 w-3" /> En attente de la vérification…
+              <CheckCircle className="h-3 w-3" /> {t('waiting_verification')}
             </p>
           )}
 
@@ -110,7 +113,7 @@ export const VerifyEmail = () => {
               className="w-full py-3 px-4 bg-primary text-white rounded-xl font-bold shadow-lg hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-80"
             >
               {resending ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              {resending ? 'Envoi…' : "Renvoyer l'email de vérification"}
+              {resending ? t('resending') : t('resend_email')}
             </button>
 
             <button
@@ -118,12 +121,12 @@ export const VerifyEmail = () => {
               className="w-full py-3 px-4 bg-white border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2"
             >
               <LogOut className="h-4 w-4" />
-              Retour à la connexion
+              {t('back_to_login')}
             </button>
           </div>
 
           <p className="text-[10px] text-slate-400 mt-6 font-medium">
-            Pensez à vérifier votre dossier spam si vous ne voyez pas l'email.
+            {t('check_spam_folder')}
           </p>
         </div>
       </div>

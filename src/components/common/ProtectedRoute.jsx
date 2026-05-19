@@ -1,8 +1,10 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 export const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, role, profileComplete, loading, roleLoading, authInitialized } = useAuth();
+  const { t } = useLanguage();
   const location = useLocation();
 
   // Wait for auth check, OR for role to be resolved when a user is present but
@@ -14,7 +16,7 @@ export const ProtectedRoute = ({ children, requiredRole }) => {
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary mx-auto" />
-          <p className="text-gray-500 font-medium tracking-tight">Vérification de l'accès...</p>
+          <p className="text-gray-500 font-medium tracking-tight">{t('checking_access')}</p>
         </div>
       </div>
     );

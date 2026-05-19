@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -13,6 +14,7 @@ const LABEL = "text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 
 
 export const PatientProfile = () => {
   const { utilisateur, role, logout } = useAuth();
+  const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('personal');
 
   // ── Personal form state ──────────────────────────────────────────────
@@ -82,13 +84,13 @@ export const PatientProfile = () => {
     };
 
     if (!personalForm.nom || !personalForm.prenom) {
-      return toast.error('Le nom et le prénom sont requis.');
+      return toast.error(t('name_required'));
     }
     if (/\d/.test(personalForm.nom) || /\d/.test(personalForm.prenom)) {
-      return toast.error('Les noms ne peuvent pas contenir de chiffres.');
+      return toast.error(t('names_no_digits'));
     }
     if (personalForm.telephone && !validateAlgerianPhone(personalForm.telephone)) {
-      return toast.error('Format de téléphone invalide (05/06/07 XX XX XX XX)');
+      return toast.error(t('phone_format_invalid'));
     }
     if (personalForm.age && (parseInt(personalForm.age) < 1 || parseInt(personalForm.age) > 120)) {
       return toast.error('L\'âge doit être entre 1 et 120 ans.');
@@ -115,7 +117,7 @@ export const PatientProfile = () => {
       }
 
       await loadProfileFromDB();
-      toast.success('Informations mises à jour avec succès !');
+      toast.success(t('info_updated_success'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -126,16 +128,16 @@ export const PatientProfile = () => {
   // ── 2a. Change password ──────────────────────────────────────────────
   const handleChangePassword = async () => {
     if (!passwordForm.newPass || passwordForm.newPass.length < 6) {
-      return toast.error('Le mot de passe doit contenir au moins 6 caractères.');
+      return toast.error(t('password_min_chars'));
     }
     if (passwordForm.newPass !== passwordForm.confirm) {
-      return toast.error('Les mots de passe ne correspondent pas.');
+      return toast.error(t('passwords_dont_match'));
     }
     setSecurityLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: passwordForm.newPass });
       if (error) throw error;
-      toast.success('Mot de passe modifié avec succès !');
+      toast.success(t('password_changed_success'));
       setPasswordForm({ newPass: '', confirm: '' });
     } catch (err) {
       toast.error(err.message);
@@ -147,7 +149,7 @@ export const PatientProfile = () => {
   // ── 2b. Change email ─────────────────────────────────────────────────
   const handleChangeEmail = async () => {
     if (!newEmail || !newEmail.includes('@')) {
-      return toast.error('Veuillez entrer un email valide.');
+      return toast.error(t('enter_valid_email'));
     }
     setSecurityLoading(true);
     try {
@@ -155,7 +157,7 @@ export const PatientProfile = () => {
       if (authError) throw authError;
       // Also update in utilisateurs table
       await supabase.from('utilisateurs').update({ email: newEmail }).eq('id', utilisateur.id);
-      toast.success('Un email de confirmation a été envoyé à votre nouvelle adresse.');
+      toast.success(t('confirmation_sent_new_address'));
       setNewEmail('');
     } catch (err) {
       toast.error(err.message);
@@ -167,7 +169,7 @@ export const PatientProfile = () => {
   // ── 3. Delete account ────────────────────────────────────────────────
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'SUPPRIMER') {
-      return toast.error('Veuillez taper SUPPRIMER pour confirmer.');
+      return toast.error(t('type_delete_to_confirm'));
     }
     setDeleteLoading(true);
     try {
@@ -181,7 +183,7 @@ export const PatientProfile = () => {
       }
       // Sign out (auth user deletion requires service role — sign out is sufficient for PFE)
       await logout();
-      toast.success('Compte supprimé. Au revoir !');
+      toast.success(t('account_deleted_goodbye'));
     } catch (err) {
       toast.error(err.message);
       setDeleteLoading(false);
@@ -189,18 +191,18 @@ export const PatientProfile = () => {
   };
 
   const tabs = [
-    { id: 'personal', label: 'Informations', icon: User },
-    { id: 'security', label: 'Sécurité', icon: Shield },
-    { id: 'danger', label: 'Compte', icon: Trash2 },
+    { id: 'personal', label: t('profile_tab_info'), icon: User },
+    { id: 'security', label: t('account_security'), icon: Shield },
+    { id: 'danger', label: t('danger_zone'), icon: Trash2 },
   ];
 
-  const sexeLabel = { M: 'Masculin', F: 'Féminin' };
+  const sexeLabel = { M: t('gender_m'), F: t('gender_f') };
 
   return (
     <div className="space-y-6 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Mon Profil</h1>
-        <p className="text-sm text-slate-500 font-medium mt-1">Gérez vos informations personnelles et paramètres de sécurité</p>
+        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">{t('my_profile_title')}</h1>
+        <p className="text-sm text-slate-500 font-medium mt-1">{t('profile_subtitle_full')}</p>
       </div>
 
       {/* Profile Header Card */}
@@ -269,7 +271,7 @@ export const PatientProfile = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL}>Prénom</label>
+              <label className={LABEL}>{t('first_name')}</label>
               <input
                 className={INPUT}
                 value={personalForm.prenom}
@@ -281,7 +283,7 @@ export const PatientProfile = () => {
               />
             </div>
             <div>
-              <label className={LABEL}>Nom</label>
+              <label className={LABEL}>{t('last_name')}</label>
               <input
                 className={INPUT}
                 value={personalForm.nom}
@@ -293,7 +295,7 @@ export const PatientProfile = () => {
               />
             </div>
             <div>
-              <label className={LABEL}>Téléphone <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span></label>
+              <label className={LABEL}>{t('phone')} <span className="ml-1 text-[10px] lowercase text-slate-400 font-normal">(05/06/07 XX XX XX XX)</span></label>
               <input
                 className={INPUT}
                 value={personalForm.telephone}
@@ -311,8 +313,8 @@ export const PatientProfile = () => {
               />
             </div>
             <div>
-              <label className={LABEL}>Âge</label>
-              <input type="number" min="1" max="120" className={INPUT} value={personalForm.age} placeholder="Votre âge"
+              <label className={LABEL}>{t('age')}</label>
+              <input type="number" min="1" max="120" className={INPUT} value={personalForm.age} placeholder={t('your_age')}
                 onChange={e => {
                   const val = e.target.value;
                   if (val === '') { setPersonalForm(p => ({ ...p, age: '' })); return; }
@@ -324,11 +326,11 @@ export const PatientProfile = () => {
             </div>
             {role === 'patient' && (
               <div>
-                <label className={LABEL}>Sexe</label>
+                <label className={LABEL}>{t('sexe')}</label>
                 <select className={INPUT} value={personalForm.sexe}
                   onChange={e => setPersonalForm(p => ({ ...p, sexe: e.target.value }))}>
-                  <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
+                  <option value="M">{t('gender_m')}</option>
+                  <option value="F">{t('gender_f')}</option>
                 </select>
               </div>
             )}
@@ -340,7 +342,7 @@ export const PatientProfile = () => {
             <input className={cn(INPUT, 'bg-slate-100 text-slate-400 cursor-not-allowed')}
               value={utilisateur?.email || ''} disabled />
             <p className="text-[11px] text-slate-400 mt-1 font-medium">
-              Pour changer l'email, allez dans l'onglet Sécurité.
+              {t('email_change_via_security')}
             </p>
           </div>
 
@@ -350,7 +352,7 @@ export const PatientProfile = () => {
             className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100 transition-all"
           >
             {personalLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Enregistrer les modifications
+            {t('save_profile')}
           </button>
         </div>
       )}
@@ -359,7 +361,7 @@ export const PatientProfile = () => {
       {activeTab === 'security' && (
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-6">
           <h3 className="text-base font-extrabold text-slate-800 flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" /> Sécurité du compte
+            <Shield className="h-4 w-4 text-primary" /> {t('account_security')}
           </h3>
 
           {/* Mode Toggle */}
@@ -370,7 +372,7 @@ export const PatientProfile = () => {
                 securityMode === 'password' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'
               )}
             >
-              <Lock className="h-3.5 w-3.5" /> Mot de passe
+              <Lock className="h-3.5 w-3.5" /> {t('password')}
             </button>
             <button
               onClick={() => setSecurityMode('email')}
@@ -386,13 +388,13 @@ export const PatientProfile = () => {
           {securityMode === 'password' && (
             <div className="space-y-4 max-w-sm">
               <div>
-                <label className={LABEL}>Nouveau mot de passe</label>
+                <label className={LABEL}>{t('new_password')}</label>
                 <div className="relative">
                   <input
                     type={showPass ? 'text' : 'password'}
                     className={cn(INPUT, 'pr-12')}
                     value={passwordForm.newPass}
-                    placeholder="Min. 6 caractères"
+                    placeholder={t('min_6_chars')}
                     onChange={e => setPasswordForm(p => ({ ...p, newPass: e.target.value }))}
                   />
                   <button type="button" onClick={() => setShowPass(v => !v)}
@@ -402,7 +404,7 @@ export const PatientProfile = () => {
                 </div>
               </div>
               <div>
-                <label className={LABEL}>Confirmer le mot de passe</label>
+                <label className={LABEL}>{t('confirm_password')}</label>
                 <input
                   type="password"
                   className={cn(INPUT,
@@ -410,15 +412,15 @@ export const PatientProfile = () => {
                       ? 'border-red-300 focus:border-red-400' : ''
                   )}
                   value={passwordForm.confirm}
-                  placeholder="Répétez le mot de passe"
+                  placeholder={t('repeat_password')}
                   onChange={e => setPasswordForm(p => ({ ...p, confirm: e.target.value }))}
                 />
                 {passwordForm.confirm && passwordForm.confirm !== passwordForm.newPass && (
-                  <p className="text-xs text-red-500 font-semibold mt-1">Les mots de passe ne correspondent pas</p>
+                  <p className="text-xs text-red-500 font-semibold mt-1">{t('passwords_dont_match')}</p>
                 )}
                 {passwordForm.confirm && passwordForm.confirm === passwordForm.newPass && passwordForm.confirm.length >= 6 && (
                   <p className="text-xs text-emerald-600 font-semibold mt-1 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" /> Les mots de passe correspondent
+                    <CheckCircle className="h-3 w-3" /> {t('passwords_match')}
                   </p>
                 )}
               </div>
@@ -428,7 +430,7 @@ export const PatientProfile = () => {
                 className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100 transition-all"
               >
                 {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-                Changer le mot de passe
+                {t('profile_change_password')}
               </button>
             </div>
           )}
@@ -437,15 +439,15 @@ export const PatientProfile = () => {
           {securityMode === 'email' && (
             <div className="space-y-4 max-w-sm">
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 font-medium">
-                Un email de confirmation sera envoyé à votre nouvelle adresse avant le changement.
+                {t('confirmation_will_be_sent')}
               </div>
               <div>
-                <label className={LABEL}>Email actuel</label>
+                <label className={LABEL}>Email</label>
                 <input className={cn(INPUT, 'bg-slate-100 text-slate-400 cursor-not-allowed')}
                   value={utilisateur?.email || ''} disabled />
               </div>
               <div>
-                <label className={LABEL}>Nouvel email</label>
+                <label className={LABEL}>Email</label>
                 <input
                   type="email"
                   className={INPUT}
@@ -460,7 +462,7 @@ export const PatientProfile = () => {
                 className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 shadow-lg shadow-blue-100 transition-all"
               >
                 {securityLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                Changer l'email
+                Email
               </button>
             </div>
           )}
@@ -471,16 +473,16 @@ export const PatientProfile = () => {
       {activeTab === 'danger' && (
         <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 space-y-4">
           <h3 className="text-base font-extrabold text-red-700 flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4" /> Zone de danger
+            <AlertTriangle className="h-4 w-4" /> {t('danger_zone')}
           </h3>
           <p className="text-sm text-slate-500 font-medium">
-            La suppression de votre compte est <strong>définitive et irréversible</strong>. Toutes vos données seront effacées.
+            {t('account_deletion_warning_1')} <strong>{t('account_deletion_warning_2')}</strong>{t('account_deletion_warning_3')}
           </p>
           <button
             onClick={() => setShowDeleteModal(true)}
             className="px-6 py-2.5 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 flex items-center gap-2 shadow-lg shadow-red-100 transition-all"
           >
-            <Trash2 className="h-4 w-4" /> Supprimer mon compte
+            <Trash2 className="h-4 w-4" /> {t('delete_my_account')}
           </button>
         </div>
       )}
@@ -492,7 +494,7 @@ export const PatientProfile = () => {
           <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-red-100 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-extrabold text-red-700 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" /> Confirmer la suppression
+                <AlertTriangle className="h-5 w-5" /> {t('confirm_deletion')}
               </h2>
               <button onClick={() => setShowDeleteModal(false)}
                 className="p-2 rounded-xl hover:bg-slate-100 text-slate-400">
@@ -500,7 +502,7 @@ export const PatientProfile = () => {
               </button>
             </div>
             <p className="text-sm text-slate-600 font-medium mb-4">
-              Pour confirmer, tapez <strong className="text-red-600">SUPPRIMER</strong> dans le champ ci-dessous.
+              {t('to_confirm_type')} <strong className="text-red-600">SUPPRIMER</strong> {t('in_field_below')}
             </p>
             <input
               className="w-full px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-red-100 focus:border-red-400 text-red-700 mb-4"
@@ -511,7 +513,7 @@ export const PatientProfile = () => {
             <div className="flex gap-3 justify-end">
               <button onClick={() => setShowDeleteModal(false)}
                 className="px-5 py-2.5 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50">
-                Annuler
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDeleteAccount}
@@ -519,7 +521,7 @@ export const PatientProfile = () => {
                 className="px-5 py-2.5 bg-red-500 text-white rounded-xl text-sm font-bold hover:bg-red-600 flex items-center gap-2 disabled:opacity-40 transition-all"
               >
                 {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Supprimer définitivement
+                {t('delete')}
               </button>
             </div>
           </div>
